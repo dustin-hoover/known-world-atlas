@@ -1,0 +1,17 @@
+node_modules
+dist/preview.html
+tools/shots/
+__pycache__/
+site/
+
+# tools/refit: reference map images are copyrighted; keep them local
+tools/refit/*.png
+tools/refit/*.npy
+tools/refit/*.json
+!tools/refit/anchors.json
+!tools/refit/fanchors.json
+tools/refit/geo.orig.js
+tools/routing/terrain.npz
+tools/routing/geo.json
+tools/borders/geo.json
+tools/borders/*.png

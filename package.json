@@ -1,0 +1,18 @@
+{
+  "name": "known-world-atlas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Known World: an unofficial, procedurally generated Earth-like globe of A Song of Ice and Fire (Westeros, Essos, Sothoryos). Fan project; facts from the novels only.",
+  "scripts": {
+    "build": "node build.js",
+    "dev": "node build.js && node scripts/serve.js",
+    "serve": "node scripts/serve.js",
+    "check": "for f in src/*.js; do node --check $f || exit 1; done && echo syntax ok",
+    "audit": "node tools/sources/audit.js --md docs/SOURCES.md",
+    "author": "python3 tools/known/author.py && node build.js"
+  },
+  "dependencies": {
+    "maplibre-gl": "5.24.0",
+    "three": "0.160.0"
+  }
+}
