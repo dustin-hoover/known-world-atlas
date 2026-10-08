@@ -1086,6 +1086,41 @@ function W3far(o) {
       lavaMat.color.setRGB(1, 0.35 + 0.15 * fl, 0.08); for (const m of streams) m.visible = heat > 0 && (heat === 2 || !m.userData.big);
     });
   }
+  // ---- the Wall: some 700 feet of ice from sea to sea, seen for scores of miles ----
+  // A raised band of grey-blue ice along each `ice` wall, wide at its foot and narrowing to the top, streaked and
+  // seamed; it stands on the true ground (sampled just south of the line, as the DEM carries the Wall itself),
+  // drops with the earth's curve, and keeps its own cold tint through the haze so it broods on the horizon.
+  for (const w of ((window.GEO && window.GEO.WALLS) || []).filter(w => w.ice)) {
+    const pts = []; for (let i = 0; i < w.pts.length - 1; i++) { const [a, b] = [w.pts[i], w.pts[i + 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / 0.08));
+      for (let k = 0; k < n; k++) pts.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); }
+    pts.push(w.pts[w.pts.length - 1]);
+    const near = pts.map(p => rel(p[0], p[1])); if (Math.min(...near.map(q => Math.hypot(q.x, q.z))) > 220000) continue;
+    const H = 213, B = 150, T = 60, pos = [], col = [], idx = [];   // wider than the DEM's own ridge, which it encloses
+    const ice = [0.66, 0.80, 0.92], seam = [0.46, 0.58, 0.70], top = [0.95, 0.98, 1.0];
+    pts.forEach((p, i) => {
+      // like the Mountain's plume, it is drawn taller with distance so that it looms over the horizon as the books
+      // describe (true height near at hand, up to four times as tall on the skyline)
+      const q = near[i], dq = Math.hypot(q.x, q.z), loom = Math.min(4, 1 + Math.max(0, dq - 700) / 2600);
+      const g = Math.min(hAt(p[0], p[1] - 0.14), hAt(p[0], p[1] + 0.14)), y0 = g - 40 - drop(q.x, q.z), y1 = g + H * loom - drop(q.x, q.z);
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], dx = (b[0] - a[0]), dy = (b[1] - a[1]), l = Math.hypot(dx, dy) || 1;
+      const nx = -dy / l, ny = dx / l;                         // the normal, in miles (north side = +n)
+      const off = (m, side) => { const r = rel(p[0] + nx * side * m / MI, p[1] + ny * side * m / MI); return [r.x, r.z]; };
+      const [sx0, sz0] = off(B, -1), [nx0, nz0] = off(B, 1), [sx1, sz1] = off(T, -1), [nx1, nz1] = off(T, 1);
+      const sag = 6 * Math.sin(i * 0.7) * Math.sin(i * 0.13);    // the top is not quite level: old ice, slumped
+      pos.push(sx0, y0, sz0, sx1, y1 + sag, sz1, nx1, y1 + sag, nz1, nx0, y0, nz0);
+      const streak = (i * 7919 % 13) / 13, c = streak < 0.25 ? seam : ice, f = 0.86 + 0.14 * Math.sin(i * 1.7) * Math.sin(i * 0.31);
+      // shadowed and grey-blue at its foot, brightening to a white crest: brooding below, cold light above
+      const foot = [c[0] * 0.55, c[1] * 0.62, c[2] * 0.7];
+      for (const cc of [foot, top, top, foot]) col.push(cc[0] * f, cc[1] * f, cc[2] * f);
+      if (i) { const o = (i - 1) * 4, n4 = i * 4; for (const [u, v] of [[0, 1], [1, 2], [2, 3]]) idx.push(o + u, n4 + u, n4 + v, o + u, n4 + v, o + v); }
+    });
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.42, metalness: 0.04, emissive: 0x2a5070, emissiveIntensity: 0.45, fog: false, side: THREE.DoubleSide });
+    const wall = new THREE.Mesh(geo, mat); wall.castShadow = true; wall.receiveShadow = true; grp.add(wall);
+    // the haze greys it a little with distance but never hides it: a pale, cold band across the north
+    const base = new THREE.Color(1, 1, 1), tint = new THREE.Color();
+    ups.push(() => { const night = 1 - Math.min(1, G.hemi.intensity / 0.9); tint.copy(base).lerp(G.scene.fog.color, 0.15); mat.color.copy(tint); mat.emissiveIntensity = 0.3 + 0.6 * night; });
+  }
   // ---- Minas Tirith, when it lies beyond the near patch ----
   const CX = 725.1, CY = -599.1, cp = rel(CX, CY), cd = Math.hypot(cp.x, cp.z);
   if (cd > 1500 && cd < 140000) {
