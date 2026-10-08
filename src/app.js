@@ -159,7 +159,7 @@ const palFeats = palPts.map(p => pt(p.X, p.Y, { name: 'Palantír of ' + p.name }
 // a world's beacon chain (Arda: Minas Tirith to Edoras); none in the Known World
 const beaconLine = { type: 'Feature', geometry: { type: 'LineString', coordinates: GEO.BEACONS.length > 1 ? lineLL(GEO.BEACONS.map(n => [PLN[n].X, PLN[n].Y])) : [] }, properties: {} };
 function realmFeats(era) { return GEO.REALMS[era].map(r => ({ type: 'Feature', geometry: geom(r), properties: { name: r.name, color: r.color } })); }
-function realmLabels(era) { return GEO.REALMS[era].map(r => { const c = r.circle ? r.circle : centroid(r.pts); return pt(c[0], c[1], { name: r.name }); }); }
+function realmLabels(era) { return GEO.REALMS[era].map(r => { const c = r.label || (r.circle ? r.circle : centroid(r.pts)); return pt(c[0], c[1], { name: r.name }); }); }
 const adminFeats = GEO.ADMIN.map(a => ({ type: 'Feature', geometry: geom(a), properties: { name: a.name, parent: a.parent } }));
 const adminLabels = GEO.ADMIN.map(a => { const c = centroid(a.pts); return pt(c[0], c[1], { name: a.name }); });
 const peopleFeats = GEO.PEOPLES.map((p, i) => ({ type: 'Feature', geometry: geom(p), properties: { name: p.name, lang: p.lang, color: p.color } }));
@@ -245,7 +245,7 @@ const style = {
     src('roads', FC(roadFeats)), src('walls', FC(wallFeats)), src('palantiri', FC(palFeats)), src('beacons', FC([beaconLine])),
     src('realms', FC(realmFeats('AC298'))), src('realm-labels', FC(realmLabels('AC298'))), src('admin', FC(adminFeats)), src('admin-labels', FC(adminLabels)),
     src('peoples', FC(peopleFeats)), src('people-labels', FC(peopleLabels)), src('grid', GRID.lines), src('grid-labels', GRID.labels),
-    src('buildings', FC(buildingFeats())), src('journeys', FC([])), src('journey-pos', FC([])), src('battles', FC([])), src('landmarks', FC([])), src('measure', FC([])), src('isobars', FC([])), src('hl', FC([])), src('lights', FC([])),
+    src('buildings', FC(buildingFeats())), src('journeys', FC([])), src('journey-pos', FC([])), src('battles', FC([])), src('landmarks', FC([])), src('dead', FC([])), src('measure', FC([])), src('isobars', FC([])), src('hl', FC([])), src('lights', FC([])),
   ]),
   layers: [
     { id: 'bg', type: 'background', paint: { 'background-color': '#0b1a2a' } },
@@ -297,6 +297,8 @@ const style = {
     // battles while they are fought: two small armies and their clash (src/avatars.js)
     { id: 'battles-av', type: 'symbol', source: 'battles', layout: { 'icon-image': ['get', 'icon'], 'icon-size': ['interpolate', ['linear'], ['zoom'], 3, 0.8, 7, 1.3, 10, 1.8], 'icon-anchor': 'top', 'icon-offset': [0, 6], 'icon-allow-overlap': true, 'icon-ignore-placement': true, 'text-field': ['get', 'label'], 'text-font': TXT_UIB, 'text-size': 12.5, 'text-anchor': 'top', 'text-offset': ['interpolate', ['linear'], ['zoom'], 3, ['literal', [0, 3.6]], 7, ['literal', [0, 5.6]], 10, ['literal', [0, 7.6]]], 'text-allow-overlap': true, 'text-ignore-placement': true }, paint: { 'text-color': '#f3d89a', 'text-halo-color': 'rgba(0,0,0,0.9)', 'text-halo-width': 1.6 } },
     // pixel-art travellers (src/avatars.js), standing just above their position
+    { id: 'dead-av', type: 'symbol', source: 'dead', minzoom: 3.5, layout: { 'icon-image': ['get', 'icon'], 'icon-anchor': 'bottom', 'icon-size': ['interpolate', ['linear'], ['zoom'], 3.5, 0.7, 7, 1, 10, 1.3], 'icon-allow-overlap': true, 'icon-ignore-placement': true,
+      'text-field': ['get', 'label'], 'text-font': TXT_IT, 'text-size': 11.5, 'text-anchor': 'top', 'text-offset': [0, 0.3], 'text-optional': true, 'text-max-width': 12 }, paint: { 'text-color': '#f0d8d0', 'text-halo-color': 'rgba(20,6,6,0.9)', 'text-halo-width': 1.4 } },
     { id: 'journeys-av', type: 'symbol', source: 'journey-pos', filter: ['has', 'icon'], layout: { 'icon-image': ['get', 'icon'], 'icon-anchor': 'bottom', 'icon-offset': [0, -3], 'icon-size': ['interpolate', ['linear'], ['zoom'], 3, 0.8, 7, 1.05, 10, 1.3], 'icon-allow-overlap': true, 'icon-ignore-placement': true, 'symbol-sort-key': ['-', 0, ['get', 'n']] } },
     { id: 'journeys-pos-label', type: 'symbol', source: 'journey-pos', layout: { 'text-field': ['get', 'name'], 'text-font': TXT_UIB, 'text-size': 12.5, 'text-offset': ['case', ['has', 'icon'], ['literal', [0, 0.55]], ['literal', [0, -1.1]]], 'text-anchor': ['case', ['has', 'icon'], 'top', 'bottom'], 'text-allow-overlap': false, 'text-optional': true }, paint: { 'text-color': ['get', 'color'], 'text-halo-color': 'rgba(0,0,0,0.85)', 'text-halo-width': 1.5 } },
   ]),
@@ -603,6 +605,9 @@ function stopsOf(id) {
   for (const w of l.wp) { const np = nearestPlace(w.X, w.Y); if (np.d > 8) continue; if (!out.length || out[out.length - 1].name !== np.p.name) out.push({ name: np.p.name, t: w.t }); }
   return out;
 }
+const PROF_OF = { robbking: 'robb', reek: 'theon' };
+function showProfile(id) { S.profile = PROF_OF[id] || id; if (panelName === 'characters') panelName = null; openPanel('characters'); }
+const deathOf = id => CASTP && CASTP.DEATHS.find(d => d.id === id || PROF_OF[d.id] === id);
 const shortDate = t => { const P = WX.parts(t); return P.month === 13 ? `closing days ${P.year}` : `moon ${P.month}, ${P.year}`; };
 function charAvatar(id) { return window.AVATARS ? `<img class="av" alt="" src="${AVATARS.dataURL([id], CASTP.PROFILES[id].color, S.t)}">` : ''; }
 function storyHolding(id, t) {
@@ -611,7 +616,8 @@ function storyHolding(id, t) {
   for (const k of order) if ((JOURNEYS[k] || []).some(j => j.name === name)) return k;
   return null;
 }
-const BATTLES = GEO.BATTLES.map((b, i) => ({ ...b, i, t0: WX.parse(b.from), t1: WX.parse(b.to) }));
+const tParse = v => typeof v === 'number' ? v : WX.parse(v);
+const BATTLES = GEO.BATTLES.map((b, i) => ({ ...b, i, t0: tParse(b.from), t1: tParse(b.to) }));
 // The slider is weighted by what happens: each party on the road, each event and each battle widens a
 // day, so the crowded last month gets room and the months of rest in Rivendell or Lórien shrink. Playback keeps an even pace in slider
 // terms, so it hurries through the quiet months and slows for the road and the battles.
@@ -721,7 +727,22 @@ function showParty(pr) {
     <div class="btns" style="margin-top:12px"><button class="btn primary" data-act="meet">Ground view</button><button class="btn" data-act="fly">Fly over</button></div>`,
     { kind: 'party', X: pr.X, Y: pr.Y, name: pr.name, zoom: 11 });
 }
+function updateDead() {
+  if (!mapLoaded || !window.AVATARS || !CASTP) return;
+  const feats = [];
+  for (const d of CASTP.DEATHS) if (S.t >= d.t && S.t < d.t + d.days) {
+    const id = 'dead:' + d.id; if (!map.hasImage(id)) { const cv = AVATARS.corpse(d.id); map.addImage(id, cv.getContext('2d').getImageData(0, 0, cv.width, cv.height), { pixelRatio: 2 }); }
+    feats.push(pt(d.X, d.Y, { icon: id, label: (AVATARS.C[d.id] ? AVATARS.C[d.id].name : d.id) + ' †', who: d.id }));
+  }
+  CASTP.FALLEN.forEach((F, i) => {
+    if (S.t < F.t + 0.4 || S.t >= F.t + F.days) return;
+    const id = 'fallen:' + i; if (!map.hasImage(id)) { const cv = AVATARS.fallen(F, id); map.addImage(id, cv.getContext('2d').getImageData(0, 0, cv.width, cv.height), { pixelRatio: 2 }); }
+    feats.push(pt(F.X, F.Y - F.spread * 0.6, { icon: id, label: 'The dead of ' + F.name.replace(/^The /, 'the ') }));
+  });
+  map.getSource('dead').setData(FC(feats));
+}
 function updateJourneys(posOnly) {
+  if (!posOnly) updateDead();
   const js = JOURNEYS[S.story] || [];
   const feats = [], pos = [], live = []; let idleAnim = false;
   for (const j of js) {
@@ -768,9 +789,11 @@ function setTime(t, fromSlider) {
   const evs = EVENTS[S.story].map(e => ({ t: WX.parse(e[0]), text: e[1] })).filter(e => e.t <= S.t + 0.5);
   const ev = evs[evs.length - 1];
   const js = JOURNEYS[S.story] || [];
-  const lead = js[0] && partyAt(js[0], S.t);
+  // the followed party, else the first who is alive and in the story
+  const lj = (S.follow && js.find(j => j.name === S.follow)) || js.find(j => { const p = partyAt(j, S.t); return p && !(p.done && j.hide); });
+  const lead = lj && partyAt(lj, S.t);
   let where = '';
-  if (lead) { const np = nearestPlace(lead.X, lead.Y); where = `<b>${esc(js[0].name)}</b> ${np.d < 4 ? 'at' : 'near'} ${esc(np.p.name)}`; }
+  if (lead) { const np = nearestPlace(lead.X, lead.Y); where = `<b>${esc(lj.name)}</b> ${lead.done && lj.hide ? 'lies dead' : np.d < 4 ? 'at' : 'near'} ${esc(np.p.name)}`; }
   $('#ticker').innerHTML = [where, ev ? esc(ev.text) : ''].filter(Boolean).join(' · ');
   updateJourneys();
   const beaconsLit = S.story === 'war' && S.t >= WX.parse('3019 3 8') && S.t < WX.parse('3019 3 16');
@@ -930,6 +953,7 @@ const PANELS = {
       return `<div class="ph"><h2>${esc(c.name)}</h2><button class="x" aria-label="Close">×</button></div>
       <div class="row" style="align-items:flex-start">${charAvatar(sel)}<span class="note" style="flex:1"><b>${esc(c.house)}</b><br>${esc(c.bio)}${c.fate ? `<br><i>${esc(c.fate)}</i>` : ''}</span></div>
       <p class="note">${p ? (p.done && l.hide ? 'Gone from the story.' : `${WX.parts(S.t).name}: ${np.d < 4 ? 'at ' : 'near '}${esc(np.p.name)}.`) : 'Not yet in the story.'}</p>
+      ${deathOf(sel) ? (() => { const d = deathOf(sel); return `<p class="note">† <b>Died</b> ${shortDate(d.t)} (date est.): ${esc(d.how)}, ${esc(nearestPlace(d.X, d.Y).p.name)}. <a href="#" data-ct="${d.t + 0.2}" data-cid="${sel}">See where</a></p>`; })() : ''}
       <div class="btns"><button class="btn primary" data-cfollow="${sel}">Follow</button><button class="btn" data-cfly="${sel}">Fly to</button><button class="btn" data-cback>All characters</button></div>
       <div class="eyebrow">Road taken <small>(dates estimated)</small></div>
       <div class="note" style="line-height:1.7">${stopsOf(sel).map(s => `<a href="#" data-ct="${s.t}" data-cid="${sel}">${esc(s.name)}</a> <small>${shortDate(s.t)}</small>`).join(' → ') || '—'}</div>
@@ -937,6 +961,11 @@ const PANELS = {
       ${byTier.map(([label, list]) => `<div class="note" style="margin:6px 0 2px"><b>${esc(label)}</b></div>` + list.map(([o, r]) => `<div class="row" style="cursor:pointer" data-cpick="${o}">${charAvatar(o)}<label>${esc(P[o].name)} <small>${r.days} day${r.days > 1 ? 's' : ''} together from ${shortDate(r.first)}, ${esc(nearestPlace(r.X, r.Y).p.name)}</small></label><button class="btn" data-cmeet="${o}" data-t="${r.first}" data-x="${r.X}" data-y="${r.Y}">Go</button></div>`).join('')).join('') || '<p class="note">No one, yet.</p>'}`;
     }
     return `<div class="ph"><h2>Characters</h2><button class="x" aria-label="Close">×</button></div>
+    <div class="eyebrow">The Seven Kingdoms on ${esc(WX.parts(S.t).name)}</div>
+    ${(() => { const c = CASTP.CROWN.find(c => (c[1] == null || S.t >= c[1]) && (c[2] == null || S.t < c[2])); return c ? `<p class="note">On the Iron Throne: <a href="#" data-cprof="${c[0]}">${esc(P[c[0]].name)}</a></p>` : ''; })()}
+    ${CASTP.SEVEN.map(r => { const on = x => (x[2] == null || S.t >= x[2]) && (x[3] == null || S.t < x[3]); const L = (CASTP.RULERS[r] || []).filter(on);
+      const lord = L.find(x => x[0] === 'lord'), claim = L.find(x => x[0] === 'claim'), who = x => x[1] ? `<a href="#" data-cprof="${x[1]}">${esc((P[PROF_OF[x[1]] || x[1]] || {}).name || x[1])}</a>` : esc(x[4]);
+      return `<div class="row" style="align-items:flex-start"><label style="min-width:118px"><b>${esc(r)}</b></label><span class="note" style="flex:1">${lord ? who(lord) : '—'}${claim ? ` · <i>crown: ${who(claim)}</i>` : ''}</span></div>`; }).join('')}
     <p class="note">Everyone we follow through the books, by their part in the story. Pick one for their profile, the road they took and the people they met. Looks come from the books' descriptions; dates are estimates.</p>
     ${TIERS.map(([k, label]) => `<div class="eyebrow">${label}</div>` + Object.keys(P).filter(id => P[id].tier === k).map(id => { const l = lifeOf(id), p = l && partyAt(l, S.t), np = p && nearestPlace(p.X, p.Y);
       return `<div class="row" style="cursor:pointer" data-cpick="${id}">${charAvatar(id)}<label>${esc(P[id].name)} <small>${esc(P[id].house)} · ${p ? (p.done && l.hide ? 'gone' : (np.d < 4 ? 'at ' : 'near ') + esc(np.p.name)) : 'not yet'}</small></label></div>`; }).join('')).join('')}`;
@@ -985,6 +1014,7 @@ const PANELS = {
 const PANEL_INIT = {
   characters: () => {
     const re = () => { panelName = null; openPanel('characters'); };
+    panel.querySelectorAll('[data-cprof]').forEach(a => a.onclick = e => { e.preventDefault(); showProfile(a.dataset.cprof); });
     panel.querySelectorAll('[data-cpick]').forEach(r => r.onclick = e => { if (e.target.closest('button')) return; S.profile = r.dataset.cpick; re(); });
     const back = panel.querySelector('[data-cback]'); if (back) back.onclick = () => { S.profile = null; re(); };
     const goStory = (id, t) => { const k = storyHolding(id, t); if (k && k !== S.story) { S.story = k; $('#story').value = k; buildTicks(); } setTime(t); };
@@ -1119,6 +1149,14 @@ function biomeAt(X, Y) {
   if (F[3] > 0.2) return { name: 'Downs and heath', h };
   return { name: 'Wild grass and scrub', h };
 }
+function rulersAt(realm, t) {
+  if (!CASTP || !CASTP.RULERS[realm]) return '';
+  const on = r => (r[2] == null || t >= r[2]) && (r[3] == null || t < r[3]), nm = id => id ? esc(CASTP.PROFILES[id] ? CASTP.PROFILES[id].name : (AVATARS && AVATARS.C[id] ? AVATARS.C[id].name : id)) : '';
+  const rows = CASTP.RULERS[realm].filter(on), crown = CASTP.CROWN.find(c => (c[1] == null || t >= c[1]) && (c[2] == null || t < c[2]));
+  const line = r => `${r[1] ? `<a href="#" data-prof="${r[1]}">${nm(r[1])}</a>, ` : ''}${esc(r[4])}`;
+  const lords = rows.filter(r => r[0] === 'lord' || r[0] === 'regent'), claims = rows.filter(r => r[0] === 'claim');
+  return `${lords.length ? `<dt>Lord</dt><dd>${lords.map(line).join('<br>')}</dd>` : ''}${crown ? `<dt>Monarch</dt><dd><a href="#" data-prof="${crown[0]}">${nm(crown[0])}</a>, ${esc(crown[3])}${claims.length ? '<br><small>Rival crown: ' + claims.map(line).join('; ') + '</small>' : ''}</dd>` : ''}`;
+}
 function realmAt(X, Y) { const r = GEO.REALMS[S.era].find(r => inPoly(X, Y, r)); return r ? r.name : '—'; }
 function adminAt(X, Y) { const a = GEO.ADMIN.find(a => inPoly(X, Y, a)); return a ? a.name : null; }
 function peopleAt(X, Y) { const p = GEO.PEOPLES.filter(p => inPoly(X, Y, p)); return p.length ? p.map(x => x.name).join(', ') : null; }
@@ -1158,6 +1196,7 @@ function openCard(html, state) {
   card.classList.add('open');
   card.querySelector('.x').onclick = () => { card.classList.remove('open'); cardState = null; };
   card.querySelectorAll('[data-act]').forEach(b => b.onclick = () => ACTIONS[b.dataset.act](state));
+  card.querySelectorAll('[data-prof]').forEach(a => a.onclick = e => { e.preventDefault(); showProfile(a.dataset.prof); });
   drawForecast(state.X, state.Y);
 }
 const ACTIONS = {
@@ -1194,7 +1233,7 @@ function showPlace(p) {
   const adm = adminAt(p.X, p.Y);
   openCard(`<div class="kind">${TYPE_LABEL[p.type] || p.type}</div><h1>${esc(p.name)}</h1>${PEAKN[p.name] && PEAKN[p.name].alt ? `<div class="alt">${esc(PEAKN[p.name].alt)}</div>` : ''}
     <p>${esc(p.desc)}</p>
-    <dl><dt>Realm</dt><dd>${esc(p.realm)}${adm ? ' · ' + esc(adm) : ''}</dd><dt>People</dt><dd>${esc(PEOPLE_LABEL[p.people] || p.people)}</dd>${p.pop ? `<dt>Population</dt><dd>~${p.pop.toLocaleString()} <small style="color:var(--faint)">estimate</small></dd>` : ''}
+    <dl><dt>Realm</dt><dd>${esc(p.realm)}${adm ? ' · ' + esc(adm) : ''}</dd>${rulersAt(realmAt(p.X, p.Y), S.t)}<dt>People</dt><dd>${esc(PEOPLE_LABEL[p.people] || p.people)}</dd>${p.pop ? `<dt>Population</dt><dd>~${p.pop.toLocaleString()} <small style="color:var(--faint)">estimate</small></dd>` : ''}
     <dt>Ground</dt><dd>${esc(b.name)}</dd><dt>Elevation</dt><dd>${Math.round(Math.max(0, b.h))} m · ${Math.round(Math.max(0, b.h) * 3.281).toLocaleString()} ft</dd>
     <dt>Position</dt><dd class="mono">${fmtLL(lon, lat)}<br>${fmtXY(p.X, p.Y)}</dd><dt>Distance</dt><dd>${distLine(p.X, p.Y)}</dd>${sourceRow(p.name)}</dl>
     <div class="eyebrow">Weather · ${esc(WX.parts(S.t).name)} ${WX.fmtTime(WX.parts(S.t).hour)}</div><div class="wxwrap">${wxBlock(p.X, p.Y)}</div>
@@ -1208,7 +1247,7 @@ function showPoint(X, Y, o = {}) {
   const title = o.name || b.name.split(' · ').pop();
   openCard(`<div class="kind">${o.kind ? TYPE_LABEL[o.kind] || o.kind : 'Location'}</div><h1>${esc(title)}</h1>${o.alt ? `<div class="alt">${esc(o.alt)}</div>` : ''}
     <dl><dt>Ground</dt><dd>${esc(b.name)}</dd><dt>Elevation</dt><dd>${b.h > 0 ? Math.round(b.h) + ' m · ' + Math.round(b.h * 3.281).toLocaleString() + ' ft' : Math.round(-b.h) + ' m below sea level'}</dd>
-    <dt>Realm</dt><dd>${esc(realmAt(X, Y))}${adm ? ' · ' + esc(adm) : ''}</dd>${ppl ? `<dt>Peoples</dt><dd>${esc(ppl)}</dd>` : ''}
+    <dt>Realm</dt><dd>${esc(realmAt(X, Y))}${adm ? ' · ' + esc(adm) : ''}</dd>${rulersAt(realmAt(X, Y), S.t)}${ppl ? `<dt>Peoples</dt><dd>${esc(ppl)}</dd>` : ''}
     <dt>Nearest</dt><dd>${esc(np.p.name)}, ${np.d.toFixed(np.d < 10 ? 1 : 0)} mi</dd>
     <dt>Position</dt><dd class="mono">${fmtLL(lon, lat)}<br>${fmtXY(X, Y)}</dd><dt>Distance</dt><dd>${distLine(X, Y)}</dd></dl>
     <div class="eyebrow">Weather · ${esc(WX.parts(S.t).name)} ${WX.fmtTime(WX.parts(S.t).hour)}</div><div class="wxwrap">${wxBlock(X, Y)}</div>

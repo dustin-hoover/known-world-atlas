@@ -19,11 +19,17 @@ maps or artwork, no material from screen adaptations.
 - **Seasons on the ground:** the land itself changes with the books' long seasons. Beyond the Wall it turns to
   tundra and then ice the farther north you go; as the summer ends the forests brown, snow creeps south over the
   North and the Wall, and by the winter of 300 AC it lies over the whole North
-- **The cast:** some sixty characters (principal, secondary, companions and the dark and mysterious, from the
+- **The cast:** some seventy characters (principal, secondary, companions and the dark and mysterious, from the
   Others and Coldhands to Melisandre, Quaithe and the three-eyed crow), each a pixel figure drawn from the books'
   descriptions, with all six Stark direwolves and Daenerys's three dragons
 - **Journeys** for every one of them from A Game of Thrones through A Dance with Dragons, along the roads and
   sea lanes, on foot, on horseback, in the queen's wheelhouse, by ship, by river boat and on dragonback
+- **Realms that follow the land:** each kingdom's border is fitted to our own coasts (exactly, at the sea), and
+  inland settles on the mountain ranges, the Wall and the rivers between realms (`tools/known/realms.py`)
+- **Lords and monarchs:** every kingdom's Lord Paramount and its king (and any rival crown) on each date, in the
+  place cards and the Characters panel, with the lords themselves among the cast
+- **Deaths and battles:** the dead lie where they fell for a time under a death mark (at the Red Wedding the bodies
+  are everywhere); a dozen battles from the Green Fork to the battle beneath the Wall, with house banners
 - **Characters panel:** a profile for each, the road they took, and everyone they crossed paths with
 - **Castles as described** in the ground view: Winterfell, Castle Black, the Eyrie, Harrenhal, the Twins, the
   Red Keep, Storm's End, Dragonstone, Pyke, the Hightower, Riverrun, Casterly Rock and Sunspear

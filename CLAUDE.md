@@ -24,6 +24,13 @@ Arda's engine notes below still apply; what differs in this world:
   `MODES` (`ride`, `wheelhouse`, `sea`, `boat`, `dragon`) by id regex, `CASTS`, declarative `GROUPS`, `EVENTS`
   and `EXTRA_PLACES`. `build()` expands and clips the paths per story into `GEO.JOURNEYS`. avatars.js merges
   `GEO.CAST` into `C`/`B`/`JOURNEY`/`GROUPS`; a party travels in the strongest mode of its members (`partyMode`).
+- **Realms (`tools/known/realms.py`):** the REALMS polygons in author.py are claims; `fit()` rasterises our land
+  (COAST + ISLANDS) at 4 mi, grows each realm from its shrunk claim and its PLACES by cost distance (ranges +30,
+  rivers +4, the Wall impassable, sea 40), gives small islands to their own places' realm, and contours the result.
+  Peoples that share a claim take the fitted shape; the rest are cut to the land. Never trace published maps.
+- **Rulers, deaths, battles (cast.py):** `RULERS` / `CROWN` (dated lords, regents, claims), `DEATHS` (body shown
+  `BODY_DAYS` under a death mark, `AVATARS.corpse`), `BATTLES` (emitted per story to GEO.BATTLES; house `BANNER`
+  charges in `GLYPH`, soldier `KIND`s and `RIDERS`), `FALLEN` (bodies after each battle; the Red Wedding's many).
 - **Characters panel** (`PANELS.characters`): profiles by tier, the road taken (`stopsOf`) and `meetings()`
   (characters within 2 mi on the same day, sampled daily at noon across all books).
 - **Castles:** places listed in author.py `CASTLES` carry `castle` (a `CASTLE` builder in world3d.js), `cr` (the

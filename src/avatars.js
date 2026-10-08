@@ -780,7 +780,7 @@ function icon(ids, color, t, f = 0, mode = 'walk', flip = false) {
   if (ICACHE[key + f]) return ICACHE[key + f];
   if (mode !== 'walk' && mode !== 'under') return ICACHE[key + f] = mounted(ids, S, grp, color, f, mode, flip, key);
   const cv = document.createElement('canvas'), g = cv.getContext('2d'), s = 3, fw = FIGW * s;
-  const show = grp && grp.show ? grp.show : grp && grp.order ? grp.order.filter(i => S.has(i)).concat([...S].filter(i => !grp.order.includes(i))) : [...S];
+  const show = grp && grp.show ? grp.show.concat([...S].filter(i => !grp.show.includes(i))) : grp && grp.order ? grp.order.filter(i => S.has(i)).concat([...S].filter(i => !grp.order.includes(i))) : [...S];
   const hOf = id => (figGrid(id, 0).length + 2) * s, fh = Math.max(...show.map(hOf)), wOf = id => (figGrid(id, 0)[0].length + 2) * s;
   if (show.length === 1 && ['dragon', 'spider', 'trolls', 'stonetrolls', 'warg', 'gem'].includes(C[show[0]].special)) {
     const id = show[0]; cv.width = wOf(id) + 8; cv.height = hOf(id) + 6;
@@ -846,7 +846,7 @@ function icon(ids, color, t, f = 0, mode = 'walk', flip = false) {
 // riders, flyers and sailors: one mount per rider (Legolas and Gimli share Arod), up to two per Eagle,
 // everyone in one boat; a company's name and colours as on foot
 function mounted(ids, S, grp, color, f, mode, flip, key) {
-  const show = (grp && grp.order ? grp.order.filter(i => S.has(i)).concat([...S].filter(i => !grp.order.includes(i))) : [...S]);
+  const show = grp && grp.show ? grp.show.concat([...S].filter(i => !grp.show.includes(i))) : (grp && grp.order ? grp.order.filter(i => S.has(i)).concat([...S].filter(i => !grp.order.includes(i))) : [...S]);
   let units = [];
   if (mode === 'ride') {
     const walkers = show.filter(i => ON_FOOT.has(i));
@@ -882,6 +882,54 @@ function mounted(ids, S, grp, color, f, mode, flip, key) {
   const name = grp ? grp.name : show.length === 1 ? C[show[0]].name : listNames(show);
   return { canvas: cv, name, key };
 }
+
+/* ---- the dead: a body lying where it fell, a dark pool beneath, and a death mark above ---- */
+const SKULL = ['.#####.', '#######', '#..#..#', '#######', '.##.##.', '.#.#.#.'];
+const pale = v => { if (!v) return v; const n = parseInt(v.slice(1, 7), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255, m = (r + g + b) / 3;
+  const q = c => Math.round(c * 0.62 + m * 0.38).toString(16).padStart(2, '0'); return '#' + q(r) + q(g) + q(b); };
+function lying(g, special) {
+  if (special) return g.map(row => row.map(pale)).reverse();          // a beast on its back
+  const h = g.length, w = g[0].length, out = blank(h, w);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (g[y][x]) out[w - 1 - x][y] = pale(g[y][x]);
+  return out;
+}
+function deathMark(g, cx, cy, r) {
+  g.fillStyle = 'rgba(10,6,6,0.88)'; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill();
+  g.strokeStyle = '#c8b8a8'; g.lineWidth = 1.5; g.stroke();
+  const u = r * 0.22; g.fillStyle = '#f0ece0';
+  for (let y = 0; y < 6; y++) for (let x = 0; x < 7; x++) if (SKULL[y][x] === '#') g.fillRect(cx + (x - 3.5) * u, cy + (y - 3.2) * u, u, u);
+}
+function pool(g, cx, cy, rx, ry) { g.fillStyle = 'rgba(110,8,8,0.75)'; g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(160,20,16,0.6)'; g.beginPath(); g.ellipse(cx - rx * 0.2, cy - 1, rx * 0.5, ry * 0.5, 0, 0, 7); g.fill(); }
+const DCACHE = {};
+function corpse(id) {
+  if (DCACHE[id]) return DCACHE[id];
+  const sp = C[id] && C[id].special, gr = lying(figGrid(id, 0), sp), s = 3;
+  const w = (gr[0].length + 2) * s, h = (gr.length + 2) * s, cv = document.createElement('canvas'), g = cv.getContext('2d');
+  cv.width = w + 16; cv.height = h + 34;
+  pool(g, cv.width / 2 + 4, cv.height - 9, w * 0.42, 6);
+  drawGrid(g, gr, 8, cv.height - h - 6, s);
+  deathMark(g, cv.width / 2, 13, 11);
+  return DCACHE[id] = cv;
+}
+// a field of the fallen: soldiers of each kind lying where they fell (seeded, so the same each time)
+function fallen(F, key) {
+  if (DCACHE[key]) return DCACHE[key];
+  const list = []; for (const [k, n] of F.units) for (let i = 0; i < n; i++) list.push(k);
+  const many = list.length, W2 = Math.min(560, 150 + many * 15), H2 = Math.min(190, 60 + many * 4.5), s = 3;
+  const cv = document.createElement('canvas'), g = cv.getContext('2d'); cv.width = W2; cv.height = H2 + 22;
+  g.fillStyle = 'rgba(70,40,26,0.35)'; g.beginPath(); g.ellipse(W2 / 2, 22 + H2 / 2, W2 / 2 - 2, H2 / 2 - 2, 0, 0, 7); g.fill();
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const spots = list.map(k => { const a = rnd() * Math.PI * 2, r = Math.sqrt(rnd()) * 0.86; return [k, W2 / 2 + Math.cos(a) * r * (W2 / 2 - 22), 22 + H2 / 2 + Math.sin(a) * r * (H2 / 2 - 10), rnd() < 0.5]; }).sort((p, q) => p[2] - q[2]);
+  for (const [k, x, y, flip] of spots) {
+    const gr = lying(KIND[k] ? soldier(k, 0, false) : BEASTS.has(k) ? beast(k, 0) : figGrid(k, 0)), w = (gr[0].length + 2) * s, h = (gr.length + 2) * s;
+    pool(g, x, y + h / 2 - 2, w * 0.4, 3);
+    g.save(); if (flip) { g.translate(x, 0); g.scale(-1, 1); g.translate(-x, 0); } drawGrid(g, gr, x - w / 2, y - h / 2, s); g.restore();
+  }
+  for (let i = 0; i < Math.min(6, 1 + many / 6); i++) { const x = 20 + rnd() * (W2 - 40), y = 26 + rnd() * (H2 - 10);   // crows
+    g.fillStyle = '#121014'; g.fillRect(x, y, 4, 2); g.fillRect(x + 1, y - 1, 2, 1); g.fillRect(x - 2, y - 1, 2, 1); g.fillRect(x + 4, y - 1, 2, 1); }
+  deathMark(g, W2 / 2, 11, 10);
+  return DCACHE[key] = cv;
+}
 /* ---- battles: two small armies under their banners, and the clash between them ---- */
 const KIND = {
   rohan:     { skin: '#e8b892', helm: '#c9a03c', body: '#3f6a3a', legs: '#5a4a30', shield: '#2a5a2a', mark: '#f0f0ea', arm: 'spear' },
@@ -900,7 +948,29 @@ const KIND = {
   goblin:    { skin: '#7a8a5a', helm: '#3a3a2e', body: '#3a3a2e', legs: '#2a2a20', arm: 'scimitar', short: 1, eye: '#e8c040' },
   hobbit:    { skin: '#f0c4a0', helm: '#6a4a2a', body: '#4f6b3a', legs: '#6a5a3a', arm: 'fork', short: 1 },
   ruffian:   { skin: '#d8a880', helm: '#4a3a2a', body: '#6a6a5a', legs: '#4a4a40', arm: 'club' },
+  // the Known World
+  stark:     { skin: '#e8c0a0', helm: '#8a8e96', body: '#5a5e66', legs: '#3a3a3e', shield: '#c8ccd4', mark: '#5a5e66', arm: 'sword' },
+  bolton:    { skin: '#f0d8cc', helm: '#5a4a4a', body: '#d89a9a', legs: '#3a2a2a', shield: '#c06a6a', mark: '#3a1a1a', arm: 'spear' },
+  tully:     { skin: '#e8c0a0', helm: '#9aa0a8', body: '#3a5aa8', legs: '#a83a2a', shield: '#3a5aa8', mark: '#c8ccd4', arm: 'spear' },
+  lannister: { skin: '#f0c8a8', helm: '#d8b040', body: '#a8281e', legs: '#5a1a14', shield: '#a8281e', mark: '#e8c040', arm: 'sword' },
+  clansman:  { skin: '#d8a880', helm: '#5a4a3a', body: '#7a6a50', legs: '#4a3e32', arm: 'axe' },
+  tyrell:    { skin: '#f0c8a8', helm: '#d8b040', body: '#3a8a3a', legs: '#2a4a2a', shield: '#3a8a3a', mark: '#e8c040', arm: 'spear' },
+  baratheon: { skin: '#e8c0a0', helm: '#2a2a2e', body: '#d8b830', legs: '#2a2a2e', shield: '#d8b830', mark: '#1a1a1e', arm: 'sword' },
+  greyjoy:   { skin: '#d8b896', helm: '#2a2a2e', body: '#1e1e22', legs: '#2a2a2e', shield: '#c8a040', mark: '#1a1a1e', arm: 'axe' },
+  ironborn:  { skin: '#d8b896', helm: '#2a2a2e', body: '#3a3a40', legs: '#2a2a2e', arm: 'axe' },
+  frey:      { skin: '#e8c0a0', helm: '#8a8a90', body: '#5a6a8a', legs: '#3a3a40', shield: '#5a6a8a', mark: '#c8ccd4', arm: 'sword' },
+  watch:     { skin: '#e8c0a0', helm: '#1e1e22', body: '#141418', legs: '#1a1a1e', arm: 'sword' },
+  freefolk:  { skin: '#e0b896', helm: '#8a7a66', body: '#7a6a56', legs: '#5a4e40', arm: 'spear' },
+  wight:     { skin: '#a8c0c8', helm: '#3a3a40', body: '#4a4e54', legs: '#3a3e44', arm: 'club', eye: '#4ab8ff' },
+  other:     { skin: '#dff0fa', helm: '#c8e4f4', body: '#e8f6ff', legs: '#c8e0f0', arm: 'sword', eye: '#4ab8ff' },
+  dothraki:  { skin: '#b07850', helm: '#1e1a1a', body: '#a87048', legs: '#5a4030', arm: 'scimitar' },
+  lhazareen: { skin: '#c89a70', helm: '#e8e4dc', body: '#d8d0c0', legs: '#a89a80', arm: 'club', short: 1 },
+  unsullied: { skin: '#c89a70', helm: '#a8823a', body: '#4a3a2a', legs: '#3a2e24', shield: '#6a5a3a', mark: '#a8823a', arm: 'spear' },
+  ghiscari:  { skin: '#c89a70', helm: '#a02828', body: '#e0d8c8', legs: '#a89a80', arm: 'scimitar' },
 };
+// riders of the Known World on their horses: [horse, horse dark, helm, skin, body]
+const RIDERS = { rider: ['#8a5a30', '#5a3a1a', '#c9a03c', '#e8b892', '#3f6a3a'], starkrider: ['#6a6a6e', '#4a4a4e', '#8a8e96', '#e8c0a0', '#5a5e66'],
+  dothrakirider: ['#5a3a22', '#3a2412', '#1e1a1a', '#b07850', '#a87048'], baratheonrider: ['#2a2a2e', '#141416', '#2a2a2e', '#e8c0a0', '#d8b830'] };
 // one foot soldier facing right, 8×12 (short folk 8×10)
 function soldier(k, f, lunge) {
   const K = KIND[k], g = blank(9, 12), top = K.short ? 2 : 0, a = (f % 2) ? 1 : 0;
@@ -981,6 +1051,20 @@ function beast(k, f) {
     for (const [x, ph] of [[2, 0], [4, 1], [9, 1], [11, 0]]) rectp(g, x, 9, x + 1, 11 - (ph === a ? 1 : 0), b1);
     return g;
   }
+  if (k === 'giant') {         // a giant of the far north: twice a man's height, shaggy, with a club
+    const g = blank(14, 24), fur = '#7a6a56', fd = '#5a4e40', sk = '#c8a888';
+    rectp(g, 4, 0, 9, 4, sk); setp(g, 8, 2, '#16110d'); rectp(g, 3, 5, 10, 15, fur); for (let y = 6; y <= 15; y += 2) setp(g, 4 + (y % 4), y, fd);
+    rectp(g, 4, 16, 5, 23 - a, fd); rectp(g, 8, 16, 9, 23 - (1 - a), fd); rectp(g, 11, 4 + a, 12, 14 + a, '#5a3a22'); rectp(g, 10, 2 + a, 13, 5 + a, '#4a2e1a');
+    return g;
+  }
+  if (RIDERS[k]) {
+    const [h0, h1, hm, sk, bd] = RIDERS[k], g = blank(16, 15);
+    rectp(g, 2, 7, 11, 10, h0); rectp(g, 11, 4, 13, 8, h0); rectp(g, 13, 3, 15, 5, h0); setp(g, 0, 8, h1); setp(g, 1, 7, h1); setp(g, 1, 9, h1);
+    for (const [x, ph] of [[3, 0], [5, 1], [9, 1], [11, 0]]) rectp(g, x + (ph === a ? 1 : 0), 11, x + (ph === a ? 1 : 0), 14 - (ph === a ? 1 : 0), h1);
+    rectp(g, 5, 0, 7, 1, hm); rectp(g, 5, 2, 7, 3, sk); setp(g, 7, 2, '#16110d'); rectp(g, 5, 4, 7, 7, bd); setp(g, 6, 8, '#5a4a30');
+    for (let y = 0; y <= 7; y++) setp(g, 9 + (a ? 1 : 0), y - 1 + Math.round(y / 3), '#8a6a44'); setp(g, 9 + (a ? 1 : 0), -1, '#d6dae2');
+    return g;
+  }
   if (k === 'rider') {
     const g = blank(16, 15), h0 = '#8a5a30', h1 = '#5a3a1a';
     rectp(g, 2, 7, 11, 10, h0); rectp(g, 11, 4, 13, 8, h0); rectp(g, 13, 3, 15, 5, h0); setp(g, 0, 8, h1); setp(g, 1, 7, h1); setp(g, 1, 9, h1);
@@ -991,10 +1075,24 @@ function beast(k, f) {
   }
   return soldier(k, f, true);
 }
+const BEASTS = new Set(['mumak', 'troll', 'ent', 'huorn', 'beorn', 'rider', 'warg', 'bolg', 'thorin', 'giant', ...Object.keys(RIDERS)]);
 const BANNER = {
   rohan: ['#2a5a2a', '#f0f0ea', 'horse'], gondor: ['#141418', '#f0f0ea', 'tree'], mordor: ['#141418', '#e03a1a', 'eye'], isengard: ['#141418', '#f0f0ea', 'hand'],
   dead: ['#4a5a54', '#c8e8d8', 'star'], umbar: ['#1e2a44', '#a02828', 'star'], erebor: ['#2f4f86', '#e6c04e', 'star'], ents: ['#3e6a2a', '#a8c860', 'leaf'],
   goblins: ['#2a1a14', '#e03a1a', 'eye'], shire: ['#4f6b3a', '#e6c04e', 'leaf'], ruffians: ['#5a5a50', '#2a2a24', 'star'],
+  // the great houses: field, charge colour and a charge drawn from GLYPH
+  stark: ['#e8e8ea', '#5a5e66', 'wolf'], lannister: ['#a8281e', '#e8c040', 'lion'], baratheon: ['#e0c030', '#141414', 'stag'], tully: ['#3a5aa8', '#c8ccd4', 'fish'],
+  greyjoy: ['#141414', '#e0c040', 'kraken'], tyrell: ['#3a8a3a', '#e8c040', 'rose'], bolton: ['#d89a9a', '#a8281e', 'man'], frey: ['#8a8a90', '#3a5aa8', 'towers'],
+  targaryen: ['#141414', '#c8281e', 'dragon'], martell: ['#e08a2a', '#c8281e', 'sun'], watch: ['#141414', '#141414', 'none'], freefolk: ['#7a6a56', '#c8b898', 'none'],
+  others: ['#c8e4f4', '#4ab8ff', 'none'], dothraki: ['#a87048', '#e8c040', 'horse'], lamb: ['#e8e4dc', '#a89a80', 'none'], ghiscari: ['#a02828', '#e8c040', 'none'],
+};
+// small charges for the houses' banners, 7×6, one character per cell ('#' = charge colour)
+const GLYPH = {
+  wolf: ['#.....#', '##...##', '.#####.', '.#.#.#.', '..###..', '...#...'], lion: ['.###...', '#####..', '##.###.', '.#####.', '..#..#.', '.##.##.'],
+  stag: ['#.#.#.#', '.#####.', '...#...', '..###..', '..#.#..', '..###..'], fish: ['.......', '.####.#', '#######', '.####.#', '.......', '.......'],
+  kraken: ['..###..', '.#####.', '.#.#.#.', '#.#.#.#', '#.#.#.#', '.#...#.'], rose: ['..#.#..', '.#####.', '#######', '.#####.', '...#...', '..###..'],
+  man: ['...#...', '..###..', '.#.#.#.', '...#...', '..#.#..', '.#...#.'], towers: ['#.#.#.#', '###.###', '##...##', '##...##', '#######', '#######'],
+  dragon: ['.#.#.#.', '#######', '#.###.#', '..###..', '.##.##.', '#.....#'], sun: ['#..#..#', '.#####.', '#######', '.#####.', '#..#..#', '...#...'],
 };
 function banner(g, kind, x, y, s, f, flip) {
   const [bg, fg] = BANNER[kind] || ['#333', '#ccc'];
@@ -1003,6 +1101,9 @@ function banner(g, kind, x, y, s, f, flip) {
   g.fillStyle = OUT; g.fillRect(fx - 1, y - 1, 12 * s + 2, 9 * s + 2 + wave);
   g.fillStyle = bg; g.fillRect(fx, y, 12 * s, 9 * s + wave); g.fillStyle = fg;
   const cx = fx + 6 * s, cy = y + 4.5 * s;
+  const gl = GLYPH[(BANNER[kind] || [])[2]];
+  if (gl) { for (let r = 0; r < 6; r++) for (let c = 0; c < 7; c++) if (gl[r][c] === '#') g.fillRect(cx + (c - 3.5) * s * 1.2, cy + (r - 3) * s * 1.2, s * 1.2, s * 1.2); return; }
+  if ((BANNER[kind] || [])[2] === 'none') return;
   if ((BANNER[kind] || [])[2] === 'eye') { g.fillRect(cx - 3 * s, cy - s, 6 * s, 2 * s); g.fillStyle = '#16110d'; g.fillRect(cx - 0.5 * s, cy - s, s, 2 * s); }
   else if ((BANNER[kind] || [])[2] === 'tree') { g.fillRect(cx - 0.5 * s, cy - 2 * s, s, 5 * s); g.fillRect(cx - 2.5 * s, cy - 2 * s, 5 * s, s); g.fillRect(cx - 1.5 * s, cy - 3 * s, 3 * s, s); }
   else if ((BANNER[kind] || [])[2] === 'hand') { g.fillRect(cx - 2 * s, cy - s, 4 * s, 3 * s); for (let k = 0; k < 4; k++) g.fillRect(cx - 2 * s + k * s, cy - 3 * s, s * 0.8, 2 * s); }
@@ -1031,7 +1132,7 @@ function battle(b, f) {
   b.sides.forEach((side, si) => {
     const dir = si === 0 ? 1 : -1, list = [];
     for (const [k, n] of side.units) for (let i = 0; i < n; i++) list.push(k);
-    const big = list.filter(k => ['mumak', 'troll', 'ent', 'huorn', 'beorn', 'bolg'].includes(k)), fly = list.filter(k => k === 'eagle' || k === 'nazgul' || k === 'bat'), foot = list.filter(k => !big.includes(k) && !fly.includes(k));
+    const big = list.filter(k => ['mumak', 'troll', 'ent', 'huorn', 'beorn', 'bolg', 'giant'].includes(k)), fly = list.filter(k => k === 'eagle' || k === 'nazgul' || k === 'bat'), foot = list.filter(k => !big.includes(k) && !fly.includes(k));
     const place = [];
     // foot and riders in ranks, front rank nearest the clash
     foot.forEach((k, i) => { const col = Math.floor(i / 3), row = i % 3; place.push([k, mid - dir * (18 + col * 15 + (row % 2) * 7), ground - 30 + row * 9, i < 3]); });
@@ -1041,7 +1142,7 @@ function battle(b, f) {
     const reach = Math.max(30, ...place.map(p => Math.abs(p[1] - mid)));
     banner(g, side.banner, Math.max(8, Math.min(W2 - 8, mid - dir * (reach + 16))), 22, s, f + si, dir < 0);
     for (const [k, x, y, front] of place) {
-      const gr = ['mumak', 'troll', 'ent', 'huorn', 'beorn', 'rider', 'warg', 'bolg', 'thorin'].includes(k) ? beast(k, f + (x | 0) % 2) : soldier(k, f + (x | 0) % 2, front);
+      const gr = BEASTS.has(k) ? beast(k, f + (x | 0) % 2) : soldier(k, f + (x | 0) % 2, front);
       const w = (gr[0].length + 2) * s, h = (gr.length + 2) * s, bob = front && f % 2 ? dir * 2 : 0;
       g.save(); if (dir < 0) { g.translate(x + w / 2 + bob, 0); g.scale(-1, 1); g.translate(-w / 2, 0); } else g.translate(x - w / 2 + bob, 0);
       drawGrid(g, gr, 0, y - h + (gr.length > 14 ? 10 : 0), s); g.restore();
@@ -1150,6 +1251,6 @@ function landmark(kind, f, heat = 1) {
   cv.width = (gr[0].length + 2) * s; cv.height = (gr.length + 2) * s; drawGrid(cv.getContext('2d'), gr, 0, 0, s);
   return LCACHE[key] = cv;
 }
-return { C, B, JOURNEY, GROUPS, charsOf, icon, dataURL, drawHead, drawFigure, battle, unitCanvas, landmark };
+return { C, B, JOURNEY, GROUPS, charsOf, icon, dataURL, drawHead, drawFigure, battle, unitCanvas, landmark, corpse, fallen };
 })();
 if (typeof self !== 'undefined') self.AVATARS = AVATARS;

@@ -178,7 +178,7 @@ SEA = {  # sea lanes as [X, Y] waypoints (open water)
 # legs: ('via', road or lane name, from, to, date0, date1) expand along the road or sea lane
 def J(*steps): return list(steps)
 ROAD = lambda road, a, b, d0, d1: ('road', road, a, b, d0, d1)
-LANE = lambda lane, d0, d1: ('lane', lane, d0, d1)
+LANE = lambda lane, d0, d1, back=False: ('lane', lane, d0, d1, back)
 
 # the king's progress home, which the Starks of the south road share
 SOUTH = (ROAD('The Kingsroad', 'Winterfell', 'The Inn at the Crossroads', '298 2 20', '298 3 14'), ('Darry', '298 3 16'), ROAD('The Kingsroad', 'Darry', 'King\'s Landing', '298 3 17', '298 4 1'))
@@ -219,7 +219,7 @@ PATHS = {
     'tyrion': J(('King\'s Landing', '297 12 1'), ROAD('The Kingsroad', 'King\'s Landing', 'Winterfell', '297 12 2', '298 2 1'), ('Winterfell', '298 2 20'),
                 ROAD('The Kingsroad', 'Winterfell', 'Castle Black', '298 2 20', '298 3 20'), ('Castle Black', '298 4 5'), ROAD('The Kingsroad', 'Castle Black', 'Winterfell', '298 4 5', '298 4 25'),
                 ROAD('The Kingsroad', 'Winterfell', 'The Inn at the Crossroads', '298 4 26', '298 5 20'), ROAD('The High Road', 'The Inn at the Crossroads', 'The Eyrie', '298 5 21', '298 6 10'),
-                ('The Eyrie', '298 6 24'), ([240, -820], '298 7 5'), ([150, -800], '298 7 12'), ([130, -830], '298 7 15'), ('Harrenhal', '298 8 20'), ('Harrenhal', '298 12 20'),
+                ('The Eyrie', '298 6 24'), ([240, -820], '298 7 20'), ([150, -800], '298 8 8'), ([130, -830], '298 8 14'), ('Harrenhal', '298 8 26'), ('Harrenhal', '298 12 20'),
                 ROAD('The Kingsroad', 'The Inn at the Crossroads', 'King\'s Landing', '298 12 22', '299 1 5'), ('King\'s Landing', '300 2 10'), LANE('kl-pentos', '300 2 11', '300 3 5'),
                 ('Pentos', '300 3 20'), ([1150, -850], '300 4 10'), ('Chroyane', '300 4 25'), ('Selhorys', '300 5 5'), ('Volantis', '300 5 20'), LANE('volantis-meereen', '300 6 1', '300 7 20'),
                 ([2600, -1990], '300 8 1'), ([2600, -1990], '300 13 5')),
@@ -230,7 +230,7 @@ PATHS = {
                ('Riverrun', '298 8 1'), ('The Whispering Wood', '298 8 15'), ('Riverrun', '298 8 18'), ('Riverrun', '299 7 1'), ([70, -890], '299 7 10'), ([180, -940], '299 8 5'),
                ('Harrenhal', '299 9 10'), ('Harrenhal', '299 11 1'), ROAD('The Kingsroad', 'The Inn at the Crossroads', 'King\'s Landing', '299 11 3', '300 1 1'), ('King\'s Landing', '300 5 15'),
                ('Riverrun', '300 7 1'), ('Raventree Hall', '300 8 15'), ('Raventree Hall', '300 13 5')),
-    'tywin': J(('Casterly Rock', '297 13 1'), ('Casterly Rock', '298 5 20'), ('The Golden Tooth', '298 6 15'), ([130, -830], '298 7 15'), ('Harrenhal', '298 8 20'), ('Harrenhal', '299 4 1'),
+    'tywin': J(('Casterly Rock', '297 13 1'), ('Casterly Rock', '298 5 20'), ('The Golden Tooth', '298 6 15'), ([150, -800], '298 8 8'), ([130, -830], '298 8 14'), ('Harrenhal', '298 8 26'), ('Harrenhal', '299 4 1'),
                ([-100, -1150], '299 5 15'), ('Bitterbridge', '299 5 25'), ('King\'s Landing', '299 6 1'), ('King\'s Landing', '300 2 10')),
     'robert': J(('King\'s Landing', '297 12 1'), ROAD('The Kingsroad', 'King\'s Landing', 'Winterfell', '297 12 2', '298 2 1'), ('Winterfell', '298 2 20'),
                 *SOUTH, ('King\'s Landing', '298 5 10'), ('The Kingswood', '298 5 14')),
@@ -255,7 +255,7 @@ PATHS = {
     'hotpie': J(('King\'s Landing', '298 8 2'), ROAD('The Kingsroad', 'King\'s Landing', 'The Inn at the Crossroads', '298 8 3', '298 12 20'), ([120, -940], '299 1 10'), ('Harrenhal', '299 2 1'),
                 ('Harrenhal', '299 4 15'), ([40, -1010], '299 5 10'), ('The Inn of the Kneeling Man', '299 5 20'), ('The Inn of the Kneeling Man', '300 13 5')),
     'jaqen': J(('King\'s Landing', '298 8 2'), ROAD('The Kingsroad', 'King\'s Landing', 'The Inn at the Crossroads', '298 8 3', '298 12 20'), ([120, -940], '299 1 10'), ('Harrenhal', '299 2 1'), ('Harrenhal', '299 4 10')),
-    'stannis': J(('Dragonstone', '297 13 1'), ('Dragonstone', '299 3 15'), ('Storm\'s End', '299 4 5'), ('Storm\'s End', '299 5 20'), ([270, -1320], '299 6 1'), LANE('dragonstone-kl', '299 6 2', '299 6 8'),
+    'stannis': J(('Dragonstone', '297 13 1'), ('Dragonstone', '299 3 15'), ('Storm\'s End', '299 4 5'), ('Storm\'s End', '299 5 20'), ([270, -1320], '299 6 1'), ('King\'s Landing', '299 6 2'), LANE('dragonstone-kl', '299 6 3', '299 6 8', True),
                  ('Dragonstone', '299 6 10'), ('Dragonstone', '299 13 1'), LANE('dragonstone-eastwatch', '299 13 2', '300 2 20'), ('Castle Black', '300 3 1'), ('Castle Black', '300 4 20'),
                  ('Deepwood Motte', '300 5 20'), ([-100, 20], '300 8 15'), ([-120, 40], '300 13 5')),
     'davos': J(('Dragonstone', '297 13 1'), ('Dragonstone', '299 5 20'), LANE('dragonstone-kl', '299 5 21', '299 6 1'), ([330, -1260], '299 6 10'), ('Dragonstone', '299 7 1'), ('Dragonstone', '299 13 1'),
@@ -284,8 +284,8 @@ PATHS = {
                 ([0, 560], '300 1 1'), ([30, 520], '300 13 5')),
     'coldhands': J(([0, 640], '297 13 1'), ([-30, 560], '299 8 20'), ('The Nightfort', '299 9 2'), ([-30, 520], '299 9 10'), ([-20, 700], '299 12 1'), ([20, 880], '300 2 1'), ('The cave of the three-eyed crow', '300 4 1'), ('The cave of the three-eyed crow', '300 13 5')),
     'threeeyed': J(('The cave of the three-eyed crow', '297 13 1'), ('The cave of the three-eyed crow', '300 13 5')),
-    'ramsay': J(('The Dreadfort', '297 13 1'), ('The Dreadfort', '299 5 20'), ('Winterfell', '299 6 1'), ('The Dreadfort', '299 6 12'), ('The Dreadfort', '300 1 20'), ('Moat Cailin', '300 2 10'),
-                ('Barrowton', '300 3 20'), ('Winterfell', '300 6 1'), ('Winterfell', '300 13 5')),
+    'ramsay': J(([150, 40], '299 2 20'), ([60, 10], '299 3 20'), ('Winterfell', '299 4 10'), ('Winterfell', '299 5 1'), ('The Dreadfort', '299 5 12'), ('Winterfell', '299 6 1'),
+                ('The Dreadfort', '299 6 12'), ('The Dreadfort', '300 1 20'), ('Moat Cailin', '300 2 10'), ('Barrowton', '300 3 20'), ('Winterfell', '300 6 1'), ('Winterfell', '300 13 5')),
     'benjen': J(('Winterfell', '298 2 1'), ('Winterfell', '298 2 20'), ROAD('The Kingsroad', 'Winterfell', 'Castle Black', '298 2 20', '298 3 20'), ('Castle Black', '298 3 25'), ([-80, 620], '298 4 20')),
     'mance': J(([-200, 860], '297 13 1'), ([-200, 860], '299 4 1'), ([-150, 700], '299 5 1'), ([-60, 600], '299 9 1'), ([10, 520], '300 3 1'), ('Castle Black', '300 3 10'), ('Castle Black', '300 13 5')),
     'ygritte': J(([-200, 760], '297 13 1'), ([-200, 760], '299 3 20'), ('The Skirling Pass', '299 3 20'), ([-150, 700], '299 5 1'), ([-60, 520], '299 7 20'), ('Queenscrown', '299 8 1'), ([40, 470], '300 3 1')),
@@ -339,6 +339,126 @@ MODES = [
     ['^(coldhands)$', '299 8 20', '300 4 1', 'ride'],                      # on a great elk in the books' telling
 ]
 
+# ------------------------------------------------------------------ the lords of the Seven Kingdoms, their kings, and the khalasar
+CHARS.update({
+    'roose': dict(tier='secondary', house='Bolton', head=H('Roose Bolton', '#f2e4dc', ['#3a3030', '#221c1c'], 'short', eye='#d8e8f0'),
+                  body=dict(tunic='#3a2a2a', legs='#2a2020', cloak='#d89a9a', boots='#1a1010', gear='sword', mail=1),
+                  bio='Lord of the Dreadfort, a quiet man with pale eyes who leeches his own blood; he leads Robb\'s foot south.', fate='Warden of the North after the Red Wedding.'),
+    'hoster': dict(tier='secondary', house='Tully', head=H('Hoster Tully', '#ecd0bc', ['#e8e4dc', '#b8b2a6'], 'sparse', wrinkles=1, beard='short', beardC=['#e8e4dc', '#b8b2a6']),
+                   body=dict(robe='#4a6aa0', belt='#a83a2a'), bio='Lord of Riverrun and Lord Paramount of the Trident, Catelyn\'s father, dying in his bed.', fate='Dies at Riverrun (ASOS).'),
+    'edmure': dict(tier='secondary', house='Tully', head=H('Edmure Tully', '#f0d0b8', AUBURN, 'short', beard='short', beardC=AUBURN),
+                   body=dict(tunic='#3a5aa8', legs='#2a2a3a', cloak='#a83a2a', boots='#2a1f18', gear='sword', mail=1), bio='Catelyn\'s brother, heir and then Lord of Riverrun, wed at the Twins.', fate='A captive after the Red Wedding.'),
+    'lysa': dict(tier='secondary', house='Arryn (born Tully)', head=H('Lysa Arryn', '#f2d6c4', AUBURN, 'long', blush=1), body=dict(robe='#7a9ac8', belt='#e8e0c8'),
+                 bio='Lady of the Eyrie, Catelyn\'s sister, ruling the Vale for her sickly son.', fate='Thrown from the Moon Door (ASOS).'),
+    'sweetrobin': dict(tier='secondary', house='Arryn', head=H('Robert Arryn', '#f4e4dc', ['#8a6a4a', '#5e4630'], 'sparse', blush=1), body=dict(robe='#e8e4f0', belt='#7a9ac8'),
+                       bio='The boy Lord of the Eyrie and Defender of the Vale, frail and given to shaking fits.'),
+    'balon': dict(tier='secondary', house='Greyjoy', head=H('Balon Greyjoy', '#d8b896', GREY, 'long', beard='short', beardC=GREY, brows=1),
+                  body=dict(tunic='#2a2a2a', legs='#1a1a1e', cloak='#c8a040', boots='#141414', gear='sword'), bio='Lord of the Iron Islands, who crowns himself again and sends his longships against the North.', fate='Falls from a bridge at Pyke (ACOK).'),
+    'euron': dict(tier='mysterious', house='Greyjoy', head=H('Euron Greyjoy', '#e8d0c0', BLACK, 'short', beard='short', beardC=BLACK, eye='#2a58c8'),
+                  body=dict(tunic='#1a1a2a', legs='#141418', cloak='#3a1a4a', boots='#101010', gear='sword', mail=1), bio='The Crow\'s Eye, Balon\'s brother, back from strange seas to claim the Seastone Chair.'),
+    'mace': dict(tier='secondary', house='Tyrell', head=H('Mace Tyrell', '#f0c8a8', BROWN, 'short', beard='short', beardC=BROWN),
+                 body=dict(tunic='#3a8a3a', legs='#2a4a2a', boots='#2a1f18', belt='#e0c040', fat=1), bio='Lord of Highgarden and Warden of the South, who backs Renly and then the Lannisters.'),
+    'renly': dict(tier='secondary', house='Baratheon', head=H('Renly Baratheon', '#f0c8a8', BLACK, 'short', hat='crown', hatC=['#3a8a3a', '#2a6a2a']),
+                  body=dict(tunic='#3a6a3a', legs='#2a3a2a', cloak='#e0c040', boots='#2a1f18', gear='sword'), bio='Robert\'s youngest brother, Lord of Storm\'s End, who claims the crown with the Reach behind him.', fate='Slain by a shadow in his tent (ACOK).'),
+    'doran': dict(tier='secondary', house='Martell', head=H('Doran Martell', '#b8885e', GREY, 'sparse'), body=dict(robe='#c8783a', belt='#e8c040'),
+                  bio='Prince of Dorne, gouty and patient, who watches from the Water Gardens and keeps his own counsel.'),
+    'tommen': dict(tier='secondary', house='Baratheon (Lannister)', head=H('Tommen Baratheon', '#f6dcc8', GOLD, 'short', blush=1), body=dict(tunic='#c8302a', legs='#3a2a2a', boots='#2a1f18'),
+                   bio='Cersei\'s gentle younger son, who becomes king after his brother.'),
+    'dothraki': dict(tier='secondary', house='the Dothraki', head=H('The khalasar', '#b07850', BLACK, 'long'), body=dict(tunic='#a87048', legs='#5a4030', boots='#3a2a1e', belt='#c9a03c', gear='sword'),
+                     bio='Khal Drogo\'s horde of horse lords, tens of thousands strong, riding the grass sea between the cities.'),
+    'bloodriders': dict(tier='sidekick', house='the Dothraki', head=H('Aggo, Jhogo and Rakharo', '#b48058', BLACK, 'long'), body=dict(tunic='#8a6040', legs='#5a4030', boots='#3a2a1e', gear='bow'),
+                        bio='The young riders who stay with Daenerys when the khalasar leaves her: her bloodriders.'),
+})
+ROOSE = J(('The Dreadfort', '297 13 1'), ('The Dreadfort', '298 6 20'), ('Winterfell', '298 7 1'), ROAD('The Kingsroad', 'Winterfell', 'Moat Cailin', '298 7 2', '298 7 20'), ('The Twins', '298 8 5'),
+          ([150, -800], '298 8 12'), ([130, -830], '298 8 14'), ([90, -700], '298 8 25'), ('The Twins', '298 9 10'), ('The Twins', '299 5 1'), ('Harrenhal', '299 6 10'), ('Harrenhal', '299 8 20'),
+          ('The Twins', '299 8 30'), ('The Twins', '299 12 1'), ('Moat Cailin', '300 2 10'), ('Barrowton', '300 3 20'), ('Winterfell', '300 6 1'), ('Winterfell', '300 13 5'))
+PATHS.update({
+    'roose': ROOSE,
+    'hoster': J(('Riverrun', '297 13 1'), ('Riverrun', '299 7 1')),
+    'edmure': J(('Riverrun', '297 13 1'), ('Riverrun', '299 8 20'), ('The Twins', '299 8 30'), ('The Twins', '300 6 15'), ('Riverrun', '300 7 1'), ('Riverrun', '300 8 10'), ('Casterly Rock', '300 9 10'), ('Casterly Rock', '300 13 5')),
+    'lysa': J(('The Eyrie', '297 13 1'), ('The Eyrie', '300 2 20')),
+    'sweetrobin': J(('The Eyrie', '297 13 1'), ('The Eyrie', '300 6 1'), ('Gates of the Moon', '300 6 10'), ('Gates of the Moon', '300 13 5')),
+    'balon': J(('Pyke', '297 13 1'), ('Pyke', '299 10 1')),
+    'euron': J(([-760, -980], '299 11 1'), ([-420, -760], '299 12 10'), ('Pyke', '299 12 15'), ([-300, -700], '300 1 20'), ('Pyke', '300 2 1'), ([-560, -1300], '300 4 1'), ([-470, -1720], '300 5 1'), ([-470, -1720], '300 13 5')),
+    'mace': J(('Highgarden', '297 13 1'), ('Highgarden', '299 1 20'), ('Bitterbridge', '299 2 15'), ('Bitterbridge', '299 5 20'), ('King\'s Landing', '299 6 1'), ('King\'s Landing', '300 4 1'), ('Storm\'s End', '300 5 1'), ('Storm\'s End', '300 13 5')),
+    'renly': J(('King\'s Landing', '297 13 1'), ('King\'s Landing', '298 5 15'), ('Highgarden', '298 7 1'), ('Highgarden', '299 1 20'), ('Bitterbridge', '299 2 15'), ('Storm\'s End', '299 4 5'), ([380, -1570], '299 4 7')),
+    'doran': J(('The Water Gardens', '297 13 1'), ('The Water Gardens', '300 3 1'), ('Sunspear', '300 3 10'), ('Sunspear', '300 13 5')),
+    'tommen': J(('King\'s Landing', '297 12 1'), ROAD('The Kingsroad', 'King\'s Landing', 'Winterfell', '297 12 2', '298 2 1'), ('Winterfell', '298 2 20'), *SOUTH, ('King\'s Landing', '299 5 20'),
+                ([300, -1260], '299 5 25'), ([300, -1260], '299 6 3'), ('King\'s Landing', '299 6 6'), ('King\'s Landing', '300 13 5')),
+    'dothraki': J(([820, -1060], '297 13 1'), ([820, -1060], '298 2 25'), ([1300, -800], '298 3 20'), ([2000, -900], '298 4 15'), ('Vaes Dothrak', '298 5 1'), ('Vaes Dothrak', '298 6 15'),
+                  ([2500, -1400], '298 7 20'), ('A village of the Lamb Men', '298 8 15'), ('A village of the Lamb Men', '298 12 1'), ([2650, -1300], '298 12 20')),
+})
+PATHS['drogo'] = [(([820, -1060], '297 13 1'))] + PATHS['drogo'][1:]
+MODES[:0] = [['^(dothraki|drogo)$', '297 13 1', '298 12 25', 'ride'], ['^roose$', '298 7 2', '298 8 25', 'ride'], ['^tommen$', '297 12 1', '298 4 2', 'ride'],
+             ['^renly$', '298 5 15', '298 7 1', 'ride'], ['^euron$', '299 11 1', '300 5 1', 'sea'], ['^bloodriders$', '299 7 11', '299 8 10', 'sea'],
+             ['^bloodriders$', '298 12 2', '300 13 5', 'ride'], ['^mace$', '299 5 20', '299 6 1', 'ride']]
+
+# who rules each kingdom, and who wears (or claims) its crown: [role, character or None, from, to, title]; dates estimated
+RULERS = {
+    'The North': [['lord', 'eddard', None, '298 8 1', 'Lord of Winterfell, Warden of the North'], ['lord', 'robb', '298 8 1', '298 9 1', 'Lord of Winterfell'], ['lord', 'robbking', '298 9 1', '299 9 1', 'Lord of Winterfell and King in the North'],
+                  ['claim', 'robbking', '298 9 1', '299 9 1', 'King in the North'], ['lord', 'roose', '299 9 1', None, 'Warden of the North (for the Iron Throne)'],
+                  ['claim', 'balon', '299 4 1', '299 10 1', 'King of the Isles and the North'], ['claim', 'stannis', '300 4 1', None, 'King (claimant), marching on Winterfell']],
+    'The Riverlands': [['lord', 'hoster', None, '299 7 1', 'Lord Paramount of the Trident'], ['lord', 'edmure', '299 7 1', '299 9 1', 'Lord Paramount of the Trident'],
+                       ['lord', 'littlefinger', '299 9 1', None, 'Lord Paramount of the Trident (by the Iron Throne\'s grant)'], ['claim', 'robbking', '298 9 1', '299 9 1', 'King in the North and of the Trident']],
+    'The Vale': [['lord', 'sweetrobin', None, None, 'Lord of the Eyrie, Defender of the Vale'], ['regent', 'lysa', None, '300 2 20', 'Lady Regent'], ['regent', 'littlefinger', '300 2 20', None, 'Lord Protector of the Vale']],
+    'The Iron Islands': [['lord', 'balon', None, '299 10 1', 'Lord Reaper of Pyke'], ['claim', 'balon', '299 1 1', '299 10 1', 'King of the Iron Islands'], ['claim', 'euron', '300 1 20', None, 'King of the Iron Islands, by the kingsmoot']],
+    'The Westerlands': [['lord', 'tywin', None, '300 2 10', 'Lord of Casterly Rock, Warden of the West'], ['lord', None, '300 2 10', None, 'Casterly Rock unclaimed: Jaime of the Kingsguard will not take it']],
+    'The Reach': [['lord', 'mace', None, None, 'Lord of Highgarden, Warden of the South'], ['claim', 'renly', '298 7 1', '299 4 7', 'King, crowned at Highgarden']],
+    'The Stormlands': [['lord', 'renly', None, '299 4 7', 'Lord of Storm\'s End'], ['lord', 'stannis', '299 4 7', None, 'Lord of Storm\'s End (held for him)'], ['claim', 'renly', '298 7 1', '299 4 7', 'King, crowned at Highgarden']],
+    'Dorne': [['lord', 'doran', None, None, 'Prince of Dorne']],
+    'The Crownlands': [['lord', 'robert', None, '298 5 15', 'the King holds the crownlands'], ['lord', 'joffrey', '298 5 15', '300 1 15', 'the King holds the crownlands'],
+                       ['lord', 'tommen', '300 1 15', None, 'the King holds the crownlands'], ['claim', 'stannis', '298 7 1', None, 'King (claimant), from Dragonstone']],
+}
+CROWN = [['robert', None, '298 5 15', 'King of the Andals and the First Men, on the Iron Throne'], ['joffrey', '298 5 15', '300 1 15', 'King on the Iron Throne'],
+         ['tommen', '300 1 15', None, 'King on the Iron Throne']]
+SEVEN = ['The North', 'The Vale', 'The Riverlands', 'The Iron Islands', 'The Westerlands', 'The Reach', 'The Stormlands', 'Dorne', 'The Crownlands']
+
+# deaths: [character, date, place or [X, Y], how] -- the body lies where it fell for a time, under a death mark
+DEATHS = [
+    ['lady', '298 3 16', 'Darry', 'killed on the king\'s order'], ['robert', '298 5 15', [251.0, -1299.0], 'dies of the boar\'s wound'],
+    ['viserys', '298 5 25', 'Vaes Dothrak', 'crowned with molten gold'], ['eddard', '298 8 1', [249.4, -1300.8], 'beheaded before the Great Sept'],
+    ['drogo', '298 12 1', 'A village of the Lamb Men', 'dies of a festering wound'], ['renly', '299 4 7', [380, -1570], 'slain by a shadow in his tent'],
+    ['craster', '299 5 20', 'Craster\'s Keep', 'killed in the mutiny at his keep'], ['hoster', '299 7 1', 'Riverrun', 'dies in his bed'],
+    ['robbking', '299 9 1', [38.6, -621.4], 'murdered at the Red Wedding'], ['catelyn', '299 9 1', [41.4, -621.3], 'murdered at the Red Wedding'],
+    ['greywind', '299 9 1', [40.0, -622.4], 'killed at the Red Wedding'], ['balon', '299 10 1', 'Pyke', 'falls from a bridge in a storm'],
+    ['joffrey', '300 1 15', [250.6, -1299.5], 'poisoned at his wedding feast'], ['tywin', '300 2 10', [250.4, -1299.3], 'killed by his son'],
+    ['lysa', '300 2 20', 'The Eyrie', 'pushed through the Moon Door'], ['ygritte', '300 3 1', 'Castle Black', 'killed by an arrow in the attack'],
+]
+BODY_DAYS = 24
+
+# battles in our own words (dates estimated): sides with banners and soldier kinds, as in the Arda engine
+def BT(name, at, d0, d1, src, sides, outcome, **kw): return dict(name=name, at=at, frm=d0, to=d1, src=src, sides=sides, outcome=outcome, **kw)
+def SIDE(name, note, banner, units): return dict(name=name, note=note, banner=banner, units=units)
+BATTLES = [
+    BT('The Battle of the Green Fork', [130, -830], '298 8 14', '298 8 14.6', 'AGOT', [SIDE('The North', 'Roose Bolton with Robb\'s foot', 'stark', [['stark', 6], ['bolton', 2]]),
+       SIDE('The Lannisters', 'Lord Tywin, with Tyrion and the hill clans', 'lannister', [['lannister', 6], ['clansman', 3]])], 'The northmen are thrown back, but the battle holds Tywin while Robb crosses the river.'),
+    BT('The Battle in the Whispering Wood', 'The Whispering Wood', '298 8 15', '298 8 15.4', 'AGOT', [SIDE('The North', 'Robb Stark\'s horse, Grey Wind among them', 'stark', [['starkrider', 3], ['stark', 4]]),
+       SIDE('The Lannisters', 'Jaime Lannister\'s host besieging Riverrun', 'lannister', [['lannister', 6]])], 'Jaime Lannister is taken captive.'),
+    BT('The Battle of the Camps', [-30, -890], '298 8 18', '298 8 18.5', 'AGOT', [SIDE('The North and the Trident', 'Robb\'s host and the Tully men from the castle', 'stark', [['stark', 4], ['tully', 3]]),
+       SIDE('The Lannisters', 'the camps around Riverrun', 'lannister', [['lannister', 6]])], 'The siege of Riverrun is broken.'),
+    BT('The raid on the Lamb Men', 'A village of the Lamb Men', '298 8 15', '298 8 15.6', 'AGOT', [SIDE('The Dothraki', 'Khal Drogo\'s khalasar', 'dothraki', [['dothrakirider', 5]]),
+       SIDE('The Lhazareen', 'shepherds of a village of the Lamb Men', 'lamb', [['lhazareen', 5]])], 'The village burns; Daenerys claims the captive women.'),
+    BT('The Battle of Oxcross', 'Oxcross', '299 3 5', '299 3 5.4', 'ACOK', [SIDE('The North', 'Robb Stark, by night, through the hills', 'stark', [['starkrider', 3], ['stark', 4]]),
+       SIDE('The Lannisters', 'Stafford Lannister\'s new levies', 'lannister', [['lannister', 6]])], 'Stafford Lannister is slain and his host scattered.'),
+    BT('The Fist of the First Men', 'The Fist of the First Men', '299 4 1', '299 4 1.5', 'ASOS', [SIDE('The Night\'s Watch', 'the Lord Commander\'s great ranging', 'watch', [['watch', 6]]),
+       SIDE('The Others', 'the dead and the white walkers in the snow', 'others', [['wight', 6], ['other', 2]])], 'The Watch is broken; a few fight their way out.'),
+    BT('The Battle of the Blackwater', [252, -1306], '299 6 1', '299 6 1.6', 'ACOK', [SIDE('Stannis Baratheon', 'his fleet and host before King\'s Landing', 'baratheon', [['baratheon', 6], ['baratheon', 2]]),
+       SIDE('The Iron Throne', 'the city, wildfire, then Tywin and the Tyrells in the flank', 'lannister', [['lannister', 4], ['tyrell', 3]])], 'Wildfire burns Stannis\'s ships and the Lannister and Tyrell host routs him.'),
+    BT('The sack of Winterfell', 'Winterfell', '299 6 1', '299 6 1.4', 'ACOK', [SIDE('The ironborn', 'Theon Greyjoy\'s few men in the castle', 'greyjoy', [['ironborn', 4]]),
+       SIDE('The Bastard\'s men', 'Ramsay Snow\'s riders, posing as rescuers', 'bolton', [['bolton', 6]])], 'Winterfell is put to the torch and Theon is taken.'),
+    BT('The taking of Astapor', 'Astapor', '299 8 20', '299 8 20.4', 'ASOS', [SIDE('Daenerys Targaryen', 'her new Unsullied, at her word', 'targaryen', [['unsullied', 6]]),
+       SIDE('The Good Masters', 'the slavers of Astapor', 'ghiscari', [['ghiscari', 5]])], 'The Unsullied kill the masters; Daenerys frees the city\'s slaves.'),
+    BT('The Red Wedding', 'The Twins', '299 9 1', '299 9 1.5', 'ASOS', [SIDE('The North', 'Robb Stark and his men, guests under the Freys\' roof', 'stark', [['stark', 6]]),
+       SIDE('The Freys and the Boltons', 'Walder Frey\'s men and Roose Bolton', 'frey', [['frey', 6], ['bolton', 2]])], 'Robb Stark, his mother and his host are murdered at the feast.'),
+    BT('The attack on Castle Black', 'Castle Black', '300 3 1', '300 3 2', 'ASOS', [SIDE('The Night\'s Watch', 'Jon Snow and a few score brothers', 'watch', [['watch', 5]]),
+       SIDE('The free folk', 'Mance Rayder\'s host, giants and mammoths', 'freefolk', [['freefolk', 6], ['giant', 1]])], 'The Watch holds the gate.'),
+    BT('The battle beneath the Wall', [30, 440], '300 3 10', '300 3 10.5', 'ASOS', [SIDE('Stannis Baratheon', 'his knights, come by sea from Dragonstone', 'baratheon', [['baratheonrider', 4], ['baratheon', 3]]),
+       SIDE('The free folk', 'Mance Rayder\'s host', 'freefolk', [['freefolk', 6]])], 'The free folk are routed and Mance Rayder is taken.'),
+]
+# the fallen lie where the fighting was, for a time; at the Red Wedding the dead are everywhere
+FALLEN = {'The Red Wedding': ('299 9 1', 30, [['stark', 30], ['frey', 3]], 3.2)}
+FALLEN_DEFAULT = (12, 0.5, 1.6)        # days, share of each side's figures that lies dead, spread in miles
+
 # casts: who appears in each journey and when (looks change: Robb crowned, Theon broken)
 CASTS = {k: [k] for k in PATHS if PATHS[k]}
 CASTS['robb'] = [['robb', None, '298 9 1'], ['robbking', '298 9 1', None]]
@@ -370,6 +490,13 @@ GROUPS = [
     dict(name='The Spider', all=['varys'], frame='#1e1424', edge='#8a6aa0', emblem='web', solo=1),
 ]
 
+GROUPS[:0] = [
+    dict(name='The khalasar of Drogo', all=['drogo', 'dothraki'], frame='#3a2a18', edge='#c9a03c', emblem='horse', show=['dothraki', 'dothraki', 'drogo', 'dothraki'], lead=['drogo']),
+    dict(name='The Dothraki', all=['dothraki'], solo=1, frame='#3a2a18', edge='#c9a03c', emblem='horse', show=['dothraki', 'dothraki', 'dothraki']),
+    dict(name='Daenerys and her bloodriders', all=['daenerys', 'bloodriders'], frame='#2a1414', edge='#e04030', emblem='horse', lead=['daenerys']),
+    dict(name='Renly\'s court', all=['renly', 'margaery'], frame='#1e3a1e', edge='#e0c040', emblem='leaf'),
+]
+
 # events in our own words; dates are estimates
 EVENTS = {
     'agot': [['298 1 1', 'Beyond the Wall, rangers of the Night\'s Watch meet the Others (date est.)', -30, 600],
@@ -383,7 +510,7 @@ EVENTS = {
              ['298 5 20', 'Catelyn Stark seizes Tyrion Lannister at the Inn at the Crossroads (date est.)', 175, -935],
              ['298 5 25', 'Viserys is crowned with molten gold in Vaes Dothrak (date est.)', 2700, -1040],
              ['298 6 24', 'Bronn wins Tyrion\'s trial by combat at the Eyrie (date est.)', 362, -756],
-             ['298 7 15', 'The Battle of the Green Fork (date est.)', 130, -830], ['298 8 1', 'Eddard Stark is executed before the Great Sept of Baelor (date est.)', 244, -1301],
+             ['298 8 14', 'The Battle of the Green Fork: Roose Bolton\'s foot meet Tywin Lannister\'s host (date est.)', 130, -830], ['298 8 1', 'Eddard Stark is executed before the Great Sept of Baelor (date est.)', 244, -1301],
              ['298 8 15', 'Robb Stark takes Jaime Lannister in the Whispering Wood (date est.)', -15, -870],
              ['298 12 1', 'Drogo dies; Daenerys walks into his pyre and three dragons are born (date est.)', 2400, -1720]],
     'acok': [['299 1 15', 'A red comet hangs in the sky (date est.)', 0, 0], ['299 2 1', 'Arya comes to Harrenhal; Jaqen H\'ghar owes her three deaths (date est.)', 130, -960],
@@ -429,6 +556,7 @@ HOUSE_COLORS = [('Stark', '#c8ccd4'), ('Lannister', '#e0b040'), ('Baratheon', '#
                 ('Seaworth', '#9aa0b0'), ('Tarth', '#5a8ae0'), ('Reed', '#7aa06a'), ('Dothraki', '#c9a03c'), ('Clegane', '#a0a090'), ('Baelish', '#6ab0a0'), ('Spider', '#a080c0')]
 # dragons follow their mother from the pyre; Rhaegal and Viserion stay chained in Meereen when she flies off on Drogon
 DERIVED = {'drogon': ('daenerys', '298 12 2', None), 'rhaegal': ('daenerys', '298 12 2', '300 9 1'), 'viserion': ('daenerys', '298 12 2', '300 9 1')}
+DERIVED['bloodriders'] = ('daenerys', '298 12 2', None)
 WHEELHOUSE = ['cersei']            # who rides in the queen's wheelhouse on the Kingsroad (the rest of the party rides beside it)
 
 
@@ -479,7 +607,7 @@ def expand(steps, XY, roads):
             pts = [A] + _sub(pl, _poly_param(pl, A), _poly_param(pl, Bp)) + [Bp]
             out += _timed(pts, T(d0), T(d1))
         elif s[0] == 'lane':
-            _, lane, d0, d1 = s; out += _timed(SEA[lane], T(d0), T(d1))
+            _, lane, d0, d1, back = s; out += _timed(SEA[lane][::-1] if back else SEA[lane], T(d0), T(d1))
         else:
             P = XY(s[0]); out.append((P[0], P[1], T(s[1])))
     # strictly increasing time; drop exact repeats
@@ -559,7 +687,30 @@ def build(places, roads, stories):
         g = dict(g)
         if 'when' in g: g['when'] = [T(g['when'][0]), T(g['when'][1])]
         groups.append(g)
+    # the kingdoms' rulers, the dead, the battles and the fallen
+    tt = lambda d: T(d) if d else None
+    rulers = {r: [[role, cid, tt(a), tt(b), title] for role, cid, a, b, title in L] for r, L in RULERS.items()}
+    crown = [[cid, tt(a), tt(b), title] for cid, a, b, title in CROWN]
+    deaths = []
+    for cid, d, spot, how in DEATHS:
+        X, Y = XY(spot); deaths.append({'id': cid, 't': T(d), 'X': X, 'Y': Y, 'how': how, 'days': BODY_DAYS})
+    battles = []
+    for b in BATTLES:
+        at = XY(b['at']); t0, t1 = T(b['frm']), T(b['to'])
+        for sk, st in stories.items():
+            if T(st['start']) - 0.5 <= t0 <= T(st['end']) + 0.5:
+                battles.append({'name': b['name'], 'story': sk, 'at': at, 'from': t0, 'to': t1, 'src': b['src'], 'sides': b['sides'], 'outcome': b['outcome']})
+    fallen = []
+    for b in BATTLES:
+        at = XY(b['at'])
+        if b['name'] in FALLEN:
+            d, days, units, spread = FALLEN[b['name']]
+        else:
+            days, share, spread = FALLEN_DEFAULT; d = b['to']
+            units = [[k, max(1, round(n * share))] for sd in b['sides'] for k, n in sd['units'] if k not in ('giant', 'other')]
+        fallen.append({'name': b['name'], 'X': at[0], 'Y': at[1], 't': T(d) if isinstance(d, str) else T(b['frm']), 'days': days, 'units': [u for u in units if u[1] > 0], 'spread': spread})
     onfoot = [k for k in CHARS if 'wolf' in CHARS[k] or 'dragon' in CHARS[k]] + ['others', 'threeeyed']
     CAST = {'C': C, 'B': B, 'JOURNEY': JCAST, 'GROUPS': groups, 'PROFILES': prof, 'ON_FOOT': onfoot, 'WHEELHOUSE': WHEELHOUSE,
+            'RULERS': rulers, 'CROWN': crown, 'SEVEN': SEVEN, 'DEATHS': deaths, 'FALLEN': fallen,
             'IDS': {name_of(k): k for k in CHARS if k in full}}
-    return CAST, JOURNEYS, modes, EVENTS
+    return CAST, JOURNEYS, modes, EVENTS, battles
