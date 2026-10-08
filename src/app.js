@@ -209,11 +209,25 @@ function buildingFeats() {
   return feats;
 }
 
+/* The land follows the books' long seasons: tiles carry the season in five steps and are redrawn when it turns. */
+const seasonLevel = t => Math.round(WX.canonSeason(t) * 4) / 4;
+let tileSeason = 0;   // the stories open in high summer
+// a fresh source each time: setTiles kept some tiles that were still being drawn for the old season
+function setImagery(base, lv) {
+  const layers = map.getStyle().layers, i = layers.findIndex(l => l.id === 'imagery'), before = layers[i + 1] && layers[i + 1].id;
+  map.removeLayer('imagery'); map.removeSource('imagery');
+  map.addSource('imagery', { type: 'raster', tiles: ['arda://img/{z}/{x}/{y}/' + base + '/' + lv], tileSize: 256, maxzoom: 16 });
+  map.addLayer({ id: 'imagery', type: 'raster', source: 'imagery', paint: { 'raster-fade-duration': 180 } }, before);
+}
+function refreshSeason() {
+  const lv = seasonLevel(S.t); if (lv === tileSeason || !mapLoaded) return;
+  tileSeason = lv; setImagery(S.base || 0, lv);
+}
 /* ---------------- map ---------------- */
 lstep('Setting the stars in the sky…', 58);
 maplibregl.addProtocol('arda', async (params, abort) => {
-  const [kind, z, x, y, mode] = params.url.slice(7).split('/');
-  const r = await run({ type: kind === 'dem' ? 'dem' : 'img', z: +z, x: +x, y: +y, mode: +mode || 0 }, abort.signal);
+  const [kind, z, x, y, mode, season] = params.url.slice(7).split('/');
+  const r = await run({ type: kind === 'dem' ? 'dem' : 'img', z: +z, x: +x, y: +y, mode: +mode || 0, season: +season || 0 }, abort.signal);
   return { data: r.bmp };
 });
 const TXT_REG = ['IM Fell English SC'], TXT_IT = ['IM Fell English Italic', 'IM Fell English'], TXT_FELL = ['IM Fell English'];
@@ -224,7 +238,7 @@ const style = {
   version: 8,
   projection: { type: 'globe' },
   sources: Object.fromEntries([
-    ['imagery', { type: 'raster', tiles: ['arda://img/{z}/{x}/{y}/0'], tileSize: 256, maxzoom: 16 }],
+    ['imagery', { type: 'raster', tiles: ['arda://img/{z}/{x}/{y}/0/0'], tileSize: 256, maxzoom: 16 }],
     ['dem', { type: 'raster-dem', tiles: ['arda://dem/{z}/{x}/{y}'], tileSize: 256, maxzoom: 11, encoding: 'terrarium' }],
     src('places', FC(placeFeats)), src('peaks', FC(peakFeats)), src('ranges', FC(rangeFeats)), src('rivers', FC(riverFeats)), src('lakes', FC(lakeFeats)),
     src('forests', FC(forestLabelFeats)), src('marshes', FC(marshLabelFeats)), src('regions', FC(regionFeats)), src('seas', FC(seaFeats)),
@@ -492,7 +506,7 @@ function weatherAt(X, Y, t, st) {
 
 /* ---------------- time & journeys ---------------- */
 // Captions are our own one-line summaries (LAWS I.1). The novels rarely give days: dates are estimates and say so.
-const EVENTS = {
+const EVENTS = GEO.EVENTS || {
   agot: [['298 1 5', 'A deserter of the Night\'s Watch is executed near Winterfell; the Stark children find six direwolf pups (date est.)', -10, 20],
     ['298 2 1', 'King Robert comes to Winterfell and asks Eddard Stark to be his Hand (date est.)', 0, 0], ['298 2 10', 'Bran falls from a tower at Winterfell (date est.)', 0, 0],
     ['298 2 20', 'Eddard rides south with the king; Jon Snow sets out for the Wall (date est.)', 0, 0],
@@ -535,6 +549,8 @@ function modeAt(story, name, t) {
   for (const [rx, a, b, mode] of MODE_RX) if (t >= a && t <= b && rx.test(name)) return mode;
   return story === 'return' ? 'ride' : 'walk';
 }
+const MODE_RANK = { dragon: 6, fire: 6, fly: 5, sea: 4, blackship: 4, boat: 3, barrel: 3, wheelhouse: 2, ride: 1 };
+const partyMode = (story, m, t) => m.map(l => modeAt(story, l.j.name, t)).reduce((a, b) => (MODE_RANK[b] || 0) > (MODE_RANK[a] || 0) ? b : a);
 function partyAt(j, t) {
   const w = j.wp;
   if (t < w[0].t) return null;
@@ -549,6 +565,51 @@ function nearestPlace(X, Y) {
   let best = null, bd = 1e9;
   for (const p of PL) { const d = Math.hypot(p.X - X, p.Y - Y); if (d < bd) { bd = d; best = p; } }
   return { p: best, d: bd };
+}
+
+/* ---------------- characters: profiles, roads taken and who they met ---------------- */
+// A character's whole road across the books (each book's journey clipped to its window, joined); the people they met
+// are those whose roads came within two miles of theirs on the same day, sampled at noon.
+const CASTP = GEO.CAST || null;
+const TIERS = [['primary', 'Principal characters'], ['secondary', 'Secondary characters'], ['sidekick', 'Companions, wolves & dragons'], ['mysterious', 'Dark & mysterious']];
+const LIFE = {};
+function lifeOf(id) {
+  if (LIFE[id]) return LIFE[id];
+  const name = CASTP.PROFILES[id].name, wp = [];
+  for (const k in JOURNEYS) for (const j of JOURNEYS[k]) if (j.name === name) wp.push(...j.wp);
+  wp.sort((a, b) => a.t - b.t);
+  const w = wp.filter((p, i) => !i || p.t > wp[i - 1].t + 1e-4);
+  return LIFE[id] = w.length ? { name, wp: w, hide: Object.values(JOURNEYS).some(js => js.some(j => j.name === name && j.hide)) } : null;
+}
+let MET = null;
+function meetings() {
+  if (MET) return MET;
+  MET = {};
+  const ids = Object.keys(CASTP.PROFILES).filter(lifeOf), L = ids.map(lifeOf);
+  const t0 = Math.min(...L.map(l => l.wp[0].t)), t1 = Math.max(...L.map(l => l.wp[l.wp.length - 1].t));
+  for (let t = Math.floor(t0) + 0.5; t <= t1; t += 1) {
+    const at = L.map(l => { const p = partyAt(l, t); return p && !(p.done && l.hide) ? p : null; });
+    for (let a = 0; a < ids.length; a++) if (at[a]) for (let b = a + 1; b < ids.length; b++) if (at[b] && Math.hypot(at[a].X - at[b].X, at[a].Y - at[b].Y) < 2) {
+      for (const [x, y] of [[ids[a], ids[b]], [ids[b], ids[a]]]) {
+        const m = (MET[x] = MET[x] || {}); const r = m[y] || (m[y] = { first: t, days: 0, X: at[a].X, Y: at[a].Y }); r.days++; r.last = t;
+      }
+    }
+  }
+  return MET;
+}
+function stopsOf(id) {
+  const l = lifeOf(id); if (!l) return [];
+  const out = [];
+  for (const w of l.wp) { const np = nearestPlace(w.X, w.Y); if (np.d > 8) continue; if (!out.length || out[out.length - 1].name !== np.p.name) out.push({ name: np.p.name, t: w.t }); }
+  return out;
+}
+const shortDate = t => { const P = WX.parts(t); return P.month === 13 ? `closing days ${P.year}` : `moon ${P.month}, ${P.year}`; };
+function charAvatar(id) { return window.AVATARS ? `<img class="av" alt="" src="${AVATARS.dataURL([id], CASTP.PROFILES[id].color, S.t)}">` : ''; }
+function storyHolding(id, t) {
+  const name = CASTP.PROFILES[id].name, order = [S.story, ...Object.keys(GEO.STORIES)];
+  for (const k of order) { const st = GEO.STORIES[k]; if (t >= WX.parse(st.start) && t <= WX.parse(st.end) && (JOURNEYS[k] || []).some(j => j.name === name)) return k; }
+  for (const k of order) if ((JOURNEYS[k] || []).some(j => j.name === name)) return k;
+  return null;
 }
 const BATTLES = GEO.BATTLES.map((b, i) => ({ ...b, i, t0: WX.parse(b.from), t1: WX.parse(b.to) }));
 // The slider is weighted by what happens: each party on the road, each event and each battle widens a
@@ -646,7 +707,7 @@ function travellersAt(t) {
     const ids = [...new Set(m.flatMap(l => AVATARS.charsOf(S.story, l.j.name, t)))]; if (!ids.length) continue;
     const X = m.reduce((a, l) => a + l.p.X, 0) / m.length, Y = m.reduce((a, l) => a + l.p.Y, 0) / m.length;
     const q = partyAt(m[0].j, t + 0.03) || m[0].p, vx = (q.X - m[0].p.X) / 0.03, vy = (q.Y - m[0].p.Y) / 0.03;
-    out.push({ X, Y, ids, color: m[0].j.color, mode: modeAt(S.story, m[0].j.name, t), moving: !m[0].p.done && Math.hypot(vx, vy) > 0.5, vx, vy });
+    out.push({ X, Y, ids, color: m[0].j.color, mode: partyMode(S.story, m, t), moving: !m[0].p.done && Math.hypot(vx, vy) > 0.5, vx, vy });
   }
   return out;
 }
@@ -680,13 +741,13 @@ function updateJourneys(posOnly) {
     // walking while the clock runs and the party is on the move; standing otherwise
     const moving = S.playing && m.some(l => { if (l.p.done) return false; const q = partyAt(l.j, S.t + 0.03); return q && Math.hypot(q.X - l.p.X, q.Y - l.p.Y) > 0.02; });
     // on foot, on horseback, on the wing or afloat (GEO.MODES); mounts face the way the party is heading on screen
-    const mode = modeAt(S.story, m[0].j.name, S.t);
+    const mode = partyMode(S.story, m, S.t);
     let flip = false;
     if (mode !== 'walk' && mode !== 'under') {
       const q = partyAt(m[0].j, S.t + 0.05) || m[0].p, r = partyAt(m[0].j, S.t - 0.05) || m[0].p;
       const a = map.project(ll(r.X, r.Y)), b = map.project(ll(q.X, q.Y)); flip = b.x - a.x < -0.5;
     }
-    const idle = mode === 'fly' || mode === 'fire' || ids.includes('sauron') || ids.includes('smaug') || ids.includes('shelob') || ids.includes('balrog'); if (idle) idleAnim = true;
+    const idle = mode === 'fly' || mode === 'fire' || mode === 'dragon' || ids.includes('sauron') || ids.includes('smaug') || ids.includes('shelob') || ids.includes('balrog'); if (idle) idleAnim = true;
     const f = moving || idle || (mode !== 'walk' && mode !== 'under' && mode !== 'ride' && S.playing) ? Math.floor(performance.now() / (mode === 'fly' ? 120 : 150)) % 4 : 0;
     const ic = AVATARS.icon(ids, color, S.t, f, mode, flip), id = 'av:' + ic.key.normalize('NFD').replace(/[^\x20-\x7e]/g, '') + ':' + f;   // ASCII ids: MapLibre would not draw 'Khazad-dûm'
     if (!map.hasImage(id)) map.addImage(id, ic.canvas.getContext('2d').getImageData(0, 0, ic.canvas.width, ic.canvas.height), { pixelRatio: 2 });
@@ -716,7 +777,7 @@ function setTime(t, fromSlider) {
   if (mapLoaded) map.setPaintProperty('beacons-line', 'line-opacity', beaconsLit ? 1 : 0.35);
   wxRequest();
   if (wxOn('night')) drawNight();
-  updateSky();
+  updateSky(); refreshSeason();
   if (cardState && cardState.kind === 'place') refreshCardWeather();
 }
 function buildTicks() {
@@ -814,7 +875,7 @@ function setEra(era) {
 const BASES = ['Satellite', 'Red Book', 'Relief'];
 function setBase(i) {
   S.base = i;
-  map.getSource('imagery').setTiles(['arda://img/{z}/{x}/{y}/' + i]);
+  tileSeason = seasonLevel(S.t); setImagery(i, tileSeason);
   map.setPaintProperty('rivers-line', 'line-color', i === 1 ? '#5f8795' : '#7fb8cf');
   for (const id of ['wx-clouds', 'wx-gclouds']) map.setPaintProperty(id, 'raster-opacity', i === 1 ? 0 : id === 'wx-clouds' ? 1 : 0.95);
 }
@@ -859,6 +920,27 @@ const PANELS = {
     <div class="eyebrow">Chronicle</div>
     ${EVENTS[S.story].map(e => { const P = WX.parts(WX.parse(e[0])); return `<div class="row" style="align-items:flex-start"><button class="btn" data-t="${e[0]}" style="min-width:108px;justify-content:center;font-size:12.5px">${esc(P.name)}</button><span class="note" style="flex:1">${esc(e[1])}</span></div>`; }).join('')}`;
   },
+  characters: () => {
+    if (!CASTP) return `<div class="ph"><h2>Characters</h2><button class="x" aria-label="Close">×</button></div><p class="note">This world has no cast yet.</p>`;
+    const P = CASTP.PROFILES, sel = S.profile && P[S.profile] ? S.profile : null;
+    if (sel) {
+      const c = P[sel], l = lifeOf(sel), p = l && partyAt(l, S.t), np = p && nearestPlace(p.X, p.Y), met = meetings()[sel] || {};
+      const others = Object.entries(met).sort((a, b) => a[1].first - b[1].first);
+      const byTier = TIERS.map(([k, label]) => [label, others.filter(([o]) => P[o].tier === k)]).filter(x => x[1].length);
+      return `<div class="ph"><h2>${esc(c.name)}</h2><button class="x" aria-label="Close">×</button></div>
+      <div class="row" style="align-items:flex-start">${charAvatar(sel)}<span class="note" style="flex:1"><b>${esc(c.house)}</b><br>${esc(c.bio)}${c.fate ? `<br><i>${esc(c.fate)}</i>` : ''}</span></div>
+      <p class="note">${p ? (p.done && l.hide ? 'Gone from the story.' : `${WX.parts(S.t).name}: ${np.d < 4 ? 'at ' : 'near '}${esc(np.p.name)}.`) : 'Not yet in the story.'}</p>
+      <div class="btns"><button class="btn primary" data-cfollow="${sel}">Follow</button><button class="btn" data-cfly="${sel}">Fly to</button><button class="btn" data-cback>All characters</button></div>
+      <div class="eyebrow">Road taken <small>(dates estimated)</small></div>
+      <div class="note" style="line-height:1.7">${stopsOf(sel).map(s => `<a href="#" data-ct="${s.t}" data-cid="${sel}">${esc(s.name)}</a> <small>${shortDate(s.t)}</small>`).join(' → ') || '—'}</div>
+      <div class="eyebrow">Crossed paths with</div>
+      ${byTier.map(([label, list]) => `<div class="note" style="margin:6px 0 2px"><b>${esc(label)}</b></div>` + list.map(([o, r]) => `<div class="row" style="cursor:pointer" data-cpick="${o}">${charAvatar(o)}<label>${esc(P[o].name)} <small>${r.days} day${r.days > 1 ? 's' : ''} together from ${shortDate(r.first)}, ${esc(nearestPlace(r.X, r.Y).p.name)}</small></label><button class="btn" data-cmeet="${o}" data-t="${r.first}" data-x="${r.X}" data-y="${r.Y}">Go</button></div>`).join('')).join('') || '<p class="note">No one, yet.</p>'}`;
+    }
+    return `<div class="ph"><h2>Characters</h2><button class="x" aria-label="Close">×</button></div>
+    <p class="note">Everyone we follow through the books, by their part in the story. Pick one for their profile, the road they took and the people they met. Looks come from the books' descriptions; dates are estimates.</p>
+    ${TIERS.map(([k, label]) => `<div class="eyebrow">${label}</div>` + Object.keys(P).filter(id => P[id].tier === k).map(id => { const l = lifeOf(id), p = l && partyAt(l, S.t), np = p && nearestPlace(p.X, p.Y);
+      return `<div class="row" style="cursor:pointer" data-cpick="${id}">${charAvatar(id)}<label>${esc(P[id].name)} <small>${esc(P[id].house)} · ${p ? (p.done && l.hide ? 'gone' : (np.d < 4 ? 'at ' : 'near ') + esc(np.p.name)) : 'not yet'}</small></label></div>`; }).join('')).join('')}`;
+  },
   weather: () => `<div class="ph"><h2>Weather</h2><button class="x" aria-label="Close">×</button></div>
     <p class="note">A deterministic atmosphere: Atlantic-style lows sweep in from Belegaer on the westerlies, highs settle over Rhûn in winter, and mountains wring rain from the air. It follows the timeline, so scrub to any date.</p>
     <div class="row" style="padding:10px 0;border-bottom:1px solid var(--rule)"><label for="w-master"><b>Show weather</b></label><input class="tog" type="checkbox" id="w-master" ${S.wxMaster ? 'checked' : ''}></div>
@@ -901,6 +983,21 @@ const PANELS = {
     <p class="note">An unofficial fan project, not endorsed by the author or publishers. Places, people and events are from George R. R. Martin's A Song of Ice and Fire.</p>`,
 };
 const PANEL_INIT = {
+  characters: () => {
+    const re = () => { panelName = null; openPanel('characters'); };
+    panel.querySelectorAll('[data-cpick]').forEach(r => r.onclick = e => { if (e.target.closest('button')) return; S.profile = r.dataset.cpick; re(); });
+    const back = panel.querySelector('[data-cback]'); if (back) back.onclick = () => { S.profile = null; re(); };
+    const goStory = (id, t) => { const k = storyHolding(id, t); if (k && k !== S.story) { S.story = k; $('#story').value = k; buildTicks(); } setTime(t); };
+    panel.querySelectorAll('[data-ct]').forEach(a => a.onclick = e => { e.preventDefault(); const t = +a.dataset.ct; goStory(a.dataset.cid, t); const p = partyAt(lifeOf(a.dataset.cid), t); if (p) flyToXY(p.X, p.Y, 9, 45); re(); });
+    panel.querySelectorAll('[data-cmeet]').forEach(b => b.onclick = () => { goStory(S.profile, +b.dataset.t); flyToXY(+b.dataset.x, +b.dataset.y, 10, 50); re(); });
+    const fl = panel.querySelector('[data-cfly]'); if (fl) fl.onclick = () => { const l = lifeOf(fl.dataset.cfly), p = partyAt(l, S.t) || l.wp[0]; flyToXY(p.X, p.Y, 9, 45); };
+    const fo = panel.querySelector('[data-cfollow]'); if (fo) fo.onclick = () => {
+      const id = fo.dataset.cfollow, name = CASTP.PROFILES[id].name, l = lifeOf(id);
+      const t = Math.max(S.t, l.wp[0].t); goStory(id, Math.min(t, l.wp[l.wp.length - 1].t));
+      S.follow = name; const j = JOURNEYS[S.story].find(j => j.name === name), p = (j && partyAt(j, S.t)) || l.wp[0];
+      map.flyTo({ center: ll(p.X, p.Y), zoom: 8, pitch: 45 }); togglePlay(true);
+    };
+  },
   layers: () => {
     panel.querySelectorAll('#baseSeg button').forEach(b => b.onclick = () => { setBase(+b.dataset.i); panel.querySelectorAll('#baseSeg button').forEach(x => x.classList.toggle('on', x === b)); });
     panel.querySelectorAll('#eraSeg button').forEach(b => b.onclick = () => { setEra(b.dataset.e); if (!LAYER_ON.realms) { setGroup('realms', 1); $('#g-realms').checked = true; } panel.querySelectorAll('#eraSeg button').forEach(x => x.classList.toggle('on', x === b)); });
@@ -1211,7 +1308,7 @@ async function openGround(X, Y, name, opt = {}) {
     heading = (Math.atan2(p.X - X, p.Y - Y) * 180 / Math.PI + 360) % 360;
   }
   if (opt.heading != null) heading = opt.heading;
-  window.GROUND.open({ X, Y, heading, t: S.t, title: opt.title || name || (np.d < 3 ? 'Near ' + np.p.name : biomeAt(X, Y).name), sub: fmtXY(X, Y) + ' of Winterfell', run, weatherAt, staticAt, places: PL, peaks: GEO.PEAKS, travellers: window.AVATARS ? travellersAt : null, battles: battlesAt, heat: doomHeat, fireworks: GEO.FIREWORKS.filter(f => f.story === S.story), onExit: t => { if (t) setTime(t); } });
+  window.GROUND.open({ X, Y, heading, t: S.t, title: opt.title || name || (np.d < 3 ? 'Near ' + np.p.name : biomeAt(X, Y).name), sub: fmtXY(X, Y) + ' of Winterfell', run, weatherAt, staticAt, places: PL, peaks: GEO.PEAKS, travellers: window.AVATARS ? travellersAt : null, battles: battlesAt, heat: doomHeat, season: seasonLevel, fireworks: GEO.FIREWORKS.filter(f => f.story === S.story), onExit: t => { if (t) setTime(t); } });
 }
 function hashAng(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return (h % 628) / 100; }
 

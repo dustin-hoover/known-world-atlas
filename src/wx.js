@@ -49,7 +49,7 @@ function canonSeason(t) {
   for (let i = 1; i < P.length; i++) if (t <= P[i][0]) return P[i - 1][1] + (P[i][1] - P[i - 1][1]) * (t - P[i - 1][0]) / (P[i][0] - P[i - 1][0]);
   return P[P.length - 1][1];
 }
-function winterness(t) { const yearly = 0.5 + 0.5 * Math.cos(2 * Math.PI * (gdoy(t) - 15) / 365); return Math.min(1, 0.68 * canonSeason(t) + 0.32 * yearly); }
+function winterness(t) { const yearly = 0.5 + 0.5 * Math.cos(2 * Math.PI * (gdoy(t) - 15) / 365); return Math.min(1, 0.85 * canonSeason(t) + 0.15 * yearly); }   // the books' seasons run for years; the yearly swing is slight
 
 /* ------------------------------ systems ------------------------------ */
 const PER = 2.3;

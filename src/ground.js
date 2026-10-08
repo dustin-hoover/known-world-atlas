@@ -177,7 +177,7 @@ async function textureFor(run, X, Y, half, size, strips) {
   const cv = document.createElement('canvas'); cv.width = cv.height = size;
   const ctx = cv.getContext('2d');
   const rows = size / strips;
-  await Promise.all(Array.from({ length: strips }, (_, s) => run({ type: 'pt', X, Y, half, tex: size, r0: s * rows, r1: (s + 1) * rows }).then(r => { ctx.drawImage(r.bmp, 0, s * rows); r.bmp.close && r.bmp.close(); })));
+  await Promise.all(Array.from({ length: strips }, (_, s) => run({ type: 'pt', X, Y, half, tex: size, r0: s * rows, r1: (s + 1) * rows, season: G.o && G.o.season ? G.o.season(G.t) : 0 }).then(r => { ctx.drawImage(r.bmp, 0, s * rows); r.bmp.close && r.bmp.close(); })));
   const t = new THREE.CanvasTexture(cv);
   t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = G.renderer.capabilities.getMaxAnisotropy(); t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter;
   return { tex: t, canvas: cv };

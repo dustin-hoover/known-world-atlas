@@ -271,6 +271,7 @@ self.onmessage = async (e) => {
   try {
     if (m.type === 'init') { GEN.init(m.data); self.postMessage({ id: m.id, ok: 1 }); return; }
     if (m.type === 'dem') { const b = await demTile(m); self.postMessage({ id: m.id, bmp: b }, [b]); return; }
+    if (m.type === 'img' || m.type === 'pt') GEN.setSeason(m.season || 0);
     if (m.type === 'img') { const b = await imgTile(m); self.postMessage({ id: m.id, bmp: b }, [b]); return; }
     if (m.type === 'ph') { const r = patchHeights(m); self.postMessage({ id: m.id, h: r.h, water: r.water }, [r.h.buffer, r.water.buffer]); return; }
     if (m.type === 'pt') { const b = await patchTexture(m); self.postMessage({ id: m.id, bmp: b }, [b]); return; }

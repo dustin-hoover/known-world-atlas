@@ -14,8 +14,21 @@ Arda's engine notes below still apply; what differs in this world:
   paints it white at every zoom (a 300-foot wall is far below the 6 mi raster).
 - **Weather:** storm tracks and pressure centres rescaled to Westeros and Essos; the weather box (`WXB`) spans
   lon −32…96, lat −22…78.
-- **No Arda content:** journeys, casts, battles, landmark art (`LANDMARK_ART`), beacons and palantíri are empty for now;
-  Arda's sprite code remains in `avatars.js` for reuse.
+- **Seasons on the ground:** `gen.setSeason(level)` (0 summer … 1 winter) cools the land by latitude
+  (`seasonCool`), browns vegetation and lays seasonal snow; `northBias` makes the far north tundra and ice in any
+  season. The app sends `seasonLevel(t) = round(canonSeason*4)/4` with every imagery tile (`arda://img/z/x/y/base/season`)
+  and swaps tile URLs when the level changes (`refreshSeason`); the ground view gets the same level.
+- **The cast (`tools/known/cast.py`, emitted as `GEO.CAST`):** `CHARS` (tier, house, head, body, bio, fate; wolves
+  `wolf=` and dragons `dragon=` use the `direwolf` / `kwdragon` sprites), `PATHS` as steps (`(place|[X, Y], date)`,
+  `ROAD(...)` along an authored road, `LANE(...)` along a `SEA` lane), `DERIVED` (dragons follow Daenerys),
+  `MODES` (`ride`, `wheelhouse`, `sea`, `boat`, `dragon`) by id regex, `CASTS`, declarative `GROUPS`, `EVENTS`
+  and `EXTRA_PLACES`. `build()` expands and clips the paths per story into `GEO.JOURNEYS`. avatars.js merges
+  `GEO.CAST` into `C`/`B`/`JOURNEY`/`GROUPS`; a party travels in the strongest mode of its members (`partyMode`).
+- **Characters panel** (`PANELS.characters`): profiles by tier, the road taken (`stopsOf`) and `meetings()`
+  (characters within 2 mi on the same day, sampled daily at noon across all books).
+- **Castles:** places listed in author.py `CASTLES` carry `castle` (a `CASTLE` builder in world3d.js), `cr` (the
+  castle's own ground, kept clear of houses) and an optional offset `cx, cy` inside a city.
+- No battles, landmark art (`LANDMARK_ART`), beacons or palantíri yet; `src/routes.js` is empty (straight legs).
 - Headless runs: `tools/app_test.py` now prints console errors even when a step fails.
 
 ---

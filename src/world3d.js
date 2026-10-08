@@ -251,6 +251,175 @@ function mallorn(r, h, flets, lamps, x, y, z) {
   return merge(P).translate(x, y, z);
 }
 
+
+/* ---------------- castles of the Known World, as the books describe them ----------------
+   Built from simple solids at a man's scale (metres). Walls and towers run 15 m below their base so they sit on
+   uneven ground. Kinds come from a place's `castle` option (tools/known/author.py). */
+const KB = (w, h, d) => bx(w, h + 15, d).translate(0, -15, 0);
+const KC = (rt, rb, h, seg = 12) => cy(rt, rb, h + 15, seg).translate(0, -15, 0);
+function kWall(P, pts, h, t, col, closed = true, step = 4) {
+  const n = closed ? pts.length : pts.length - 1;
+  for (let i = 0; i < n; i++) {
+    const [x0, z0] = pts[i], [x1, z1] = pts[(i + 1) % pts.length], L = Math.hypot(x1 - x0, z1 - z0), a = Math.atan2(z1 - z0, x1 - x0);
+    P.push([KB(L + t, h, t).rotateY(-a).translate((x0 + x1) / 2, 0, (z0 + z1) / 2), col]);
+    for (let d = step / 2; d < L; d += step) { const f = d / L; P.push([bx(step * 0.45, 1.8, t * 0.3).rotateY(-a).translate(x0 + (x1 - x0) * f, h, z0 + (z1 - z0) * f), col]); }
+  }
+}
+function kDrum(P, x, z, r, h, col, roof, seg = 12) {
+  P.push([KC(r, r * 1.06, h, seg).translate(x, 0, z), col]);
+  const segM = Math.max(seg, Math.round(r * 1.2)); for (let i = 0; i < segM; i += 2) { const a = i / segM * Math.PI * 2; const mw = Math.min(r * 0.42, 3.2); P.push([bx(mw, 1.8, Math.min(r * 0.3, 2)).rotateY(-a).translate(x + Math.cos(a) * (r - 1), h, z + Math.sin(a) * (r - 1)), col]); }
+  if (roof) P.push([cn(r * 1.12, r * 1.6, seg).translate(x, h, z), roof]);
+}
+function kSquare(P, x, z, w, h, col, roof) {
+  P.push([KB(w, h, w).translate(x, 0, z), col]);
+  for (const [dx, dz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) P.push([bx(w * 0.22, 2.2, w * 0.22).translate(x + dx * w * 0.39, h, z + dz * w * 0.39), col]);
+  if (roof) P.push([cn(w * 0.75, w * 0.9, 4).rotateY(Math.PI / 4).translate(x, h, z), roof]);
+}
+const ring = (r, n, a0 = 0, sx = 1, sz = 1) => Array.from({ length: n }, (_, i) => [Math.cos(a0 + i / n * Math.PI * 2) * r * sx, Math.sin(a0 + i / n * Math.PI * 2) * r * sz]);
+function kTree(P, x, z, h, trunk, leaf) { P.push([cy(0.5, 0.8, h * 0.45, 6).translate(x, 0, z), trunk], [cn(h * 0.22, h * 0.7, 7).translate(x, h * 0.3, z), leaf]); }
+function weirwood(P, x, z) { P.push([cy(1.4, 2.2, 9, 7).translate(x, 0, z), 0xeeebe2], [sph(7, 9, 6).scale(1, 0.55, 1).translate(x, 11, z), 0xa8201a], [sph(4, 8, 6).scale(1, 0.6, 1).translate(x + 3, 13, z - 2), 0xc0301e]); }
+function castleMesh(P, opts = {}) {
+  const g = new THREE.Group(), m = new THREE.Mesh(merge(P), vcMat(Object.assign({ roughness: 0.9 }, opts)));
+  m.castShadow = m.receiveShadow = true; g.add(m); return g;
+}
+const CASTLE = {
+  // two curtain walls of grey granite, the outer 80 feet and the inner 100, with a moat between; the round First Keep,
+  // the Great Keep, the Broken Tower, the glass gardens warmed by the hot springs, and the godswood with its heart tree
+  winterfell() {
+    const gr = 0x7a7a80, gr2 = 0x66666e, roof = 0x4a4e58, P = [];
+    const outer = [[-170, -150], [170, -150], [170, 150], [-170, 150]], inner = [[-130, -112], [130, -112], [130, 112], [-130, 112]];
+    kWall(P, outer, 24, 7, gr2); kWall(P, inner, 30, 8, gr);
+    for (const [x, z] of outer) kDrum(P, x, z, 11, 30, gr2);
+    for (const [x, z] of inner) kDrum(P, x, z, 13, 38, gr);
+    for (const [x, z] of [[0, -150], [0, 150], [-170, 0], [170, 0]]) kSquare(P, x, z, 16, 28, gr2);
+    P.push([bx(372, 0.6, 26).translate(0, -1.6, -131), 0x2a3a44], [bx(372, 0.6, 26).translate(0, -1.6, 131), 0x2a3a44], [bx(26, 0.6, 236).translate(-150, -1.6, 0), 0x2a3a44], [bx(26, 0.6, 236).translate(150, -1.6, 0), 0x2a3a44]);
+    P.push([KB(64, 30, 36).translate(-20, 0, -40), gr], [cn(46, 14, 4).rotateY(Math.PI / 4).scale(1, 1, 0.6).translate(-20, 30, -40), roof]);     // the Great Keep
+    kDrum(P, 40, -60, 16, 26, gr2);                                                                                                     // the First Keep
+    for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; P.push([bx(2, 3, 2).translate(40 + Math.cos(a) * 15, 26, -60 + Math.sin(a) * 15), 0x4e4e54]); }   // its gargoyles
+    P.push([KC(7, 8, 42, 10).translate(95, 0, -80), gr]); for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2; P.push([bx(2.4, 2 + (i * 5) % 7, 2.4).translate(95 + Math.cos(a) * 6, 42, -80 + Math.sin(a) * 6), gr]); }  // the Broken Tower
+    kDrum(P, -95, -70, 6, 34, gr, roof); kDrum(P, 70, 60, 5, 30, gr, roof);                                                           // bell tower and rookery
+    P.push([KB(46, 9, 22).translate(-70, 0, 70), 0x5a6a70], [bx(44, 4, 20).translate(-70, 9, 70), 0xa8d4dc]);                         // the glass gardens
+    for (let i = 0; i < 26; i++) { const x = -110 + (i * 37) % 80, z = -100 + (i * 23) % 70; kTree(P, x + 70, z + 150 - 60, 14 + (i % 4) * 3, 0x3a2a1a, 0x2a4a30); }
+    weirwood(P, 20, 70);
+    return castleMesh(P);
+  },
+  // no walls: towers, halls and barracks of stone and timber at the foot of the Wall, and a timber stair zig-zagging up its face
+  castleblack() {
+    const st = 0x5a5a5e, tb = 0x5a4632, P = [];
+    kSquare(P, -30, 30, 18, 30, st, 0x2e2e34); kDrum(P, 30, 20, 8, 34, st); kDrum(P, 70, 50, 6, 22, st);
+    P.push([KB(14, 26, 12).rotateZ(0.06).translate(-80, 0, 60), st]);                    // Hardin's Tower, leaning
+    P.push([KB(60, 10, 16).translate(10, 0, 80), st], [cn(36, 6, 4).rotateY(Math.PI / 4).scale(1, 1, 0.35).translate(10, 10, 80), 0x3a3a40]);   // the common hall
+    P.push([KB(70, 8, 14).translate(-20, 0, 120), 0x6a625a]);                             // the Flint Barracks
+    for (let k = 0; k < 9; k++) { const y = k * 22, dir = k % 2 ? 1 : -1; P.push([bx(70, 1.2, 5).rotateZ(dir * 0.3).translate(0, y + 11, -6), tb], [bx(3, y + 22, 3).translate(dir * 35, 0, -6), tb]); }
+    P.push([bx(18, 6, 12).translate(30, 205, -10), tb]);                                   // the winch cage at the top
+    return castleMesh(P);
+  },
+  // seven slender white towers crowded on a shoulder of the mountain, high above the valley
+  eyrie() {
+    const w = 0xf2f0ea, bl = 0x8ab0d0, rock = 0x8a8072, P = [[KC(34, 60, 120, 9), rock], [KC(30, 30, 10, 14).translate(0, 120, 0), 0xe6e2d8]];
+    const tw = [[0, 0, 7, 46], [-18, 10, 4.5, 34], [16, 12, 4.5, 36], [-14, -16, 4, 30], [14, -15, 4, 32], [0, 22, 4, 28], [-24, -2, 3.5, 26]];
+    for (const [x, z, r, h] of tw) P.push([cy(r, r * 1.05, h, 10).translate(x, 128, z), w], [cn(r * 1.15, r * 2.2, 10).translate(x, 128 + h, z), bl]);
+    return castleMesh(P, { roughness: 0.6 });
+  },
+  // the greatest castle in Westeros: walls like cliffs and five monstrous towers whose tops dragonfire melted like candles
+  harrenhal() {
+    const d = 0x45403c, d2 = 0x34302c, glass = 0x241e1c, P = [];
+    const wall = [[-420, -300], [380, -320], [440, 260], [-380, 300]];
+    kWall(P, wall, 42, 14, d, true, 6);
+    const tw = [[-380, -260, 30, 120], [340, -280, 26, 100], [400, 220, 34, 140], [-340, 260, 24, 90], [-40, -10, 30, 110]];
+    for (const [x, z, r, h] of tw) {
+      P.push([KC(r * 0.9, r, h, 14).translate(x, 0, z), d]);
+      for (let k = 0; k < 6; k++) { const a = k * 1.1; P.push([sph(r * 0.45, 8, 6).scale(1, 1.6, 1).translate(x + Math.cos(a) * r * 0.55, h - 6 - (k % 3) * 9, z + Math.sin(a) * r * 0.55), glass]); }   // stone run like wax
+      P.push([sph(r * 0.8, 10, 6).scale(1, 0.45, 1).translate(x, h, z), d2]);
+    }
+    P.push([KB(160, 24, 70).translate(-60, 0, 150), d2]);                                  // the Hall of a Hundred Hearths
+    return castleMesh(P, { roughness: 0.75, metalness: 0.08 });
+  },
+  // two castles facing each other across the Green Fork, joined by a bridge with the Water Tower at its middle
+  twins() {
+    const g1 = 0x8a8680, g2 = 0x77736c, P = [];
+    for (const s of [-1, 1]) {
+      const cx = s * 150, sq = [[cx - 60, -60], [cx + 60, -60], [cx + 60, 60], [cx - 60, 60]];
+      kWall(P, sq, 18, 6, g2); for (const [x, z] of sq) kDrum(P, x, z, 8, 24, g2);
+      kSquare(P, cx + s * 10, 0, 28, 46, g1, 0x4a4e58);
+    }
+    P.push([bx(180, 4, 16).translate(0, 10, 0), g2]); for (const x of [-60, -30, 30, 60]) P.push([KB(8, 10, 14).translate(x, 0, 0), g2]);
+    kDrum(P, 0, 0, 12, 34, g1, 0x4a4e58);
+    return castleMesh(P);
+  },
+  // red stone on Aegon's High Hill: seven great drum towers with iron ramparts, and Maegor's Holdfast within its dry moat
+  redkeep() {
+    const r1 = 0xa0483a, r2 = 0x8a3a2e, iron = 0x2a2626, P = [];
+    const wall = ring(150, 7, 0.3, 1.1, 0.9);
+    kWall(P, wall, 26, 9, r2);
+    for (const [x, z] of wall) { kDrum(P, x, z, 15, 38, r1); P.push([cy(15.5, 15.5, 2.5, 12).translate(x, 38, z), iron]); }
+    P.push([cy(52, 52, 0.6, 20).translate(0, -3, 0), 0x2a2420]); kSquare(P, 0, 0, 52, 40, r1);                 // Maegor's Holdfast and its moat
+    kSquare(P, 70, -50, 16, 44, r2); P.push([KB(70, 22, 30).translate(-60, 0, 50), r1]);                         // the Tower of the Hand; the throne room
+    return castleMesh(P);
+  },
+  // one immense drum tower behind a curtain wall without a corner, built to stand against the storms
+  stormsend() {
+    const g = 0x6a6e74, P = [];
+    kWall(P, ring(95, 28), 30, 12, 0x5e6268, true, 5);
+    kDrum(P, 0, 0, 45, 92, g, null, 24);
+    for (let k = 0; k < 6; k++) P.push([bx(5, 7, 1).rotateY(k).translate(Math.cos(k) * 45, 40 + (k % 3) * 14, Math.sin(k) * 45), 0x1a1a1e]);
+    return castleMesh(P);
+  },
+  // black stone fused by dragonfire into dragon shapes: towers with dragon heads, gargoyles on every wall
+  dragonstone() {
+    const b = 0x24222a, b2 = 0x302c34, P = [];
+    const wall = ring(120, 9, 0.2, 1.2, 0.9); kWall(P, wall, 22, 8, b2);
+    for (const [x, z] of wall) { kDrum(P, x, z, 9, 30, b); P.push([bx(5, 5, 9).translate(x, 30, z + 4), b2], [cn(1.2, 6, 5).rotateX(-0.6).translate(x - 2, 33, z), b2], [cn(1.2, 6, 5).rotateX(-0.6).translate(x + 2, 33, z), b2]); }
+    kDrum(P, 0, 0, 26, 52, b);                                                                    // the Stone Drum
+    P.push([KC(8, 10, 74, 10).translate(60, 0, -40), b], [bx(9, 7, 18).translate(60, 74, -36), b2], [cn(2, 9, 5).rotateX(-0.5).translate(57, 80, -42), b2], [cn(2, 9, 5).rotateX(-0.5).translate(63, 80, -42), b2]);   // the Sea Dragon Tower
+    for (let k = 0; k < 18; k++) { const [x, z] = wall[k % 9], [x2, z2] = wall[(k + 1) % 9], f = (k % 2 ? 0.33 : 0.66); P.push([bx(3, 4, 3).translate(x + (x2 - x) * f, 22, z + (z2 - z) * f), b2]); }
+    return castleMesh(P, { roughness: 0.5 });
+  },
+  // towers on sea stacks, linked by bridges of stone and of rope that sway over the surf
+  pyke() {
+    const rock = 0x4a4844, st = 0x5a5a5c, P = [], stacks = [[0, 0, 28, 40], [80, 30, 20, 34], [140, -20, 18, 30], [-70, 40, 22, 36]];
+    for (const [x, z, r, h] of stacks) { P.push([KC(r * 0.85, r, h, 9).translate(x, -20, z), rock]); kDrum(P, x, z, r * 0.45, h - 20 + 32, st, 0x2e3034); }
+    for (let i = 0; i < stacks.length - 1; i++) {
+      const [x0, z0, , h0] = stacks[i === 2 ? 0 : i], [x1, z1, , h1] = stacks[i + 1], L = Math.hypot(x1 - x0, z1 - z0), a = Math.atan2(z1 - z0, x1 - x0);
+      P.push([bx(L, 1.2, 2.4).rotateY(-a).translate((x0 + x1) / 2, Math.min(h0, h1) - 14, (z0 + z1) / 2), i % 2 ? 0x5a4632 : st]);
+    }
+    return castleMesh(P);
+  },
+  // the tallest tower in Westeros, in stepped tiers on its island, with a beacon fire at the top
+  hightower() {
+    const w = 0xd8d6d0, w2 = 0xc4c2bc, P = [[KB(120, 18, 120), 0x8a8478]];
+    const tiers = [[60, 60], [48, 50], [38, 45], [30, 40], [22, 36], [15, 30]]; let y = 18;
+    for (const [r, h] of tiers) { P.push([cy(r * 0.92, r, h, 16).translate(0, y, 0), y % 2 ? w : w2]); y += h; }
+    P.push([cy(9, 9, 10, 12).translate(0, y, 0), 0x6a6460]);
+    const g = castleMesh(P, { roughness: 0.6 });
+    const fire = glow('rgba(255,200,90,1)', 'rgba(255,90,20,0)', 70); fire.position.y = y + 14; g.add(fire);
+    const light = new THREE.PointLight(0xffa040, 3e5, 6000, 2); light.position.y = y + 14; g.add(light);
+    g.userData.update = (dt, t) => { fire.scale.setScalar(60 + 12 * Math.sin(t * 5.1) * Math.sin(t * 1.7)); };
+    return g;
+  },
+  // a triangle of sandstone walls where the Tumblestone joins the Red Fork; the rivers fill its moat
+  riverrun() {
+    const s = 0xc8a070, s2 = 0xb08a5c, P = [], tri = [[0, -120], [130, 90], [-130, 90]];
+    kWall(P, tri, 22, 8, s2); for (const [x, z] of tri) kDrum(P, x, z, 12, 32, s, 0x4a6a9a);
+    kSquare(P, 0, 20, 30, 40, s, 0x4a6a9a); P.push([bx(300, 0.6, 30).translate(0, -1.6, 110), 0x3a5a6a]);
+    return castleMesh(P);
+  },
+  // the Rock: a great stone mountain above the sea, its halls delved within, towers on its crown
+  casterlyrock() {
+    const rk = 0xa08a68, rk2 = 0x8a7458, P = [[sph(260, 18, 10).scale(1.4, 0.75, 0.8).translate(0, -40, 0), rk], [sph(140, 14, 8).scale(1, 0.9, 0.9).translate(-120, 40, 40), rk2]];
+    for (let i = 0; i < 40; i++) P.push([bx(4, 6, 1).translate(-200 + (i * 47) % 400, 20 + (i * 29) % 120, 205 - (i % 5) * 4), 0x2a2018]);
+    for (const [x, z, h] of [[-40, 0, 40], [30, 30, 30], [90, -20, 26]]) kDrum(P, x, z, 8, 150 + h, 0xc8b490, 0xa83020);
+    return castleMesh(P);
+  },
+  // the Tower of the Sun with its dome of gold and glass, the slender Spear Tower, and the Winding Walls
+  sunspear() {
+    const sd = 0xd8c8a0, P = [];
+    kWall(P, [[-160, -60], [-80, -110], [20, -90], [120, -130], [170, -40], [120, 60], [0, 90], [-120, 70]], 14, 6, 0xc8b890);
+    P.push([KC(22, 24, 36, 16), sd], [new THREE.SphereGeometry(22, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2).translate(0, 36, 0), 0xe0b040]);
+    P.push([KC(5, 6, 66, 10).translate(60, 0, -20), sd], [cn(1.5, 16, 6).translate(60, 66, -20), 0xe8d070]);
+    return castleMesh(P, { roughness: 0.55 });
+  },
+};
 /* Landmark specials (Orthanc, Barad-dûr, …) and town details for one near patch.
    B = { list, special } from GEN.buildingsNear; coordinates relative to the patch centre (X0, Y0). */
 function W3town(B, X0, Y0, hAt) {
@@ -270,6 +439,7 @@ function W3town(B, X0, Y0, hAt) {
     else if (s.kind === 'ecthelion') m = ecthelion();
     else if (s.type === 'gate') { m = ereborGate(); m.rotation.y = Math.atan2(Math.cos(s.face), -Math.sin(s.face)); }
     else if (s.kind === 'ravenhill') m = ravenhill();
+    else if (s.type === 'castle' && CASTLE[s.kind]) m = CASTLE[s.kind]();
     else if (s.kind === 'sidedoor') { m = sideDoor(); m.rotation.y = Math.atan2(Math.cos(s.face), -Math.sin(s.face)); }
     else if (s.type === 'havens') { const h = greyHavens(x, z, hAt); if (h) { grp.add(h); up.push(h.userData.update); } continue; }
     else if (s.type === 'mallorn') { grp.add(new THREE.Mesh(mallorn(4.2, 78, 4, lamps, x, y - 1, z), vcMat({ roughness: 0.8 }))); continue; }

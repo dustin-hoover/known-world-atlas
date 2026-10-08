@@ -126,7 +126,7 @@ function build(GEO) {
       roads: GEO.ROADS.map(r => ({ name: r.name, pts: r.pts, cls: r.cls })),
       lakes: GEO.LAKES.map(l => ({ pts: l.pts })),
       walls: GEO.WALLS.map(w => ({ name: w.name, pts: w.pts, circle: w.circle, ice: w.ice })),
-      settlements: GEO.PLACES.filter(p => p[7] && p[7].culture && p[7].r).map(p => ({ name: p[0], x: p[2], y: p[3], r: p[7].r, culture: p[7].culture, gate: p[7].gate, feature: p[7].feature, havens: p[7].havens })),
+      settlements: GEO.PLACES.filter(p => p[7] && p[7].culture && p[7].r).map(p => ({ name: p[0], x: p[2], y: p[3], r: p[7].r, culture: p[7].culture, gate: p[7].gate, feature: p[7].feature, havens: p[7].havens, castle: p[7].castle, cr: p[7].cr, cx: p[7].cx, cy: p[7].cy })),
     },
   };
 }

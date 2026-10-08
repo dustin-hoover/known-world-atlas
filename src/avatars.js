@@ -342,8 +342,8 @@ function hoardGrid(f) {
   return g;
 }
 // Smaug in flight: wings beating, belly of gold, and over Lake-town a gout of fire
-function dragonGrid(f, fire) {
-  const W2 = fire ? 92 : 66, by = 22, g = blank(W2, 40), sc = '#b8361e', sd = '#6e1c10', mem = '#8a2a18', bone = '#3a0e08';
+function dragonGrid(f, fire, pal, riders) {
+  const W2 = fire ? 92 : 66, by = 22, g = blank(W2, 40), sc = pal ? pal[0] : '#b8361e', sd = pal ? pal[1] : '#6e1c10', mem = pal ? pal[2] : '#8a2a18', bone = pal ? shade(pal[1], 0.6) : '#3a0e08';
   const up = [-20, -6, 12, -6][f];
   const wing = (rx, tipX, dy, c) => { for (let x = tipX; x <= rx; x++) { const u = (rx - x) / (rx - tipX), y = Math.round(by + dy * u), th = 1 + Math.round(7 * Math.sin(Math.PI * Math.min(1, u * 1.1))); setp(g, x, y - 1, bone); rectp(g, x, y, x, y + th - (x % 6 === 0 ? 2 : 0), c); if (x % 7 === 0) for (let k = 0; k < th; k++) setp(g, x - k / 3, y + k, bone); } };
   wing(40, 10, up - 4, '#5e1a10');
@@ -360,6 +360,7 @@ function dragonGrid(f, fire) {
     const L = 26 + (f % 2) * 4;
     for (let i = 0; i < L; i++) { const w = 1 + Math.round(i * 0.28), y0 = hy + 4 + Math.round(i * 0.35); for (let k = -w; k <= w; k++) setp(g, hx + 12 + i, y0 + k, Math.abs(k) < w * 0.35 ? '#fff0a0' : Math.abs(k) < w * 0.7 ? '#ffb030' : ((i + k + f) % 3 ? '#ff6a18' : '#c02010')); }
   }
+  (riders || []).forEach((id, i) => paste(g, upper(id, 0), 24 + i * 7, by - (BY + 6) - 1));
   wing(38, 6, up, mem);
   return g;
 }
@@ -469,6 +470,8 @@ function figGrid(id, f) {
   if (C[id].special === 'ent') return entGrid(f);
   if (C[id].special === 'eye') return eyeGrid(f);
   if (C[id].special === 'balrog') return balrogGrid(f);
+  if (C[id].special === 'direwolf') return direwolfGrid(id, f);
+  if (C[id].special === 'kwdragon') return kwDragonGrid(id, f);
   const g = Array.from({ length: FH }, () => Array(FW).fill(null)), b = B[id] || {}, c = C[id];
   const set = (x, y, v) => { if (x >= 0 && x < FW && y >= 0 && y < FH && v) g[y][x] = v; };
   const rect = (x0, y0, x1, y1, v) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, v); };
@@ -580,6 +583,52 @@ const HORSE = { gandalf: ['#eef2f6', '#c4ccd8'], gandalfW: ['#eef2f6', '#c4ccd8'
   legolas: ['#d8d4cc', '#aaa49a'], gimli: ['#d8d4cc', '#aaa49a'], merry: ['#8a8a90', '#5e5e66'], pippin: ['#eef2f6', '#c4ccd8'], nazgul: ['#141218', '#050407'],
   elrond: ['#e0dcd4', '#b4aea4'], galadriel: ['#f4f2ea', '#d0ccc0'], arwen: ['#3a3438', '#1e1a1c'], boromir: ['#6a4a32', '#46301f'] };
 const PONY = [['#7a5232', '#50351f'], ['#a0704a', '#6e4a2e'], ['#5a3e2a', '#3a2818'], ['#c8b090', '#9a8466']];
+/* ---- a world's own cast (GEO.CAST, written by its author script) joins the Middle-earth one ---- */
+const CAST = (typeof GEO !== 'undefined' && GEO.CAST) || null;
+const WHEEL = new Set(CAST ? CAST.WHEELHOUSE : []), SOLO = new Set();
+if (CAST) {
+  Object.assign(C, CAST.C); Object.assign(B, CAST.B);
+  for (const k in JOURNEY) delete JOURNEY[k]; Object.assign(JOURNEY, CAST.JOURNEY);
+  GROUPS.unshift(...CAST.GROUPS.map(g => ({ ...g, test: S => (!g.solo || S.size === 1) && g.all.every(i => S.has(i)) })));
+  for (const g of CAST.GROUPS) if (g.solo) g.all.forEach(i => SOLO.add(i));
+}
+// a direwolf: a great wolf, long-legged and deep-chested, in its own fur and eye colours
+function direwolfGrid(id, f) {
+  const [w0, w1] = C[id].fur, w2 = shade(w0, 1.12), eye = C[id].eye, Wd = 26, Ht = 16, g = blank(Wd, Ht), a = f % 2;
+  rectp(g, 5, 5, 18, 10, w0); rectp(g, 6, 4, 17, 4, w1); for (let x = 6; x <= 17; x += 2) setp(g, x, 3, w1); rectp(g, 6, 10, 17, 10, w1);
+  rectp(g, 17, 2, 23, 7, w0); rectp(g, 22, 5, 25, 7, w2); setp(g, 19, 1, w1); setp(g, 21, 1, w1); setp(g, 19, 0, w1); setp(g, 20, 4, eye); setp(g, 25, 5, '#16110d'); rectp(g, 23, 8, 25, 8, w1);
+  rectp(g, 16, 7, 18, 10, w2);                                                        // ruff at the throat
+  for (let i = 0; i < 5; i++) setp(g, 4 - i, 5 + Math.round(i * 0.6) - (a && i > 2 ? 1 : 0), i % 2 ? w0 : w1); setp(g, 0, 8 - a, w1);
+  for (const [x, ph] of [[6, 0], [9, 1], [15, 1], [18, 0]]) rectp(g, x + (ph === a ? 1 : 0), 11, x + 1 + (ph === a ? 1 : 0), 15 - (ph === a ? 1 : 0), w1);
+  return g;
+}
+// a young dragon on the ground, wings half raised, in its own scales (pal: scales, dark, wings)
+function kwDragonGrid(id, f) {
+  const [sc, sd, ac] = C[id].pal, g = blank(22, 16), a = f % 2;
+  for (let i = 0; i < 7; i++) setp(g, i, 12 - Math.round(i * 0.4) + (i < 2 && a ? -1 : 0), i % 2 ? sc : sd);
+  for (let x = 7; x <= 13; x++) { const top = 1 + Math.abs(x - 9) + a; rectp(g, x, top, x, 7, x % 3 ? ac : sd); }
+  rectp(g, 6, 8, 14, 12, sc); rectp(g, 7, 12, 13, 12, shade(ac, 1.1));
+  rectp(g, 14, 5, 15, 9, sc); rectp(g, 15, 3, 19, 6, sc); rectp(g, 20, 5, 21, 6, sc); setp(g, 17, 4, '#ffd040'); setp(g, 15, 2, '#e8dcc0'); setp(g, 16, 1, '#e8dcc0'); setp(g, 21, 5, '#16110d');
+  rectp(g, 8, 13, 9, 15 - a, sd); rectp(g, 12, 13, 13, 15 - (1 - a), sd);
+  return g;
+}
+// the queen's great wheelhouse: a long painted carriage on wheels, its passengers at the windows, the team in front
+function wheelhouseGrid(ids, f) {
+  const horse = horseGrid([], f, 1), Ht = horse.length, n = Math.max(1, Math.min(3, ids.length)), bw = 8 + 17 * n, g = blank(bw + horse[0].length - 2, Ht);
+  const wood = '#7a4a24', woodD = '#4e2e14', gold = '#e0b040', red = '#a8281e', top = 4, bot = Ht - 7;
+  rectp(g, 1, top - 3, bw - 1, top - 2, red); rectp(g, 0, top - 1, bw, top - 1, gold);
+  rectp(g, 1, top, bw - 1, bot, wood); for (let x = 3; x < bw; x += 5) rectp(g, x, bot - 3, x, bot, woodD); rectp(g, 1, bot, bw - 1, bot, gold);
+  ids.slice(0, 3).forEach((id, i) => { const wx = 4 + i * 17; rectp(g, wx, top + 1, wx + 15, top + 16, '#2a1a10'); paste(g, GCACHE[id] || (GCACHE[id] = grid(id)), wx + 1, top + 1);
+    rectp(g, wx - 1, top + 1, wx - 1, top + 16, gold); rectp(g, wx + 16, top + 1, wx + 16, top + 16, gold); });
+  for (const cx of [7, bw - 7]) {                                                     // wheels turning
+    const cy = Ht - 5;
+    for (let k = 0; k < 24; k++) { const an = k / 24 * Math.PI * 2; setp(g, cx + Math.cos(an) * 4, cy + Math.sin(an) * 4, woodD); }
+    for (let k = 0; k < 4; k++) { const an = (k / 4 + f / 16) * Math.PI * 2; for (let r = 0; r < 4; r++) setp(g, cx + Math.cos(an) * r, cy + Math.sin(an) * r, gold); }
+  }
+  rectp(g, bw, bot - 6, bw + 4, bot - 6, '#3a2a1a');                                  // the traces
+  paste(g, horse, bw - 3, 0);
+  return g;
+}
 function blank(w, h) { return Array.from({ length: h }, () => Array(w).fill(null)); }
 function paste(g, src, ox, oy, maxRow = 1e9) { for (let y = 0; y < src.length && y <= maxRow; y++) for (let x = 0; x < src[0].length; x++) if (src[y][x]) { const X = x + ox, Y = y + oy; if (Y >= 0 && Y < g.length && X >= 0 && X < g[0].length) g[Y][X] = src[y][x]; } }
 function setp(g, x, y, v) { x = Math.round(x); y = Math.round(y); if (y >= 0 && y < g.length && x >= 0 && x < g[0].length && v) g[y][x] = v; }
@@ -590,7 +639,7 @@ const upper = (id, f) => figGrid(id, f === 1 || f === 3 ? 0 : 0).map((row, y) =>
 // horse (or pony) and riders: 26 wide; the horse's back is at row BY + 6
 function horseGrid(ids, f, k) {
   const W2 = 28, top = BY + 6, g = blank(W2, top + 12), hy = top - 1;           // hy: horse body top row
-  const pony = ids.every(i => C[i].ears === 'hobbit') || ids.includes('thorin') || ids.includes('bilbo');
+  const pony = ids.length && ids.every(i => C[i].ears === 'hobbit') || ids.includes('thorin') || ids.includes('bilbo');
   const [c0, c1] = HORSE[ids[ids.length - 1]] || PONY[k % PONY.length], s = pony ? 0 : 1;
   const eye = ids.includes('nazgul') ? '#ff3b2f' : '#16110d';
   // tail
@@ -710,10 +759,11 @@ function boatGrid(ids, f, kind) {
 const ICACHE = {};
 function groupOf(ids, t) {
   const S = new Set(ids);
-  return ids.length > 1 || S.has('nazgul') ? GROUPS.find(G => G.test(S) && (!G.when || (t >= P(G.when[0]) && t <= P(G.when[1])))) : null;
+  return ids.length > 1 || S.has('nazgul') || SOLO.has(ids[0]) ? GROUPS.find(G => G.test(S) && (!G.when || (t >= P(G.when[0]) && t <= P(G.when[1])))) : null;
 }
 // folk who never sit a horse: in a riding party they go on foot beside it
 const ON_FOOT = new Set(['tom', 'goldberry', 'treebeard', 'gollum', 'ugluk', 'uruk', 'shelob', 'smaug', 'sauron', 'trolls', 'stonetrolls', 'goblin', 'greatgoblin', 'bolg', 'warg', 'mirkspider', 'arkenstone', 'balrog']);
+if (CAST) CAST.ON_FOOT.forEach(i => ON_FOOT.add(i));
 function icon(ids, color, t, f = 0, mode = 'walk', flip = false) {
   if (ids.length > 1 && ids.includes('arkenstone')) {
     const base = icon(ids.filter(i => i !== 'arkenstone'), color, t, f, mode, flip), k = base.key + '|ark' + f;
@@ -803,6 +853,13 @@ function mounted(ids, S, grp, color, f, mode, flip, key) {
     const rest = show.filter(i => i !== 'legolas' && i !== 'gimli' && !ON_FOOT.has(i)); if (S.has('legolas') && S.has('gimli')) units.push(['legolas', 'gimli']); else { if (S.has('legolas')) rest.push('legolas'); if (S.has('gimli')) rest.push('gimli'); }
     units = units.concat(rest.map(i => [i])).map((u, k) => horseGrid(u, (f + k) % 4, k)).concat(walkers.map((i, k) => Object.assign(figGrid(i, (f + k + 1) % 4).slice(), { walker: true })));
   } else if (S.has('smaug')) units = [dragonGrid(f, mode === 'fire')];
+  else if (mode === 'dragon') {     // a dragon with its rider; the other dragons fly alongside
+    const drag = show.filter(i => C[i].special === 'kwdragon'), riders = show.filter(i => C[i].special !== 'kwdragon');
+    units = (drag.length ? drag : ['drogon']).map((d, k) => dragonGrid((f + k) % 4, false, C[d] && C[d].pal, k === 0 ? riders : []));
+  } else if (mode === 'wheelhouse') {
+    const inside = show.filter(i => WHEEL.has(i)), out = show.filter(i => !WHEEL.has(i) && !ON_FOOT.has(i)), walkers = show.filter(i => ON_FOOT.has(i));
+    units = [wheelhouseGrid(inside.length ? inside : show.slice(0, 1), f)].concat(out.filter(i => !inside.includes(i)).map((i, k) => horseGrid([i], (f + k + 1) % 4, k)), walkers.map((i, k) => Object.assign(figGrid(i, (f + k + 1) % 4).slice(), { walker: true })));
+  }
   else if (mode === 'fly') { const per = show.length > 6 ? 3 : 2; for (let i = 0; i < show.length; i += per) units.push(eagleGrid(show.slice(i, i + per), (f + i / per) % 4)); }
   else if (mode === 'boat') {
     // the three grey boats of Lórien: Aragorn with Frodo and Sam, Boromir with Merry and Pippin, Legolas and Gimli
@@ -814,13 +871,13 @@ function mounted(ids, S, grp, color, f, mode, flip, key) {
   const step = units.length > 1 ? Math.round(Math.max(...ws) * (many ? (mode === 'fly' ? 0.42 : 0.32) : mode === 'fly' ? 0.5 : 0.62)) : 0, lift = units.length > 1 ? (many ? 12 : 10) : 0;
   const liftOf = j => units[j].walker ? 0 : many ? ((units.length - 1 - j) % 2) * lift : (units.length - 1 - j) * lift;
   const cv = document.createElement('canvas'), g = cv.getContext('2d');
-  cv.width = Math.max(...ws) + step * (units.length - 1) + 16; cv.height = Math.max(...hs) + (many ? lift : lift * (units.length - 1)) + (mode === 'fly' || mode === 'fire' ? 26 : 12);
+  cv.width = Math.max(...ws) + step * (units.length - 1) + 16; cv.height = Math.max(...hs) + (many ? lift : lift * (units.length - 1)) + (mode === 'fly' || mode === 'fire' || mode === 'dragon' ? 26 : 12);
   const cx = cv.width / 2, by = cv.height - 8;
   // ground under a rider: a small token; under a flyer: its shadow far below
-  if (mode === 'ride') { g.fillStyle = grp ? grp.frame : color; g.strokeStyle = OUT; g.lineWidth = 3; g.beginPath(); g.ellipse(cx, by, cv.width / 2 - 4, 7, 0, 0, 7); g.fill(); g.stroke(); }
-  if (mode === 'fly' || mode === 'fire') { g.fillStyle = 'rgba(0,0,0,0.28)'; g.beginPath(); g.ellipse(cx, by, cv.width * 0.3, 5, 0, 0, 7); g.fill(); g.fillStyle = color; g.beginPath(); g.arc(cx, by, 4, 0, 7); g.fill(); }
+  if (mode === 'ride' || mode === 'wheelhouse') { g.fillStyle = grp ? grp.frame : color; g.strokeStyle = OUT; g.lineWidth = 3; g.beginPath(); g.ellipse(cx, by, cv.width / 2 - 4, 7, 0, 0, 7); g.fill(); g.stroke(); }
+  if (mode === 'fly' || mode === 'fire' || mode === 'dragon') { g.fillStyle = 'rgba(0,0,0,0.28)'; g.beginPath(); g.ellipse(cx, by, cv.width * 0.3, 5, 0, 0, 7); g.fill(); g.fillStyle = color; g.beginPath(); g.arc(cx, by, 4, 0, 7); g.fill(); }
   g.save(); if (flip) { g.translate(cv.width, 0); g.scale(-1, 1); }
-  units.forEach((_, k) => { const j = units.length - 1 - k; drawGrid(g, units[j], 8 + j * step, by - (mode === 'fly' || mode === 'fire' ? 20 : 4) - hs[j] - liftOf(j) + (mode === 'fly' || mode === 'fire' ? 0 : 6), s); });
+  units.forEach((_, k) => { const j = units.length - 1 - k; drawGrid(g, units[j], 8 + j * step, by - (mode === 'fly' || mode === 'fire' || mode === 'dragon' ? 20 : 4) - hs[j] - liftOf(j) + (mode === 'fly' || mode === 'fire' || mode === 'dragon' ? 0 : 6), s); });
   g.restore();
   const name = grp ? grp.name : show.length === 1 ? C[show[0]].name : listNames(show);
   return { canvas: cv, name, key };

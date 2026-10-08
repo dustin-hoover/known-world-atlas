@@ -322,6 +322,14 @@ function evaluate(X, Y, pix) {
 }
 
 /* ---------------- climate ---------------- */
+// The season of the story (0 = high summer, 1 = deep winter), set per tile by the worker: the books' seasons last
+// years, so the land itself changes (snow over the North in winter, browning grass in autumn).
+let SEASON = 0;
+function setSeason(v) { SEASON = +v || 0; }
+// The lands beyond the Wall are colder than their latitude alone would make them: tundra from the Wall north,
+// permanent snow by the Haunted Forest's far edge, ice in the Land of Always Winter.
+const northBias = lat => -9 * sat((lat - 64) / 8);
+const seasonCool = lat => 13 * SEASON * sat((lat - 25) / 30);
 function tempAt(lat, h) {
   const c = Math.cos(Math.abs(lat) * D2R);
   return 34 * Math.pow(c, 1.5) - 9 - 0.0065 * Math.max(h, 0);
@@ -437,11 +445,11 @@ function colorAt(X, Y, h, slope, pix, mode, dsea) {
     if (depth < 3 && pix < 0.01) blend(210, 214, 206, sat(1 - depth / 3) * 0.35);
     return tmp3;
   }
-  const T = tempAt(lat, h);
+  const T0 = tempAt(lat, h) + northBias(lat), T = T0 - seasonCool(lat);
   const Mst = moistAt(X, Y, lat, wm);
   const arid = F[8];
   // ---- base ground ----
-  const veg = sat(Mst * 1.35 - 0.15);
+  const veg = sat(Mst * 1.35 - 0.15) * (1 - 0.35 * SEASON * sat((lat - 35) / 20));   // grass browns as the year turns
   setc(134, 124, 84);                            // dry steppe
   blend(68, 90, 42, veg);                        // lush grass
   if (T > 18) blend(158, 142, 82, sat((T - 18) / 6) * (1 - veg) * 0.8);   // savanna
@@ -563,8 +571,10 @@ function colorAt(X, Y, h, slope, pix, mode, dsea) {
     const dark = ash > 0.3 ? 0.55 : 0;
     blend(mix(124, 70, dark) + 14 * rn, mix(114, 64, dark) + 12 * rn, mix(104, 60, dark) + 10 * rn, rock);
   }
-  const Tsnow = T + 8.5 + 8 * slope;
+  const Tsnow = T0 + 8.5 + 8 * slope;
   let snow = sstep(-1, -4.5, Tsnow);
+  snow = Math.max(snow, sstep(-6, -12, T0) * 0.95);                                   // permanent snow in the far north
+  if (SEASON > 0.05) snow = Math.max(snow, sstep(0.5, -4, T + 3 * fbm(X * 0.02, Y * 0.02, 3)) * (1 - 0.5 * sat(fd)));   // the season's snow; dark conifers show through
   snow = Math.max(snow, F[14] * 0.9 * sstep(0.2, 0.7, F[14] + 0.3 * fbm(X * 0.05, Y * 0.05, 3)));
   if (snow > 0.01) {
     const sn = fbmA(X, Y, 2, Math.max(pix, 0.002), 0.8, 14);
@@ -831,6 +841,7 @@ const STYLE = {
   dunland: { roof: [[120, 100, 70], [102, 88, 62], [92, 80, 58]], w: [7, 11], d: [5, 7], dens: 160, grid: 0, h: 5 },
   woodmen: { roof: [[110, 90, 60], [96, 80, 56]], w: [8, 13], d: [6, 8], dens: 200, grid: 0, h: 6 },
   ruin: { roof: [[150, 146, 138], [130, 126, 120]], w: [8, 18], d: [8, 14], dens: 260, grid: 1, h: 5, ruin: 1 },
+  castle: { roof: [[120, 116, 110]], w: [8, 12], d: [8, 10], dens: 0, grid: 0, h: 6 },
 };
 function buildings(si) {
   if (BCACHE.has(si)) return BCACHE.get(si);
@@ -847,6 +858,7 @@ function buildings(si) {
     const rr = Math.pow(hash2(si, tries, 33), s.culture === 'minastirith' ? 0.8 : 0.6) * rM;
     let ex = Math.cos(a) * rr, ny = Math.sin(a) * rr;
     if (s.culture === 'minastirith' && ex < -30) continue;           // city faces east; the mountain is behind
+    if (s.castle && Math.hypot(ex - (s.cx || 0) * MI, ny - (s.cy || 0) * MI) < (s.cr || 0.15) * MI) continue;   // the castle's own ground
     const keep = 1 - Math.pow(rr / rM, 2) * 0.6;
     if (hash2(si, tries, 35) > keep) continue;
     let ang = st.grid ? orient + Math.round(hash2(si, tries, 37) * 2) * Math.PI / 2 : hash2(si, tries, 39) * Math.PI;
@@ -873,6 +885,7 @@ function buildings(si) {
   }
   if (s.culture === 'mordor' && s.name === 'Barad-dûr') sp.push({ type: 'tower', kind: 'baraddur', x: s.x, y: s.y, r: 60, h: 420, c: [18, 16, 18], square: 1 });
   if (s.culture === 'morgul') sp.push({ type: 'tower', kind: 'morgul', x: s.x, y: s.y, r: 14, h: 110, c: [170, 196, 184] });
+  if (s.castle) sp.push({ type: 'castle', kind: s.castle, x: s.x + (s.cx || 0), y: s.y + (s.cy || 0), c: [120, 116, 110] });
   if (s.havens) sp.push({ type: 'havens', x: s.x, y: s.y, c: [226, 223, 214] });
   if (s.feature) sp.push({ type: 'feature', kind: s.feature, x: s.x, y: s.y, face: s.gate || 0, c: [120, 116, 110] });
   else if (s.gate) sp.push({ type: 'gate', x: s.x, y: s.y, face: s.gate, c: [120, 116, 110] });
@@ -1003,7 +1016,7 @@ function buildingsNear(X, Y, rad) {
   return { list: out, special: sp };
 }
 
-return { D2R, MI, EARTH_C, toLL, toXY, noise, fbm, fbmA, hash2, sat, sstep, mix, clamp, init, evaluate, F, R, CH, tempAt, moistAt,
+return { setSeason, D2R, MI, EARTH_C, toLL, toXY, noise, fbm, fbmA, hash2, sat, sstep, mix, clamp, init, evaluate, F, R, CH, tempAt, moistAt,
   demTile, imageryTile, renderGrid, tileLL, drawVectors, buildingsNear, numenorField, orchardAt };
 })();
 if (typeof self !== 'undefined') self.GEN = GEN;
