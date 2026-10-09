@@ -158,19 +158,24 @@ CHARS = {
 # ------------------------------------------------------------------ roads and sea lanes for legs
 SEA = {  # sea lanes as [X, Y] waypoints (open water)
     'white-harbor-kl': [[190, -272], [300, -330], [560, -430], [640, -700], [640, -1000], [520, -1180], [300, -1250], [250, -1300]],
-    'gulltown-white-harbor': [[522, -860], [620, -780], [620, -450], [400, -330], [190, -272]],
+    'gulltown-white-harbor': [[522, -860], [620, -780], [620, -450], [190, -272]],
     'seagard-pyke': [[-110, -690], [-220, -720], [-322, -748]],
     'pyke-stony-shore': [[-322, -748], [-420, -620], [-480, -380], [-440, -250]],
     'qarth-astapor': [[3410, -2590], [3200, -2720], [2700, -2650], [2400, -2400], [2452, -2150]],
-    'dragonstone-kl': [[400, -1192], [330, -1230], [250, -1300]],
-    'dragonstone-eastwatch': [[400, -1192], [520, -1150], [640, -800], [640, -450], [480, -300], [520, 120], [400, 400], [200, 470], [157, 458]],
-    'eastwatch-white-harbor': [[157, 458], [300, 470], [480, 200], [560, -200], [400, -330], [190, -272]],
-    'eastwatch-braavos': [[157, 458], [300, 480], [560, 100], [640, -300], [720, -420], [770, -480]],
-    'braavos-oldtown': [[770, -480], [700, -900], [650, -1500], [700, -2100], [400, -2650], [-100, -2700], [-500, -2400], [-470, -2160], [-430, -2120]],
-    'kl-pentos': [[250, -1300], [330, -1260], [520, -1180], [700, -1120], [780, -1120]],
+    'dragonstone-kl': [[400, -1192], [400, -1205], [385, -1224], [330, -1230], [250, -1300]],
+    'dragonstone-eastwatch': [[400, -1192], [640, -800], [520, 120], [400, 400], [157, 458]],
+    'eastwatch-white-harbor': [[157, 458], [300, 470], [480, 200], [560, -200], [190, -272]],
+    'eastwatch-braavos': [[157, 458], [300, 480], [560, 100], [640, -300], [720, -420], [735, -470], [745, -480], [770, -480]],
+    'braavos-oldtown': [[770, -480], [752, -512], [700, -2100], [624, -2392], [-100, -2700], [-470, -2160], [-430, -2120]],
+    'kl-pentos': [[250, -1300], [330, -1260], [520, -1180], [700, -1120], [780, -1120], [794, -1120]],
     'volantis-meereen': [[1420, -2200], [1600, -2700], [2100, -2600], [2400, -2380], [2600, -2150], [2690, -1980]],
-    'saltpans-braavos': [[262, -905], [400, -920], [620, -880], [640, -600], [720, -480], [770, -480]],
-    'kl-fingers': [[250, -1300], [330, -1250], [520, -1150], [630, -800], [585, -560]],
+    'saltpans-braavos': [[324, -927], [330, -930], [620, -880], [640, -600], [720, -420], [735, -470], [745, -480], [770, -480]],
+    'kl-fingers': [[250, -1300], [330, -1250], [520, -1150], [630, -800], [585, -560], [536, -584]],
+    'pentos-qarth': [[794, -1120], [780, -1120], [984, -1856], [1064, -1992], [1128, -2072], [1700, -2672], [1790, -2672], [2700, -2650], [3200, -2720], [3410, -2590]],
+    'dragonstone-storms-end': [[400, -1192], [400, -1208], [464, -1384], [384, -1560], [374, -1576]],
+    'tarth-mainland': [[562, -1520], [376, -1560]],
+    'volon-therys-cape-wrath': [[1300, -2150], [1272, -2144], [936, -2048], [554, -1699]],
+    'bay-of-seals-skagos': [[322, 365], [352, 472], [350, 500]],
 }
 
 
@@ -180,6 +185,8 @@ def J(*steps): return list(steps)
 ROAD = lambda road, a, b, d0, d1: ('road', road, a, b, d0, d1)
 LANE = lambda lane, d0, d1, back=False: ('lane', lane, d0, d1, back)
 
+# the march from Astapor to Yunkai and on to Meereen, overland round the bay
+SLAVERS = (('Astapor', '299 8 20'), ([2536, -2072], '299 9 13'), ('Yunkai', '299 9 20'), ([2576, -2032], '299 10 13'), ([2656, -1976], '299 12 29'), ('Meereen', '300 2 1'))
 # the king's progress home, which the Starks of the south road share
 SOUTH = (ROAD('The Kingsroad', 'Winterfell', 'The Inn at the Crossroads', '298 2 20', '298 3 14'), ('Darry', '298 3 16'), ROAD('The Kingsroad', 'Darry', 'King\'s Landing', '298 3 17', '298 4 1'))
 PATHS = {
@@ -203,7 +210,7 @@ PATHS = {
               ('The House of Black and White', '300 2 3'), ('The House of Black and White', '300 13 5')),
     'bran': J(('Winterfell', '297 13 1'), ('Winterfell', '299 5 1'), ([-30, 120], '299 5 20'), ([60, 300], '299 7 15'), ('Queenscrown', '299 8 1'), ('The Nightfort', '299 9 1'),
               ([-30, 520], '299 9 10'), ([-20, 700], '299 12 1'), ([20, 880], '300 2 1'), ('The cave of the three-eyed crow', '300 4 1'), ('The cave of the three-eyed crow', '300 13 5')),
-    'rickon': J(('Winterfell', '297 13 1'), ('Winterfell', '299 5 1'), ([200, 120], '299 5 25'), ([330, 380], '299 9 1'), ('Skagos', '299 12 1'), ('Skagos', '300 13 5')),
+    'rickon': J(('Winterfell', '297 13 1'), ('Winterfell', '299 5 1'), ([200, 120], '299 5 25'), ([322, 365], '299 9 1'), ([322, 365], '299 11 20'), LANE('bay-of-seals-skagos', '299 11 21', '299 12 1'), ('Skagos', '300 13 5')),
     'jon': J(('Winterfell', '297 13 1'), ('Winterfell', '298 2 20'), ROAD('The Kingsroad', 'Winterfell', 'Castle Black', '298 2 20', '298 3 20'), ('Castle Black', '299 1 1'),
              ('Craster\'s Keep', '299 1 20'), ('The Fist of the First Men', '299 2 5'), ('The Skirling Pass', '299 3 20'), ([-150, 700], '299 5 1'), ([-60, 520], '299 7 20'),
              ('Queenscrown', '299 8 1'), ('Castle Black', '299 8 20'), ('Castle Black', '300 13 5')),
@@ -221,7 +228,7 @@ PATHS = {
                 ROAD('The Kingsroad', 'Winterfell', 'The Inn at the Crossroads', '298 4 26', '298 5 20'), ROAD('The High Road', 'The Inn at the Crossroads', 'The Eyrie', '298 5 21', '298 6 10'),
                 ('The Eyrie', '298 6 24'), ([240, -820], '298 7 20'), ([150, -800], '298 8 8'), ([130, -830], '298 8 14'), ('Harrenhal', '298 8 26'), ('Harrenhal', '298 12 20'),
                 ROAD('The Kingsroad', 'The Inn at the Crossroads', 'King\'s Landing', '298 12 22', '299 1 5'), ('King\'s Landing', '300 2 10'), LANE('kl-pentos', '300 2 11', '300 3 5'),
-                ('Pentos', '300 3 20'), ([1150, -850], '300 4 10'), ('Chroyane', '300 4 25'), ('Selhorys', '300 5 5'), ('Volantis', '300 5 20'), LANE('volantis-meereen', '300 6 1', '300 7 20'),
+                ('Pentos', '300 3 20'), ([1150, -850], '300 4 10'), ('Chroyane', '300 4 25'), ('Selhorys', '300 5 5'), ('Volantis', '300 5 20'), LANE('volantis-meereen', '300 6 1', '300 7 20'), ([2656, -1976], '300 7 21'),
                 ([2600, -1990], '300 8 1'), ([2600, -1990], '300 13 5')),
     'cersei': J(('King\'s Landing', '297 12 1'), ROAD('The Kingsroad', 'King\'s Landing', 'Winterfell', '297 12 2', '298 2 1'), ('Winterfell', '298 2 20'),
                 *SOUTH, ('King\'s Landing', '300 13 5')),
@@ -239,7 +246,7 @@ PATHS = {
     'bronn': J(('The Inn at the Crossroads', '298 5 20'), ROAD('The High Road', 'The Inn at the Crossroads', 'The Eyrie', '298 5 21', '298 6 10'), ('The Eyrie', '298 6 24'), ([240, -820], '298 7 5'),
                ([150, -800], '298 7 12'), ([130, -830], '298 7 15'), ('Harrenhal', '298 8 20'), ('Harrenhal', '298 12 20'), ROAD('The Kingsroad', 'The Inn at the Crossroads', 'King\'s Landing', '298 12 22', '299 1 5'),
                ('King\'s Landing', '300 3 1'), ([-150, -1250], '300 4 1'), ([-150, -1250], '300 13 5')),
-    'podrick': J(('King\'s Landing', '299 1 10'), ('King\'s Landing', '300 3 1'), ('Duskendale', '300 3 15'), ('Maidenpool', '300 4 10'), ('Saltpans', '300 5 10'), ([200, -920], '300 7 1'), ([200, -920], '300 13 5')),
+    'podrick': J(('King\'s Landing', '299 1 10'), ('King\'s Landing', '300 3 1'), ('Rosby', '300 3 5'), ('Duskendale', '300 3 15'), ('Maidenpool', '300 4 10'), ('Saltpans', '300 5 10'), ([200, -920], '300 7 1'), ([200, -920], '300 13 5')),
     'sandor': J(('King\'s Landing', '297 12 1'), ROAD('The Kingsroad', 'King\'s Landing', 'Winterfell', '297 12 2', '298 2 1'), ('Winterfell', '298 2 20'),
                 *SOUTH, ('King\'s Landing', '299 6 1'), ([160, -1200], '299 6 20'), ([60, -930], '299 8 1'),
                 ('The Twins', '299 9 1'), ([200, -820], '299 10 20'), ([110, -880], '299 12 10'), ([200, -905], '300 1 1'), ('The Quiet Isle', '300 1 25'), ('The Quiet Isle', '300 13 5')),
@@ -247,39 +254,40 @@ PATHS = {
                       ('King\'s Landing', '300 1 15'), LANE('kl-fingers', '300 1 16', '300 2 5'), ('The Eyrie', '300 2 15'), ('Gates of the Moon', '300 6 10'), ('Gates of the Moon', '300 13 5')),
     'varys': J(('King\'s Landing', '297 13 1'), ('King\'s Landing', '300 13 5')),
     'margaery': J(('Highgarden', '297 13 1'), ('Highgarden', '299 1 20'), ('Bitterbridge', '299 2 15'), ('Storm\'s End', '299 4 5'), ('Bitterbridge', '299 5 10'), ('King\'s Landing', '299 6 10'), ('King\'s Landing', '300 13 5')),
-    'brienne': J(('Evenfall Hall', '297 13 1'), ('Evenfall Hall', '299 1 1'), ('Bitterbridge', '299 2 15'), ('Storm\'s End', '299 4 5'), ('Riverrun', '299 5 10'), ('Riverrun', '299 7 1'),
+    'brienne': J(('Evenfall Hall', '297 13 1'), ('Evenfall Hall', '299 1 1'), LANE('tarth-mainland', '299 1 2', '299 1 4'), ('Bitterbridge', '299 2 15'), ('Storm\'s End', '299 4 5'), ('Riverrun', '299 5 10'), ('Riverrun', '299 7 1'),
                  ([70, -890], '299 7 10'), ([180, -940], '299 8 5'), ('Harrenhal', '299 9 10'), ('Harrenhal', '299 11 1'), ROAD('The Kingsroad', 'The Inn at the Crossroads', 'King\'s Landing', '299 11 3', '300 1 1'),
-                 ('King\'s Landing', '300 3 1'), ('Duskendale', '300 3 15'), ('Maidenpool', '300 4 10'), ('Saltpans', '300 5 10'), ('The Quiet Isle', '300 5 25'), ([200, -920], '300 7 1'), ([200, -920], '300 13 5')),
+                 ('King\'s Landing', '300 3 1'), ('Rosby', '300 3 5'), ('Duskendale', '300 3 15'), ('Maidenpool', '300 4 10'), ('Saltpans', '300 5 10'), ('The Quiet Isle', '300 5 25'), ([200, -920], '300 7 1'), ([200, -920], '300 13 5')),
     'gendry': J(('King\'s Landing', '297 13 1'), ('King\'s Landing', '298 8 2'), ROAD('The Kingsroad', 'King\'s Landing', 'The Inn at the Crossroads', '298 8 3', '298 12 20'), ([120, -940], '299 1 10'),
                 ('Harrenhal', '299 2 1'), ('Harrenhal', '299 4 15'), ([40, -1010], '299 5 10'), ('Acorn Hall', '299 6 10'), ('Stoney Sept', '299 7 1'), ([60, -930], '299 7 25'), ([200, -905], '299 8 10'), ([200, -905], '300 13 5')),
     'hotpie': J(('King\'s Landing', '298 8 2'), ROAD('The Kingsroad', 'King\'s Landing', 'The Inn at the Crossroads', '298 8 3', '298 12 20'), ([120, -940], '299 1 10'), ('Harrenhal', '299 2 1'),
                 ('Harrenhal', '299 4 15'), ([40, -1010], '299 5 10'), ('The Inn of the Kneeling Man', '299 5 20'), ('The Inn of the Kneeling Man', '300 13 5')),
     'jaqen': J(('King\'s Landing', '298 8 2'), ROAD('The Kingsroad', 'King\'s Landing', 'The Inn at the Crossroads', '298 8 3', '298 12 20'), ([120, -940], '299 1 10'), ('Harrenhal', '299 2 1'), ('Harrenhal', '299 4 10')),
-    'stannis': J(('Dragonstone', '297 13 1'), ('Dragonstone', '299 3 15'), ('Storm\'s End', '299 4 5'), ('Storm\'s End', '299 5 20'), ([270, -1320], '299 6 1'), ('King\'s Landing', '299 6 2'), LANE('dragonstone-kl', '299 6 3', '299 6 8', True),
+    'stannis': J(('Dragonstone', '297 13 1'), ('Dragonstone', '299 3 15'), LANE('dragonstone-storms-end', '299 3 16', '299 3 25'), ('Storm\'s End', '299 4 5'), ('Storm\'s End', '299 5 20'), ([270, -1320], '299 6 1'), ('King\'s Landing', '299 6 2'), LANE('dragonstone-kl', '299 6 3', '299 6 8', True),
                  ('Dragonstone', '299 6 10'), ('Dragonstone', '299 13 1'), LANE('dragonstone-eastwatch', '299 13 2', '300 2 20'), ('Castle Black', '300 3 1'), ('Castle Black', '300 4 20'),
                  ('Deepwood Motte', '300 5 20'), ([-100, 20], '300 8 15'), ([-120, 40], '300 13 5')),
     'davos': J(('Dragonstone', '297 13 1'), ('Dragonstone', '299 5 20'), LANE('dragonstone-kl', '299 5 21', '299 6 1'), ([330, -1260], '299 6 10'), ('Dragonstone', '299 7 1'), ('Dragonstone', '299 13 1'),
                LANE('dragonstone-eastwatch', '299 13 2', '300 2 20'), ('Castle Black', '300 3 5'), ('Eastwatch-by-the-Sea', '300 3 20'), LANE('eastwatch-white-harbor', '300 3 21', '300 4 10'),
                ('White Harbor', '300 4 12'), ('White Harbor', '300 9 1'), ([400, 300], '300 10 1'), ('Skagos', '300 11 1'), ('Skagos', '300 13 5')),
-    'melisandre': J(('Dragonstone', '297 13 1'), ('Dragonstone', '299 3 15'), ('Storm\'s End', '299 4 5'), ([300, -1400], '299 4 25'), ('Dragonstone', '299 5 15'), ('Dragonstone', '299 13 1'),
+    'melisandre': J(('Dragonstone', '297 13 1'), ('Dragonstone', '299 3 15'), LANE('dragonstone-storms-end', '299 3 16', '299 3 25'), ('Storm\'s End', '299 4 5'),
+                    ('Storm\'s End', '299 5 4'), LANE('dragonstone-storms-end', '299 5 5', '299 5 15', True), ('Dragonstone', '299 13 1'),
                     LANE('dragonstone-eastwatch', '299 13 2', '300 2 20'), ('Castle Black', '300 3 1'), ('Castle Black', '300 13 5')),
     'daenerys': J(('Pentos', '297 13 1'), ('Pentos', '298 2 20'), ([820, -1060], '298 2 25'), ([1300, -800], '298 3 20'), ([2000, -900], '298 4 15'), ('Vaes Dothrak', '298 5 1'), ('Vaes Dothrak', '298 6 15'),
                   ([2500, -1400], '298 7 20'), ('A village of the Lamb Men', '298 8 15'), ('A village of the Lamb Men', '298 12 2'), ([2900, -1900], '298 13 5'), ('Vaes Tolorro', '299 1 15'),
-                  ([3300, -2400], '299 2 25'), ('Qarth', '299 3 1'), ('Qarth', '299 7 10'), LANE('qarth-astapor', '299 7 11', '299 8 10'), ('Astapor', '299 8 20'), ('Yunkai', '299 9 20'),
-                  ('Meereen', '300 2 1'), ('Meereen', '300 9 1'), ('Daznak\'s Pit', '300 9 2'), ([2200, -1300], '300 9 12'), ([2200, -1300], '300 13 5')),
+                  ([3300, -2400], '299 2 25'), ('Qarth', '299 3 1'), ('Qarth', '299 7 10'), LANE('qarth-astapor', '299 7 11', '299 8 10'), *SLAVERS,
+                  ('Meereen', '300 9 1'), ('Daznak\'s Pit', '300 9 2'), ([2200, -1300], '300 9 12'), ([2200, -1300], '300 13 5')),
     'viserys': J(('Pentos', '297 13 1'), ('Pentos', '298 2 20'), ([820, -1060], '298 2 25'), ([1300, -800], '298 3 20'), ([2000, -900], '298 4 15'), ('Vaes Dothrak', '298 5 1'), ('Vaes Dothrak', '298 5 25')),
     'drogo': J(([820, -1060], '298 2 1'), ([820, -1060], '298 2 25'), ([1300, -800], '298 3 20'), ([2000, -900], '298 4 15'), ('Vaes Dothrak', '298 5 1'), ('Vaes Dothrak', '298 6 15'),
                ([2500, -1400], '298 7 20'), ('A village of the Lamb Men', '298 8 15'), ('A village of the Lamb Men', '298 12 1')),
     'jorah': J(('Pentos', '297 13 1'), ('Pentos', '298 2 20'), ([820, -1060], '298 2 25'), ([1300, -800], '298 3 20'), ([2000, -900], '298 4 15'), ('Vaes Dothrak', '298 5 1'), ('Vaes Dothrak', '298 6 15'),
                ([2500, -1400], '298 7 20'), ('A village of the Lamb Men', '298 8 15'), ('A village of the Lamb Men', '298 12 2'), ([2900, -1900], '298 13 5'), ('Vaes Tolorro', '299 1 15'),
-               ([3300, -2400], '299 2 25'), ('Qarth', '299 3 1'), ('Qarth', '299 7 10'), LANE('qarth-astapor', '299 7 11', '299 8 10'), ('Astapor', '299 8 20'), ('Yunkai', '299 9 20'),
-               ('Meereen', '300 2 1'), ('Meereen', '300 2 12'), ([1900, -2400], '300 3 20'), ('Selhorys', '300 5 5'), ('Volantis', '300 5 20'), LANE('volantis-meereen', '300 6 1', '300 7 20'),
+               ([3300, -2400], '299 2 25'), ('Qarth', '299 3 1'), ('Qarth', '299 7 10'), LANE('qarth-astapor', '299 7 11', '299 8 10'), *SLAVERS,
+               ('Meereen', '300 2 12'), LANE('volantis-meereen', '300 2 13', '300 3 20', True), ('Selhorys', '300 5 5'), ('Volantis', '300 5 20'), LANE('volantis-meereen', '300 6 1', '300 7 20'), ([2656, -1976], '300 7 21'),
                ([2600, -1990], '300 8 1'), ([2600, -1990], '300 13 5')),
-    'missandei': J(('Astapor', '297 13 1'), ('Astapor', '299 8 20'), ('Yunkai', '299 9 20'), ('Meereen', '300 2 1'), ('Meereen', '300 13 5')),
-    'barristan': J(('King\'s Landing', '297 13 1'), ('King\'s Landing', '298 6 1'), LANE('kl-pentos', '298 6 2', '298 7 1'), ('Pentos', '298 9 1'), ('Qarth', '299 7 1'),
-                   LANE('qarth-astapor', '299 7 11', '299 8 10'), ('Astapor', '299 8 20'), ('Yunkai', '299 9 20'), ('Meereen', '300 2 1'), ('Meereen', '300 13 5')),
+    'missandei': J(('Astapor', '297 13 1'), *SLAVERS, ('Meereen', '300 13 5')),
+    'barristan': J(('King\'s Landing', '297 13 1'), ('King\'s Landing', '298 6 1'), LANE('kl-pentos', '298 6 2', '298 7 1'), ('Pentos', '298 9 1'), ('Pentos', '299 5 1'), LANE('pentos-qarth', '299 5 2', '299 7 1'),
+                   LANE('qarth-astapor', '299 7 11', '299 8 10'), *SLAVERS, ('Meereen', '300 13 5')),
     'quaithe': J(('Qarth', '297 13 1'), ('Qarth', '300 13 5')),
-    'griff': J(('Pentos', '300 3 20'), ([1150, -850], '300 4 10'), ('Chroyane', '300 4 25'), ('Selhorys', '300 5 1'), ([1300, -2150], '300 6 1'), ([520, -1680], '300 9 1'), ('Griffin\'s Roost', '300 9 5'), ('Griffin\'s Roost', '300 13 5')),
+    'griff': J(('Pentos', '300 3 20'), ([1150, -850], '300 4 10'), ('Chroyane', '300 4 25'), ('Selhorys', '300 5 1'), ([1300, -2150], '300 6 1'), LANE('volon-therys-cape-wrath', '300 6 2', '300 9 1'), ('Griffin\'s Roost', '300 9 5'), ('Griffin\'s Roost', '300 13 5')),
     'others': J(([-30, 900], '297 13 1'), ([-30, 600], '298 1 1'), ([-10, 760], '298 2 1'), ([-10, 760], '299 1 1'), ('The Fist of the First Men', '299 4 1'), ([-30, 600], '299 6 1'),
                 ([0, 560], '300 1 1'), ([30, 520], '300 13 5')),
     'coldhands': J(([0, 640], '297 13 1'), ([-30, 560], '299 8 20'), ('The Nightfort', '299 9 2'), ([-30, 520], '299 9 10'), ([-20, 700], '299 12 1'), ([20, 880], '300 2 1'), ('The cave of the three-eyed crow', '300 4 1'), ('The cave of the three-eyed crow', '300 13 5')),
@@ -292,13 +300,13 @@ PATHS = {
     'tormund': J(([-200, 860], '297 13 1'), ([-200, 860], '299 4 1'), ([-150, 700], '299 5 1'), ([-60, 520], '299 7 20'), ('Queenscrown', '299 8 1'), ([40, 470], '300 3 1'), ([80, 600], '300 3 5'), ('Hardhome', '300 8 1'), ('Castle Black', '300 10 1'), ('Castle Black', '300 13 5')),
     'craster': J(('Craster\'s Keep', '297 13 1'), ('Craster\'s Keep', '299 5 20')),
     'gilly': J(('Craster\'s Keep', '297 13 1'), ('Craster\'s Keep', '299 6 1'), ([-30, 560], '299 8 20'), ('The Nightfort', '299 9 1'), ('Castle Black', '299 9 10'), ('Castle Black', '300 3 20'),
-               ('Eastwatch-by-the-Sea', '300 4 1'), LANE('eastwatch-braavos', '300 4 2', '300 5 1'), ('Braavos', '300 6 10'), LANE('braavos-oldtown', '300 6 11', '300 8 1'), ([-460, -2130], '300 8 3'), ([-460, -2130], '300 13 5')),
+               ('Eastwatch-by-the-Sea', '300 4 1'), LANE('eastwatch-braavos', '300 4 2', '300 5 1'), ('Braavos', '300 6 10'), LANE('braavos-oldtown', '300 6 11', '300 8 1'), ([-440, -2113], '300 8 3'), ([-440, -2113], '300 13 5')),
     'hodor': J(('Winterfell', '297 13 1'), ('Winterfell', '299 5 1'), ([-30, 120], '299 5 20'), ([60, 300], '299 7 15'), ('Queenscrown', '299 8 1'), ('The Nightfort', '299 9 1'), ([-30, 520], '299 9 10'),
                ([-20, 700], '299 12 1'), ([20, 880], '300 2 1'), ('The cave of the three-eyed crow', '300 4 1'), ('The cave of the three-eyed crow', '300 13 5')),
     'meera': J(('Greywater Watch', '297 13 1'), ('Greywater Watch', '299 1 15'), ROAD('The Kingsroad', 'Moat Cailin', 'Winterfell', '299 1 20', '299 2 15'), ('Winterfell', '299 5 1'), ([-30, 120], '299 5 20'),
                ([60, 300], '299 7 15'), ('Queenscrown', '299 8 1'), ('The Nightfort', '299 9 1'), ([-30, 520], '299 9 10'), ([-20, 700], '299 12 1'), ([20, 880], '300 2 1'),
                ('The cave of the three-eyed crow', '300 4 1'), ('The cave of the three-eyed crow', '300 13 5')),
-    'osha': J(([-40, 120], '297 13 1'), ([-40, 120], '298 4 10'), ('Winterfell', '298 4 12'), ('Winterfell', '299 5 1'), ([200, 120], '299 5 25'), ([330, 380], '299 9 1'), ('Skagos', '299 12 1'), ('Skagos', '300 13 5')),
+    'osha': J(([-40, 120], '297 13 1'), ([-40, 120], '298 4 10'), ('Winterfell', '298 4 12'), ('Winterfell', '299 5 1'), ([200, 120], '299 5 25'), ([322, 365], '299 9 1'), ([322, 365], '299 11 20'), LANE('bay-of-seals-skagos', '299 11 21', '299 12 1'), ('Skagos', '300 13 5')),
 }
 PATHS['jojen'] = PATHS['meera']
 # the wolves keep their people's roads while they are together
@@ -325,10 +333,10 @@ MODES = [
     ['^(robb|greywind|theon)$', '298 7 2', '299 6 15', 'ride'],
     ['^theon$', '299 1 16', '299 1 22', 'sea'], ['^theon$', '299 2 26', '299 3 12', 'sea'],
     ['^(tyrion|bronn)$', '298 12 22', '299 1 5', 'ride'], ['^tyrion$', '300 2 11', '300 3 5', 'sea'], ['^(tyrion|griff)$', '300 3 21', '300 5 20', 'boat'],
-    ['^(tyrion|jorah)$', '300 6 1', '300 7 20', 'sea'],
+    ['^(tyrion|jorah)$', '300 6 1', '300 7 21', 'sea'],
     ['^(daenerys|viserys|drogo|jorah)$', '298 2 25', '298 8 15', 'ride'], ['^(daenerys|jorah|barristan|drogon|rhaegal|viserion)$', '299 7 11', '299 8 10', 'sea'],
     ['^barristan$', '298 6 2', '298 7 1', 'sea'],
-    ['^(stannis|davos|melisandre)$', '299 13 2', '300 2 20', 'sea'], ['^davos$', '299 5 21', '299 6 1', 'sea'], ['^stannis$', '299 6 2', '299 6 8', 'sea'],
+    ['^(stannis|davos|melisandre)$', '299 13 2', '300 2 20', 'sea'], ['^davos$', '299 5 21', '299 7 1', 'sea'], ['^stannis$', '299 6 2', '299 6 8', 'sea'],
     ['^davos$', '300 3 21', '300 4 10', 'sea'], ['^davos$', '300 9 2', '300 11 1', 'sea'],
     ['^(samwell|gilly)$', '300 4 2', '300 5 1', 'sea'], ['^(samwell|gilly)$', '300 6 11', '300 8 1', 'sea'],
     ['^(sansa|littlefinger)$', '300 1 16', '300 2 5', 'sea'],
@@ -384,7 +392,7 @@ PATHS.update({
     'renly': J(('King\'s Landing', '297 13 1'), ('King\'s Landing', '298 5 15'), ('Highgarden', '298 7 1'), ('Highgarden', '299 1 20'), ('Bitterbridge', '299 2 15'), ('Storm\'s End', '299 4 5'), ([380, -1570], '299 4 7')),
     'doran': J(('The Water Gardens', '297 13 1'), ('The Water Gardens', '300 3 1'), ('Sunspear', '300 3 10'), ('Sunspear', '300 13 5')),
     'tommen': J(('King\'s Landing', '297 12 1'), ROAD('The Kingsroad', 'King\'s Landing', 'Winterfell', '297 12 2', '298 2 1'), ('Winterfell', '298 2 20'), *SOUTH, ('King\'s Landing', '299 5 20'),
-                ([300, -1260], '299 5 25'), ([300, -1260], '299 6 3'), ('King\'s Landing', '299 6 6'), ('King\'s Landing', '300 13 5')),
+                ('Rosby', '299 5 25'), ('Rosby', '299 6 3'), ('King\'s Landing', '299 6 6'), ('King\'s Landing', '300 13 5')),
     'dothraki': J(([820, -1060], '297 13 1'), ([820, -1060], '298 2 25'), ([1300, -800], '298 3 20'), ([2000, -900], '298 4 15'), ('Vaes Dothrak', '298 5 1'), ('Vaes Dothrak', '298 6 15'),
                   ([2500, -1400], '298 7 20'), ('A village of the Lamb Men', '298 8 15'), ('A village of the Lamb Men', '298 12 1'), ([2650, -1300], '298 12 20')),
 })
@@ -666,9 +674,13 @@ def build(places, roads, stories):
             if full[k][-1][2] < last - 1: j['hide'] = 1         # dead or gone: no dot left behind
             JOURNEYS[sk].append(j)
             JCAST[sk][nm] = [c if isinstance(c, str) else [c[0], c[1], c[2]] for c in CASTS.get(k, [k])]
-    # MODES name journeys, not ids
+    # every sea lane is sailed: the leg along a LANE is 'sea' whatever else the traveller is doing that season
+    lanes = [['^' + re.escape(k) + '$', s[2], s[3], 'sea'] for k, steps in PATHS.items() if 'dragon' not in CHARS[k]
+             for s in (steps or []) if s[0] == 'lane']
+    # MODES name journeys, not ids; the app takes the first match, so the narrowest window comes first
+    # (a voyage inside a season on horseback), and the wheelhouse before the riders beside it
     modes = []
-    for rx, d0, d1, mode in sorted(MODES, key=lambda m: m[3] != 'wheelhouse'):
+    for rx, d0, d1, mode in sorted(lanes + MODES, key=lambda m: (T(m[2]) - T(m[1]), m[3] != 'wheelhouse')):
         ids = [k for k in CHARS if k in full and re.search(rx, k)]
         if not ids: continue
         modes.append(['^(' + '|'.join(re.escape(name_of(k)) for k in ids) + ')$', d0, d1, mode])
