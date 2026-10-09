@@ -29,7 +29,7 @@ def chaikin(pts, n=2, closed=True):
 # ---------------------------------------------------------------- coasts
 WESTEROS = [  # clockwise from the north-west of the Land of Always Winter
     [-420, 1250], [-300, 1330], [-150, 1360], [0, 1340], [150, 1360], [300, 1320], [420, 1250], [470, 1100], [430, 950],
-    [380, 820], [300, 700], [330, 640], [250, 560], [175, 475],                                   # Hardhome, the Bay of Seals
+    [380, 820], [300, 700], [330, 640], [250, 560], [195, 500], [154, 470], [148, 452], [160, 438],  # Hardhome, the Bay of Seals at Eastwatch
     [220, 420], [300, 380], [380, 330], [420, 250], [440, 160], [470, 60], [520, -60], [545, -150],  # the east coast, Widow's Watch
     [480, -200], [400, -230], [260, -250], [190, -272],                                            # the Bite's north shore, White Harbor
     [140, -320], [112, -400], [104, -480], [150, -545],                                            # the Neck's east shore
@@ -47,7 +47,7 @@ WESTEROS = [  # clockwise from the north-west of the Land of Always Winter
     [-150, -600], [-260, -560], [-330, -520], [-260, -470], [-90, -450],                           # Cape Kraken
     [-38, -382], [-150, -380], [-260, -330], [-380, -300], [-450, -250], [-420, -150],             # Blazewater Bay, the Stony Shore
     [-520, -40], [-600, 40], [-560, 110], [-440, 120], [-330, 180], [-260, 250], [-220, 320], [-180, 400],  # Sea Dragon Point, the Bay of Ice
-    [-150, 448], [-220, 520], [-320, 600], [-400, 700], [-470, 850], [-480, 1000],                 # the Wall's west end, the Frozen Shore
+    [-150, 425], [-136, 444], [-142, 462], [-220, 520], [-320, 600], [-400, 700], [-470, 850], [-480, 1000],                 # the Wall's west end, the Frozen Shore
 ]
 ESSOS = [
     [720, -420], [800, -380], [950, -360], [1100, -330], [1300, -300], [1600, -260], [1900, -230], [2200, -200],
@@ -382,7 +382,36 @@ CASTLES = {'Winterfell': ('winterfell', 0.16), 'Castle Black': ('castleblack', 0
            'Pyke': ('pyke', 0.12), 'Oldtown': ('hightower', 0.06, -0.8, -0.6), 'Riverrun': ('riverrun', 0.12), 'Casterly Rock': ('casterlyrock', 0.3), 'Sunspear': ('sunspear', 0.14)}
 
 
+def in_poly(x, y, poly):
+    c = False
+    for i in range(len(poly)):
+        (x1, y1), (x2, y2) = poly[i], poly[(i + 1) % len(poly)]
+        if (y1 > y) != (y2 > y) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1: c = not c
+    return c
+
+
+def snap_walls(coast):
+    """Run each ice wall's ends out (or back) along its line to meet the sea, ending a mile into the water:
+    the Wall goes from the Bay of Ice to the Bay of Seals (AGOT)."""
+    import math
+    for w in WALLS:
+        if not w.get('ice'): continue
+        for e, q in ((0, 1), (-1, -2)):
+            ex, ey = w['pts'][e]; qx, qy = w['pts'][q]; L = math.hypot(ex - qx, ey - qy); dx, dy = (ex - qx) / L, (ey - qy) / L
+            d = -L * 0.6
+            while not in_poly(ex + dx * d, ey + dy * d, coast) and d < 0: d += 0.25     # if the end is at sea, come back to land
+            while in_poly(ex + dx * d, ey + dy * d, coast) and d < 120: d += 0.25       # then out to the shore
+            w['pts'][e] = [round(ex + dx * (d + 1), 1), round(ey + dy * (d + 1), 1)]
+    return WALLS
+
+
 def main():
+    coast_s = chaikin(WESTEROS, 2)
+    snap_walls(coast_s)
+    W0, W1 = WALLS[0]['pts'][0], WALLS[0]['pts'][-1]
+    for p in PLACES:
+        if p[0] == 'Eastwatch-by-the-Sea': p[2], p[3] = round(W1[0] - 3, 1), round(W1[1] + 2, 1)
+        if p[0] == 'Westwatch-by-the-Bridge': p[2], p[3] = round(W0[0] + 3, 1), round(W0[1] - 1, 1)
     for p in PLACES:
         if p[0] in CASTLES:
             o = p[7]; c = CASTLES[p[0]]; o['castle'], o['cr'] = c[0], c[1]
