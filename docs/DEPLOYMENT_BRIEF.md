@@ -65,7 +65,7 @@ Paste this as the first message of a new session in this project:
 > This chat is for planning the launch and business of the Otherworldly site only. Don't change the
 > live sites. Attach `dustin-hoover/known-world-atlas` and `dustin-hoover/arda-atlas`. Read
 > `docs/DEPLOYMENT_BRIEF.md`, `docs/HANDOFF.md`, `CLAUDE.md` and everything in `docs/otherworldly/` in
-> known-world-atlas, and Arda's own handoff and `CLAUDE.md` if it has them. Then use the session tools
+> known-world-atlas (the brief is on `main`, or on branch `ccr-cc45635d-bhce9p` if not merged yet), and Arda's own handoff and `CLAUDE.md` if it has them. Then use the session tools
 > (`list_sessions` and `list_events`) to read my earlier sessions on these projects, including the Arda
 > chat and session `session_0123Mi8FZ1iTXRJo5i25n56A`, for any decisions about the combined site, ads,
 > the visit counter or the community. Tell me in a few lines what you found, then ask me any questions
