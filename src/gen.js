@@ -100,6 +100,130 @@ const CH = { land:0, cont:1, mtn:2, hill:3, forest:4, gold:5, dark:6, marsh:7, a
 function init(data) {
   M = data.main; G = data.glob; PEAKS = data.peaks || []; NUM = data.numenor; FLATS = data.flats || [];
   if (data.vectors) initVectors(data.vectors);
+  CO = data.coast ? initCoast(data.coast) : null;
+}
+
+/* ---------------- the exact coastline ----------------
+   Every coast and island ring is kept as line segments in a bucket grid. coastSD(X, Y) gives the signed distance in
+   miles to the nearest shore (positive on land), exact near the shore and from the coarse grid further off, so the
+   shore is a crisp line at every zoom. It also leaves where along the shore the nearest point lies (CS.u, in miles
+   along its ring) and the outward normal there (CS.nx, CS.ny), for the shore's own detail. */
+let CO = null;
+const CS = { d: 0, u: 0, nx: 0, ny: 0, ring: -1, near: 0 };
+const CB = 10;            // bucket size, miles
+function initCoast(c) {
+  const ax = [], ay = [], bx = [], by = [], u0 = [], rg = [], buckets = new Map();
+  c.rings.forEach((r, ri) => {
+    let area = 0;
+    for (let i = 0; i < r.length; i++) { const p = r[i], q = r[(i + 1) % r.length]; area += p[0] * q[1] - q[0] * p[1]; }
+    const pts = area < 0 ? r.slice().reverse() : r;          // anticlockwise: land lies to the left of every segment
+    let u = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i], q = pts[(i + 1) % pts.length];
+      const L = Math.hypot(q[0] - p[0], q[1] - p[1]); if (L < 1e-6) continue;
+      const k = ax.length; ax.push(p[0]); ay.push(p[1]); bx.push(q[0]); by.push(q[1]); u0.push(u); rg.push(ri); u += L;
+      for (let gx = Math.floor(Math.min(p[0], q[0]) / CB); gx <= Math.floor(Math.max(p[0], q[0]) / CB); gx++)
+        for (let gy = Math.floor(Math.min(p[1], q[1]) / CB); gy <= Math.floor(Math.max(p[1], q[1]) / CB); gy++) {
+          const key = gx * 100003 + gy; let b = buckets.get(key); if (!b) buckets.set(key, b = []); b.push(k);
+        }
+    }
+  });
+  return { ax: Float64Array.from(ax), ay: Float64Array.from(ay), bx: Float64Array.from(bx), by: Float64Array.from(by), u0: Float64Array.from(u0),
+    rg: Int32Array.from(rg), buckets, sd: c.sd, w: c.w, h: c.h, x0: c.x0, y1: c.y1, res: c.res, zones: c.zones || [], mark: new Int32Array(ax.length), stamp: 0 };
+}
+// the kind of shore here: [fjord, rocky, beach, marsh] weights 0..1 (the rest is mixed)
+const KZ = new Float32Array(4);
+function shoreKind(X, Y) {
+  const px = (X - CO.x0) / CO.res - 0.5, py = (CO.y1 - Y) / CO.res - 0.5;
+  KZ.fill(0);
+  if (px < 0 || py < 0 || px >= CO.w - 1 || py >= CO.h - 1) return KZ;
+  const ix = px | 0, iy = py | 0, fx = px - ix, fy = py - iy, i = iy * CO.w + ix, W = CO.w;
+  for (let k = 0; k < CO.zones.length; k++) {
+    const a = CO.zones[k];
+    KZ[k] = ((a[i] * (1 - fx) + a[i + 1] * fx) * (1 - fy) + (a[i + W] * (1 - fx) + a[i + W + 1] * fx) * fy) / 255;
+  }
+  return KZ;
+}
+/* The shore's own detail: the signed distance to the coast (miles, positive on land) reshaped by the kind of shore,
+   down to the size of a pixel. Coasts are fractal, so every zoom shows new bays and points. */
+function coastDetail(X, Y, sd, pix) {
+  const k = shoreKind(X, Y), fj = k[0], ro = k[1], be = k[2], ma = k[3];
+  const mixed = sat(1 - fj - ro - be - ma);
+  const small = Math.max(pix * 0.9, 0.004);
+  // the general wander of the shore: rough on rocky coasts, long and smooth on sandy ones
+  const amp = 1.5 * mixed + 2.2 * ro + 1.8 * fj + 0.7 * be + 1.3 * ma;
+  const H = 0.78 * mixed + 0.62 * ro + 0.66 * fj + 1.05 * be + 0.9 * ma;
+  let e = sd + amp * fbmA(X, Y, 22, small, H, 6);
+  if (!CS.near) return e;
+  const u = CS.u + CS.ring * 7919;      // miles along the shore; every ring its own pattern
+  // fjords: long narrow inlets cut back into the land, winding, narrowing toward their heads
+  if (fj > 0.05 && sd > -3) {
+    const S = 7.5, c0 = Math.floor(u / S);
+    for (let c = c0 - 1; c <= c0 + 1; c++) {
+      const r1 = hash2(c, 17, 3), r2 = hash2(c, 29, 5), r3 = hash2(c, 41, 7);
+      if (r3 > 0.7 * fj + 0.15) continue;
+      const len = 6 + 18 * r1, v = sd;
+      if (v > len) continue;
+      const centre = (c + 0.2 + 0.6 * r2) * S + 2.2 * noise(v * 0.12 + c * 3.1, 7.7) + 0.8 * noise(v * 0.5, c * 1.7);
+      const w = (0.35 + 0.9 * r1) * Math.pow(sat(1 - v / len), 0.55) + 0.06;
+      const across = Math.abs(u - centre);
+      e = Math.min(e, (across - w) * 1.6 + Math.max(0, v - len) * 2);
+    }
+  }
+  // skerries and stacks off rocky and fjord coasts
+  const sk = fj + ro * 0.7;
+  if (sk > 0.05 && sd < 0.5 && sd > -9) {
+    const blob = fbmA(X, Y, 2.4, small, 0.7, 9) - 0.62 + sd / 16 * (1 - 0.5 * fj);
+    if (blob > 0) e = Math.max(e, blob * 3 * sk);
+  }
+  // barrier islands and spits off sandy coasts, with tidal inlets through them and a lagoon behind
+  if (be > 0.2 && sd < 0 && sd > -6) {
+    const off = 2.3 + 1.2 * noise(u * 0.015, 3.3), wid = 0.22 + 0.18 * noise(u * 0.05, 8.1);
+    const gap = noise(u * 0.09, 1.9) + 0.4 * noise(u * 0.4, 6.6);
+    if (gap > -0.25) e = Math.max(e, (wid - Math.abs(sd + off)) * (be - 0.2) * 1.25);
+  }
+  // marsh coasts: a fringe of tidal creeks winding into the land
+  if (ma > 0.1 && sd > -0.5 && sd < 4) {
+    const cr = 1 - Math.abs(noise(X * 0.9 + 3.1 * noise(X * 0.2, Y * 0.2), Y * 0.9));
+    const creek = sstep(0.93, 0.985, cr) * sstep(4, 0.5, sd) * ma;
+    e -= creek * 1.2;
+  }
+  return e;
+}
+function coarseSD(X, Y) {
+  const px = (X - CO.x0) / CO.res - 0.5, py = (CO.y1 - Y) / CO.res - 0.5;
+  if (px < 0 || py < 0 || px >= CO.w - 1 || py >= CO.h - 1) return -999;
+  const ix = px | 0, iy = py | 0, fx = px - ix, fy = py - iy, i = iy * CO.w + ix, a = CO.sd, W = CO.w;
+  return ((a[i] * (1 - fx) + a[i + 1] * fx) * (1 - fy) + (a[i + W] * (1 - fx) + a[i + W + 1] * fx) * fy) / 10;
+}
+function coastSD(X, Y) {
+  CS.near = 0;
+  if (!CO) return NaN;
+  const c = coarseSD(X, Y);
+  CS.d = c;
+  if (Math.abs(c) > 24) return c;                 // far from any shore: the grid is enough
+  const r = Math.abs(c) + CO.res * 1.5 + 1;
+  const g0x = Math.floor((X - r) / CB), g1x = Math.floor((X + r) / CB), g0y = Math.floor((Y - r) / CB), g1y = Math.floor((Y + r) / CB);
+  let best = Infinity, bk = -1, bt = 0;
+  const st = ++CO.stamp;
+  for (let gx = g0x; gx <= g1x; gx++) for (let gy = g0y; gy <= g1y; gy++) {
+    const b = CO.buckets.get(gx * 100003 + gy); if (!b) continue;
+    for (let n = 0; n < b.length; n++) {
+      const k = b[n]; if (CO.mark[k] === st) continue; CO.mark[k] = st;
+      const ax = CO.ax[k], ay = CO.ay[k], dx = CO.bx[k] - ax, dy = CO.by[k] - ay, L2 = dx * dx + dy * dy;
+      let t = ((X - ax) * dx + (Y - ay) * dy) / L2; t = t < 0 ? 0 : t > 1 ? 1 : t;
+      const ex = X - ax - t * dx, ey = Y - ay - t * dy, d2 = ex * ex + ey * ey;
+      if (d2 < best) { best = d2; bk = k; bt = t; }
+    }
+  }
+  if (bk < 0) return c;
+  const d = Math.sqrt(best);
+  const ax = CO.ax[bk], ay = CO.ay[bk], dx = CO.bx[bk] - ax, dy = CO.by[bk] - ay, L = Math.hypot(dx, dy);
+  // which side: the nearest segment's left is land; at a corner, side with the coarse grid unless clearly away
+  let side = (dx * (Y - ay) - dy * (X - ax)) >= 0 ? 1 : -1;
+  if ((bt <= 0 || bt >= 1) && d < CO.res) side = c >= 0 ? 1 : -1;
+  CS.u = CO.u0[bk] + bt * L; CS.nx = dy / L; CS.ny = -dx / L; CS.ring = CO.rg[bk]; CS.near = 1;
+  return CS.d = side * d;
 }
 
 const F = new Float32Array(NCH);
@@ -137,7 +261,7 @@ function sampleGlob(lon, lat) {
 }
 
 /* Results of the last evaluate() call */
-const R = { h: 0, s: 0, wx: 0, wy: 0, wm: 0, lat: 0, lon: 0, base: 0, mtn: 0, stream: 0 };
+const R = { h: 0, s: 0, sd: 0, wx: 0, wy: 0, wm: 0, lat: 0, lon: 0, base: 0, mtn: 0, stream: 0 };
 
 function numenorField(X, Y) {
   if (!NUM) return 0;
@@ -248,8 +372,17 @@ function evaluate(X, Y, pix) {
     F[12] = F[12] * (1 + 0.3 * bn);
   }
 
-  const cd = fbmA(X, Y, 28, Math.max(pix * 1.2, 0.0015), 0.92, 1);
-  const s = land - 0.5 + cd * 0.2;
+  // the shore: exact from the authored coast, with its own detail; the old raster only where no coast is near
+  let s;
+  const sd = CO ? coastSD(X, Y) : NaN;
+  if (sd === sd && sd > -998) {
+    const e = Math.abs(sd) < 30 ? coastDetail(X, Y, sd, pix) : sd;
+    R.sd = e;
+    s = clamp(e / 12, -0.5, 0.5);       // the old scale: ±0.5 over about six miles
+  } else {
+    const cd = fbmA(X, Y, 28, Math.max(pix * 1.2, 0.0015), 0.92, 1);
+    s = land - 0.5 + cd * 0.2; R.sd = s * 12;
+  }
   R.s = s; R.stream = 0;
   let h;
   if (s > 0) {
@@ -1017,6 +1150,6 @@ function buildingsNear(X, Y, rad) {
 }
 
 return { setSeason, D2R, MI, EARTH_C, toLL, toXY, noise, fbm, fbmA, hash2, sat, sstep, mix, clamp, init, evaluate, F, R, CH, tempAt, moistAt,
-  demTile, imageryTile, renderGrid, tileLL, drawVectors, buildingsNear, numenorField, orchardAt };
+  demTile, imageryTile, renderGrid, tileLL, drawVectors, buildingsNear, numenorField, orchardAt, coastSD, CS };
 })();
 if (typeof self !== 'undefined') self.GEN = GEN;

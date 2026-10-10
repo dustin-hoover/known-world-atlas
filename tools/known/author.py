@@ -92,6 +92,37 @@ ISLANDS = [
     isle('The Basilisk Isles', 1700, -2880, 70, 30, seed=26), isle('New Ghis', 2240, -2455, 30, 22, seed=27),
 ]
 
+# ---------------------------------------------------------------- the character of the shore
+# Each stretch of coast gets a kind, which the terrain turns into its own detail (gen.js coastDetail):
+#   fjord - long steep inlets and skerries, as on the coasts of the far north
+#   rocky - headlands, coves and sea stacks, cliffs where the land is high
+#   beach - smooth sandy shores with barrier islands and spits
+#   marsh - low, muddy, wandering shores and tidal flats
+# Shores not inside any zone are mixed. Our own reading of how the books describe each coast.
+def zone(kind, pts): return {'kind': kind, 'pts': pts}
+
+
+COAST_ZONES = [
+    zone('fjord', [[-900, 470], [900, 470], [900, 1600], [-900, 1600]]),                  # beyond the Wall: the Frozen Shore, Hardhome
+    zone('fjord', [[-420, 160], [-120, 160], [-120, 470], [-420, 470]]),                  # the Bay of Ice and Bear Island
+    zone('fjord', [[280, 420], [460, 420], [460, 600], [280, 600]]),                      # Skagos
+    zone('rocky', [[-650, -470], [-380, -470], [-380, 160], [-650, 160]]),                # the Stony Shore, Sea Dragon Point
+    zone('rocky', [[300, -200], [600, -200], [600, 420], [300, 420]]),                    # the North's east coast, Widow's Watch
+    zone('rocky', [[-520, -820], [-230, -820], [-230, -600], [-520, -600]]),              # the Iron Islands
+    zone('rocky', [[-380, -620], [-200, -620], [-200, -420], [-380, -420]]),              # Cape Kraken
+    zone('rocky', [[-560, -1250], [-380, -1250], [-380, -820], [-560, -820]]),            # the Westerlands' cliffs, the Crag, Fair Isle
+    zone('rocky', [[400, -880], [640, -880], [640, -480], [400, -480]]),                  # the Fingers
+    zone('rocky', [[380, -1120], [480, -1120], [480, -1020], [380, -1020]]),              # Crackclaw Point
+    zone('rocky', [[340, -1640], [620, -1640], [620, -1360], [340, -1360]]),              # Shipbreaker Bay, Storm's End, Tarth, Cape Wrath
+    zone('rocky', [[380, -1220], [430, -1220], [430, -1170], [380, -1170]]),              # Dragonstone
+    zone('beach', [[-640, -2300], [-380, -2300], [-380, -1400], [-640, -1400]]),          # the Reach's coast, the Shield Islands, the Arbor
+    zone('beach', [[-300, -2620], [600, -2620], [600, -2250], [-300, -2250]]),            # Dorne's south coast
+    zone('beach', [[0, -2120], [720, -2120], [720, -1990], [0, -1990]]),                  # Dorne's north shore on the Sea of Dorne
+    zone('marsh', [[-120, -620], [160, -620], [160, -300], [-120, -300]]),                # the Neck, Blazewater Bay
+    zone('marsh', [[270, -980], [340, -980], [340, -900], [270, -900]]),                  # the Trident's mouth, Saltpans
+    zone('marsh', [[1350, -2280], [1480, -2280], [1480, -2150], [1350, -2150]]),          # the mouths of the Rhoyne at Volantis
+]
+
 # ---------------------------------------------------------------- relief
 RANGES = [
     {'name': 'The Frostfangs', 'h': 3000, 'w': 50, 'label': True, 'pts': [[-300, 560], [-250, 700], [-210, 850], [-190, 1000]]},
@@ -451,7 +482,7 @@ def main():
 const GEO = (() => {
 """
     parts = [
-        ('COAST', chaikin(WESTEROS, 2)), ('ISLANDS', ISLANDS), ('RANGES', RANGES), ('HILLS', HILLS), ('PEAKS', PEAKS),
+        ('COAST', chaikin(WESTEROS, 2)), ('ISLANDS', ISLANDS), ('COAST_ZONES', COAST_ZONES), ('RANGES', RANGES), ('HILLS', HILLS), ('PEAKS', PEAKS),
         ('RIVERS', RIVERS), ('LAKES', LAKES), ('FORESTS', FORESTS), ('MARSHES', MARSHES), ('ARID', ARID), ('FARMS', FARMS),
         ('GRASS', GRASS), ('ASH', ASH), ('UPLIFT', UPLIFT), ('ICE', ICE), ('RELIEF', RELIEF), ('NUMENOR', None),
         ('PLACES', PLACES), ('REGION_LABELS', REGION_LABELS), ('SEA_LABELS', SEA_LABELS), ('REALMS', REALMS),

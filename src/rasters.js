@@ -32,6 +32,56 @@ function boxBlur(a, w, h, r, passes) {
   return out;
 }
 
+/* Squared Euclidean distance transform (Felzenszwalb & Huttenlocher) of a 0/1 grid: distance to the nearest 1. */
+function edt(mask, w, h) {
+  const INF = 1e20, f = new Float64Array(Math.max(w, h)), d = new Float64Array(Math.max(w, h)), v = new Int32Array(Math.max(w, h)), z = new Float64Array(Math.max(w, h) + 1);
+  const out = new Float64Array(w * h);
+  const pass = (n) => {
+    let k = 0; v[0] = 0; z[0] = -INF; z[1] = INF;
+    for (let q = 1; q < n; q++) {
+      let s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+      while (s <= z[k]) { k--; s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); }
+      k++; v[k] = q; z[k] = s; z[k + 1] = INF;
+    }
+    k = 0;
+    for (let q = 0; q < n; q++) { while (z[k + 1] < q) k++; d[q] = (q - v[k]) * (q - v[k]) + f[v[k]]; }
+  };
+  for (let x = 0; x < w; x++) { for (let y = 0; y < h; y++) f[y] = mask[y * w + x] ? 0 : INF; pass(h); for (let y = 0; y < h; y++) out[y * w + x] = d[y]; }
+  for (let y = 0; y < h; y++) { for (let x = 0; x < w; x++) f[x] = out[y * w + x]; pass(w); for (let x = 0; x < w; x++) out[y * w + x] = d[x]; }
+  return out;
+}
+
+/* The coastline for GEN's exact shore: every coast and island ring, and a coarse signed distance grid (CR miles per
+   cell, tenths of a mile, positive on land) that tells GEN where the shore is near enough to measure exactly. */
+const CR = 4;
+function coastData(GEO) {
+  const rings = [GEO.COAST].concat(GEO.ISLANDS.map(i => i.pts)).filter(r => r && r.length > 2);
+  const cw = Math.ceil((X1 - X0) / CR), chh = Math.ceil((Y1 - Y0) / CR);
+  const cv = document.createElement('canvas'); cv.width = cw; cv.height = chh;
+  const g = cv.getContext('2d', { willReadFrequently: true });
+  g.fillStyle = '#000'; g.fillRect(0, 0, cw, chh); g.fillStyle = '#fff';
+  for (const r of rings) { g.beginPath(); r.forEach((p, i) => { const x = (p[0] - X0) / CR, y = (Y1 - p[1]) / CR; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); g.fill(); }
+  const px = g.getImageData(0, 0, cw, chh).data;
+  const land = new Uint8Array(cw * chh), sea = new Uint8Array(cw * chh);
+  for (let i = 0; i < land.length; i++) { land[i] = px[i * 4] >= 128 ? 1 : 0; sea[i] = 1 - land[i]; }
+  const dl = edt(sea, cw, chh), ds = edt(land, cw, chh);       // on land: distance to the sea; at sea: distance to land
+  const sd = new Int16Array(cw * chh);
+  for (let i = 0; i < sd.length; i++) {
+    const v = land[i] ? Math.sqrt(dl[i]) - 0.5 : -(Math.sqrt(ds[i]) - 0.5);
+    sd[i] = Math.max(-32000, Math.min(32000, Math.round(v * CR * 10)));
+  }
+  // the character of each shore (fjord, rocky, beach, marsh), blurred so one kind fades into the next
+  const kinds = ['fjord', 'rocky', 'beach', 'marsh'];
+  const zones = kinds.map(k => {
+    g.fillStyle = '#000'; g.fillRect(0, 0, cw, chh); g.fillStyle = '#fff';
+    for (const z of (GEO.COAST_ZONES || []).filter(z => z.kind === k)) { g.beginPath(); z.pts.forEach((p, i) => { const x = (p[0] - X0) / CR, y = (Y1 - p[1]) / CR; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); g.fill(); }
+    const d = g.getImageData(0, 0, cw, chh).data, a = new Uint8Array(cw * chh);
+    for (let i = 0; i < a.length; i++) a[i] = d[i * 4];
+    return boxBlur(a, cw, chh, 3, 2);
+  });
+  return { rings, sd, w: cw, h: chh, x0: X0, y1: Y1, res: CR, zones };
+}
+
 function build(GEO) {
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
@@ -116,6 +166,7 @@ function build(GEO) {
   }
   const G1 = boxBlur(G0, GW, GH, 5, 3);
   return {
+    coast: coastData(GEO),
     main: { W, H, x0: X0, y1: Y1, res: RES, ch },
     glob: { W: GW, H: GH, ch: [boxBlur(G0, GW, GH, 1, 1), G1, boxBlur(G2, GW, GH, 1, 1), boxBlur(G3, GW, GH, 1, 1)] },
     peaks: GEO.PEAKS.map(p => ({ x: p.x, y: p.y, h: p.h, r: p.r, kind: p.kind, gate: p.gate, to: p.to, reach: p.reach })),
