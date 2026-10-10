@@ -54,7 +54,7 @@ def westeros_coast():
     else the hand-drawn outline above."""
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'coast_donor.json')
     if os.path.exists(path): return json.load(open(path))['coast']
-    return westeros_coast()
+    return chaikin(WESTEROS, 2)
 
 
 def donor_islands():
@@ -489,9 +489,62 @@ def math_hypot(a, b):
     return math.hypot(a, b)
 
 
+SEA_RIVERS = {'The White Knife', 'The Last River', 'The Milkwater', 'The Trident', 'The Blackwater Rush', 'The Mander',
+              'The Honeywine', 'The Torrentine', 'The Greenblood', 'The Rhoyne', 'The Skahazadhan'}
+
+
+def river_mouths(coast_s):
+    """Every river that reaches the sea ends on the shore and opens into an estuary: the river is trimmed where it
+    first leaves the land (or carried on to the nearest shore), and the land is cut by a funnel along its last miles,
+    from the river's own width to a mouth sized by it. Returns the new coast; Essos's ring is changed in place."""
+    import math
+    from shapely.geometry import Polygon, LineString, Point
+    from shapely.ops import unary_union, nearest_points
+    main = Polygon(coast_s).buffer(0)
+    essos = next(i for i in ISLANDS if i['name'] == 'Essos'); ess = Polygon(essos['pts']).buffer(0)
+    cuts = {'main': [], 'essos': []}
+    for r in RIVERS:
+        pts = [tuple(p) for p in r['pts']]; E = Point(pts[-1])
+        key, land = ('main', main) if main.distance(E) <= ess.distance(E) else ('essos', ess)
+        edge = land.boundary
+        if r['name'] not in SEA_RIVERS and edge.distance(E) > 30: continue     # it ends in a lake or another river
+        out = [pts[0]]
+        for a, b in zip(pts, pts[1:]):
+            if land.contains(Point(b)): out.append(b); continue
+            x = LineString([a, b]).intersection(edge)
+            xs = [x] if x.geom_type == 'Point' else list(getattr(x, 'geoms', []))
+            if xs: q = min(xs, key=lambda g: g.distance(Point(a))); out.append((q.x, q.y))
+            break
+        else:
+            q = nearest_points(edge, Point(out[-1]))[0]
+            if q.distance(Point(out[-1])) > 0.01: out.append((q.x, q.y))
+        r['pts'] = [[round(x, 2), round(y, 2)] for x, y in out]
+        W = max(1.0, min(8.0, r.get('w1', 200) / 1609 * 12)); L = 6 + 3 * W
+        # walk back L miles from the mouth, laying circles that widen toward the sea
+        seg, acc, circles = list(zip(out[::-1], out[::-1][1:])), 0.0, []
+        for a, b in seg:
+            d = math.hypot(b[0] - a[0], b[1] - a[1])
+            for k in range(int(d / 0.4) + 1):
+                s = acc + k * 0.4
+                if s > L: break
+                t = k * 0.4 / d if d else 0
+                circles.append(Point(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t).buffer(W / 2 * (1 - s / L) ** 1.3 + 0.05, 12))
+            acc += d
+            if acc > L: break
+        circles.append(Point(out[-1]).buffer(W * 0.6, 16))
+        cuts[key].append(unary_union(circles))
+    def cut(g, cs):
+        if not cs: return g
+        g = g.difference(unary_union(cs))
+        return max(getattr(g, 'geoms', [g]), key=lambda q: q.area)
+    ring = lambda g: [[round(x, 2), round(y, 2)] for x, y in list(g.exterior.coords)[:-1]]
+    essos['pts'] = ring(cut(ess, cuts['essos']))
+    return ring(cut(main, cuts['main']))
+
+
 def prepare():
     """Everything that settles the geography before the cast is built; returns the coast. Used by main() and the checks."""
-    coast_s = westeros_coast()
+    coast_s = river_mouths(westeros_coast())
     snap_walls(coast_s)
     W0, W1 = WALLS[0]['pts'][0], WALLS[0]['pts'][-1]
     for p in PLACES:
@@ -517,7 +570,29 @@ def prepare():
         i['pts'] = [[round(x, 2), round(y, 2)] for x, y in list(g.exterior.coords)[:-1]]
     ISLANDS[:] = [i for i in ISLANDS if len(i['pts']) > 2]
     settle(PLACES, coast_s)
+    mouth_towns()
     return coast_s
+
+
+# towns the books put at a river's mouth: each stands on its river's last mile, its landmarks moving with it
+MOUTH_TOWNS = {'Planky Town': 'The Greenblood', 'White Harbor': 'The White Knife', 'Oldtown': 'The Honeywine',
+               "King's Landing": 'The Blackwater Rush', 'Volantis': 'The Rhoyne', 'Meereen': 'The Skahazadhan'}
+
+
+def mouth_towns():
+    import math
+    riv = {r['name']: r['pts'] for r in RIVERS}
+    for town, river in MOUTH_TOWNS.items():
+        t = next((p for p in PLACES if p[0] == town), None); pts = riv.get(river)
+        if not t or not pts or len(pts) < 2: continue
+        (ax, ay), (bx, by) = pts[-2], pts[-1]; L = math.hypot(bx - ax, by - ay) or 1
+        X, Y = bx - (bx - ax) / L * 0.8, by - (by - ay) / L * 0.8          # just inside the mouth
+        dx, dy = X - t[2], Y - t[3]
+        if math.hypot(dx, dy) > 80: continue
+        for p in PLACES:
+            if p is t or (p[1] in ('landmark', 'tower') and math.hypot(p[2] - t[2], p[3] - t[3]) < 8):
+                p[2], p[3] = round(p[2] + dx, 1), round(p[3] + dy, 1)
+        print(f'  {town} stands at the mouth of {river} (moved {math.hypot(dx, dy):.1f} mi)')
 
 
 def main():
@@ -526,7 +601,7 @@ def main():
     CAST, JOURNEYS, MODES, EVENTS, BATTLES = cast.build(PLACES, ROADS, STORIES, [coast_s] + [i['pts'] for i in ISLANDS])
     # realm borders fitted to our coasts, ranges, rivers and the Wall; peoples cut to the land
     import realms
-    coast = westeros_coast()
+    coast = coast_s
     claims = REALMS['AC298']
     fitted = realms.fit(claims, PLACES, coast, ISLANDS, RANGES, RIVERS, WALLS, island_realms={'The Iron Islands'})
     byname = {r['name']: r for r in fitted}
@@ -553,7 +628,7 @@ def main():
 const GEO = (() => {
 """
     parts = [
-        ('COAST', westeros_coast()), ('ISLANDS', ISLANDS), ('COAST_ZONES', COAST_ZONES), ('RANGES', RANGES), ('HILLS', HILLS), ('PEAKS', PEAKS),
+        ('COAST', coast_s), ('ISLANDS', ISLANDS), ('COAST_ZONES', COAST_ZONES), ('RANGES', RANGES), ('HILLS', HILLS), ('PEAKS', PEAKS),
         ('RIVERS', RIVERS), ('LAKES', LAKES), ('FORESTS', FORESTS), ('MARSHES', MARSHES), ('ARID', ARID), ('FARMS', FARMS),
         ('GRASS', GRASS), ('ASH', ASH), ('UPLIFT', UPLIFT), ('ICE', ICE), ('RELIEF', RELIEF), ('NUMENOR', None),
         ('PLACES', PLACES), ('REGION_LABELS', REGION_LABELS), ('SEA_LABELS', SEA_LABELS), ('REALMS', REALMS),

@@ -179,6 +179,8 @@ def build():
 NECK = [[-10, -560], [70, -548], [150, -556], [165, -640], [90, -668], [10, -655]]
 ALWAYS_WINTER = [[-470, 1150], [-430, 1260], [-300, 1340], [-150, 1370], [0, 1350], [150, 1370], [300, 1330], [430, 1260],
                  [470, 1150], [330, 1190], [150, 1215], [-100, 1215], [-300, 1180]]
+# the head of Blackwater Bay, opened out so the Blackwater Rush meets the bay at King's Landing
+BLACKWATER_HEAD = [[256, -1306], [285, -1290], [320, -1278], [345, -1300], [330, -1335], [285, -1342], [252, -1322]]
 SEA_OF_DORNE = [[300, -1930], [150, -1915], [40, -1935], [-30, -1965], [-20, -2005], [60, -2040], [180, -2050], [300, -2030]]
 
 
@@ -187,7 +189,7 @@ def assemble(rings):
     from shapely.geometry import Polygon
     from shapely.ops import unary_union
     polys = [(r.get('name'), Polygon(r['pts']).buffer(0)) for r in rings if len(r['pts']) > 3]
-    land = unary_union([g for _, g in polys] + [Polygon(NECK), Polygon(ALWAYS_WINTER)]).difference(Polygon(SEA_OF_DORNE))
+    land = unary_union([g for _, g in polys] + [Polygon(NECK), Polygon(ALWAYS_WINTER)]).difference(Polygon(SEA_OF_DORNE)).difference(Polygon(BLACKWATER_HEAD))
     # the warp can fold a narrow estuary into slivers: close water gaps and open land threads under about a mile
     land = land.buffer(0.5, join_style=1).buffer(-1.0, join_style=1).buffer(0.5, join_style=1).simplify(0.05)
     parts = sorted(getattr(land, 'geoms', [land]), key=lambda g: -g.area)

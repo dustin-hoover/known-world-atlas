@@ -262,7 +262,7 @@ PATHS = {
     'hotpie': J(('King\'s Landing', '298 8 2'), ROAD('The Kingsroad', 'King\'s Landing', 'The Inn at the Crossroads', '298 8 3', '298 12 20'), ([120, -940], '299 1 10'), ('Harrenhal', '299 2 1'),
                 ('Harrenhal', '299 4 15'), ([40, -1010], '299 5 10'), ('The Inn of the Kneeling Man', '299 5 20'), ('The Inn of the Kneeling Man', '300 13 5')),
     'jaqen': J(('King\'s Landing', '298 8 2'), ROAD('The Kingsroad', 'King\'s Landing', 'The Inn at the Crossroads', '298 8 3', '298 12 20'), ([120, -940], '299 1 10'), ('Harrenhal', '299 2 1'), ('Harrenhal', '299 4 10')),
-    'stannis': J(('Dragonstone', '297 13 1'), ('Dragonstone', '299 3 15'), LANE('dragonstone-storms-end', '299 3 16', '299 3 25'), ('Storm\'s End', '299 4 5'), ('Storm\'s End', '299 5 20'), ([270, -1320], '299 6 1'), ('King\'s Landing', '299 6 2'), LANE('dragonstone-kl', '299 6 3', '299 6 8', True),
+    'stannis': J(('Dragonstone', '297 13 1'), ('Dragonstone', '299 3 15'), LANE('dragonstone-storms-end', '299 3 16', '299 3 25'), ('Storm\'s End', '299 4 5'), ('Storm\'s End', '299 5 20'), ([268, -1356], '299 6 1'), ('King\'s Landing', '299 6 2'), LANE('dragonstone-kl', '299 6 3', '299 6 8', True),
                  ('Dragonstone', '299 6 10'), ('Dragonstone', '299 13 1'), LANE('dragonstone-eastwatch', '299 13 2', '300 2 20'), ('Castle Black', '300 3 1'), ('Castle Black', '300 4 20'),
                  ('Deepwood Motte', '300 5 20'), ([-100, 20], '300 8 15'), ([-120, 40], '300 13 5')),
     'davos': J(('Dragonstone', '297 13 1'), ('Dragonstone', '299 5 20'), LANE('dragonstone-kl', '299 5 21', '299 6 1'), ([330, -1260], '299 6 10'), ('Dragonstone', '299 7 1'), ('Dragonstone', '299 13 1'),
