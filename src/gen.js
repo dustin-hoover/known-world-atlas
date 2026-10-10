@@ -148,12 +148,13 @@ function shoreKind(X, Y) {
 }
 /* The shore's own detail: the signed distance to the coast (miles, positive on land) reshaped by the kind of shore,
    down to the size of a pixel. Coasts are fractal, so every zoom shows new bays and points. */
+const BARRIERS = false;   // made-up barrier islands read as ruled strips along long straight shores: off until the shore itself is finer
 function coastDetail(X, Y, sd, pix) {
   const k = shoreKind(X, Y), fj = k[0], ro = k[1], be = k[2], ma = k[3];
   const mixed = sat(1 - fj - ro - be - ma);
   const small = Math.max(pix * 0.9, 0.004);
   // the general wander of the shore: rough on rocky coasts, long and smooth on sandy ones
-  const amp = 1.5 * mixed + 2.2 * ro + 1.8 * fj + 0.7 * be + 1.3 * ma;
+  const amp = 1.5 * mixed + 2.2 * ro + 1.8 * fj + 1.3 * be + 1.3 * ma;
   const H = 0.78 * mixed + 0.62 * ro + 0.66 * fj + 1.05 * be + 0.9 * ma;
   let e = sd + amp * fbmA(X, Y, 22, small, H, 6);
   if (!CS.near) return e;
@@ -179,7 +180,7 @@ function coastDetail(X, Y, sd, pix) {
     if (blob > 0) e = Math.max(e, blob * 3 * sk);
   }
   // barrier islands and spits off sandy coasts, with tidal inlets through them and a lagoon behind
-  if (be > 0.2 && sd < 0 && sd > -6) {
+  if (BARRIERS && be > 0.2 && sd < 0 && sd > -6) {
     const off = 2.3 + 1.2 * noise(u * 0.015, 3.3), wid = 0.22 + 0.18 * noise(u * 0.05, 8.1);
     const gap = noise(u * 0.09, 1.9) + 0.4 * noise(u * 0.4, 6.6);
     if (gap > -0.25) e = Math.max(e, (wid - Math.abs(sd + off)) * (be - 0.2) * 1.25);

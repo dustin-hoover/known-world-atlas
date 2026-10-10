@@ -589,9 +589,8 @@ def mouth_towns():
         X, Y = bx - (bx - ax) / L * 0.8, by - (by - ay) / L * 0.8          # just inside the mouth
         dx, dy = X - t[2], Y - t[3]
         if math.hypot(dx, dy) > 80: continue
-        for p in PLACES:
-            if p is t or (p[1] in ('landmark', 'tower') and math.hypot(p[2] - t[2], p[3] - t[3]) < 8):
-                p[2], p[3] = round(p[2] + dx, 1), round(p[3] + dy, 1)
+        group = [p for p in PLACES if p is t or (p[1] in ('landmark', 'tower') and math.hypot(p[2] - t[2], p[3] - t[3]) < 8)]
+        for p in group: p[2], p[3] = round(p[2] + dx, 1), round(p[3] + dy, 1)
         print(f'  {town} stands at the mouth of {river} (moved {math.hypot(dx, dy):.1f} mi)')
 
 
