@@ -109,9 +109,14 @@ if __name__ == '__main__':
     for ours, (name, la0, la1, lo0, lo1, our_h) in ANALOGUES.items():
         if want and not any(w.lower() in ours.lower() for w in want): continue
         h, mx, my = load_box(la0, la1, lo0, lo1)
-        m = measure(h, mx, my); out[ours] = dict(analogue=name, ours_m=our_h, **m)
+        m = measure(h, mx, my)
+        # the same at one mile per sample, for comparing with our terrain (slopes depend on the sampling)
+        f = max(1, round(1609 / my)); fx = max(1, round(1609 / mx))
+        hc = h[:h.shape[0] // f * f, :h.shape[1] // fx * fx].reshape(h.shape[0] // f, f, h.shape[1] // fx, fx).mean(axis=(1, 3))
+        m1 = measure(hc, mx * fx, my * f)
+        out[ours] = dict(analogue=name, ours_m=our_h, **m, slope50_1mi=m1['slope50'], slope90_1mi=m1['slope90'])
         hillshade(h, mx, my, os.path.join(SHOTS, ours.replace("'", '').replace(' ', '-').lower() + '.png'),
                   f'{ours}  <-  {name}  (Copernicus DEM GLO-90)')
         print(f"{ours:26s} <- {name:26s} peak {m['peak']:5.0f} relief {m['relief']:5.0f} valley {m['valley']:5.0f} "
-              f"slope {m['slope50']:4.1f}/{m['slope90']:4.1f} ridge {m['ridge_km']:5.1f} km hyps {m['hyps']:.2f}", flush=True)
+              f"slope {m['slope50']:4.1f}/{m['slope90']:4.1f} (1 mi: {out[ours]['slope50_1mi']:4.1f}/{out[ours]['slope90_1mi']:4.1f}) ridge {m['ridge_km']:5.1f} km hyps {m['hyps']:.2f}", flush=True)
     json.dump(out, open(os.path.join(SHOTS, 'measurements.json'), 'w'), indent=1)
