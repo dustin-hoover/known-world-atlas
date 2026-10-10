@@ -15,3 +15,8 @@ tools/routing/terrain.npz
 tools/routing/geo.json
 tools/borders/geo.json
 tools/borders/*.png
+
+# tools/refs: reference maps are copyrighted; only the source list and the comparison tool are kept in git
+tools/refs/*
+!tools/refs/SOURCES.md
+!tools/refs/compare.py
