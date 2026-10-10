@@ -49,6 +49,20 @@ WESTEROS = [  # clockwise from the north-west of the Land of Always Winter
     [-520, -40], [-600, 40], [-560, 110], [-440, 120], [-330, 180], [-260, 250], [-220, 320], [-180, 400],  # Sea Dragon Point, the Bay of Ice
     [-150, 425], [-136, 444], [-142, 462], [-220, 520], [-320, 600], [-400, 700], [-470, 850], [-480, 1000],                 # the Wall's west end, the Frozen Shore
 ]
+def westeros_coast():
+    """Westeros's coast: built from Britain and Ireland by tools/known/donor.py when coast_donor.json exists,
+    else the hand-drawn outline above."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'coast_donor.json')
+    if os.path.exists(path): return json.load(open(path))['coast']
+    return westeros_coast()
+
+
+def donor_islands():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'coast_donor.json')
+    if not os.path.exists(path): return []
+    return [{'name': i['name'] or 'isle', 'pts': i['pts']} for i in json.load(open(path))['islands']]
+
+
 ESSOS = [
     [720, -420], [800, -380], [950, -360], [1100, -330], [1300, -300], [1600, -260], [1900, -230], [2200, -200],
     [2500, -180], [2800, -160], [3100, -170], [3500, -200], [3900, -260], [4300, -330], [4700, -420], [5100, -560],
@@ -78,10 +92,7 @@ def isle(name, cx, cy, rx, ry, k=9, jag=0.18, seed=1):
 ISLANDS = [
     {'name': 'Essos', 'pts': chaikin(ESSOS, 2)},
     {'name': 'Sothoryos', 'pts': chaikin(SOTHORYOS, 2)},
-    isle('Bear Island', -300, 262, 32, 22, seed=2), isle('Skagos', 350, 500, 40, 30, seed=3),
     isle('The Three Sisters', 330, -300, 34, 12, seed=4),
-    isle('Pyke', -330, -762, 16, 12, seed=5), isle('Great Wyk', -395, -718, 34, 26, seed=6), isle('Old Wyk', -425, -672, 18, 16, seed=7),
-    isle('Harlaw', -296, -702, 24, 18, seed=8), isle('Orkmont', -362, -640, 20, 18, seed=9), isle('Blacktyde', -420, -770, 16, 14, seed=10),
     isle('Fair Isle', -480, -1062, 14, 10, seed=11), isle('Dragonstone', 402, -1190, 18, 15, seed=12), isle('Driftmark', 362, -1212, 18, 10, seed=13),
     isle('Claw Isle', 432, -1090, 9, 7, seed=14), isle('Tarth', 565, -1520, 30, 14, seed=15), isle('The Arbor', -570, -2232, 32, 22, seed=16),
     isle('The Shield Islands', -590, -1760, 20, 30, seed=17),
@@ -90,7 +101,7 @@ ISLANDS = [
     isle('Lorath', 1242, -246, 40, 26, seed=22), isle('Ib', 2800, -40, 220, 120, k=11, seed=23),
     isle('The Summer Isles', -150, -2970, 120, 70, k=11, seed=24), isle('Naath', 2050, -2950, 60, 34, seed=25),
     isle('The Basilisk Isles', 1700, -2880, 70, 30, seed=26), isle('New Ghis', 2240, -2455, 30, 22, seed=27),
-]
+] + (DONOR := donor_islands())    # Bear Island (the Isle of Man), Skagos (Shetland), the Iron Islands (Orkney), the Hebrides and the rest
 
 # ---------------------------------------------------------------- the character of the shore
 # Each stretch of coast gets a kind, which the terrain turns into its own detail (gen.js coastDetail):
@@ -103,9 +114,11 @@ def zone(kind, pts): return {'kind': kind, 'pts': pts}
 
 
 COAST_ZONES = [
-    zone('fjord', [[-900, 470], [900, 470], [900, 1600], [-900, 1600]]),                  # beyond the Wall: the Frozen Shore, Hardhome
-    zone('fjord', [[-420, 160], [-120, 160], [-120, 470], [-420, 470]]),                  # the Bay of Ice and Bear Island
-    zone('fjord', [[280, 420], [460, 420], [460, 600], [280, 600]]),                      # Skagos
+    # beyond the Wall the coast is Scotland's own (sea lochs, skerries); only the Lands of Always Winter, drawn by us,
+    # get made-up fjords
+    zone('fjord', [[-900, 1150], [900, 1150], [900, 1600], [-900, 1600]]),                # the Lands of Always Winter
+    zone('rocky', [[-900, 470], [900, 470], [900, 1150], [-900, 1150]]),                  # beyond the Wall: the Frozen Shore, Hardhome
+    zone('rocky', [[-420, 160], [-120, 160], [-120, 470], [-420, 470]]),                  # the Bay of Ice and Bear Island
     zone('rocky', [[-650, -470], [-380, -470], [-380, 160], [-650, 160]]),                # the Stony Shore, Sea Dragon Point
     zone('rocky', [[300, -200], [600, -200], [600, 420], [300, 420]]),                    # the North's east coast, Widow's Watch
     zone('rocky', [[-520, -820], [-230, -820], [-230, -600], [-520, -600]]),              # the Iron Islands
@@ -436,8 +449,49 @@ def snap_walls(coast):
     return WALLS
 
 
-def main():
-    coast_s = chaikin(WESTEROS, 2)
+def settle(places, coast):
+    """Put every place on our land: a place out at sea comes ashore at the nearest point of land, a port sits on its own
+    waterline, and a place inside a moved city moves with it. Prints each move."""
+    from shapely.geometry import Polygon, Point
+    from shapely.ops import unary_union, nearest_points
+    land = unary_union([Polygon(coast).buffer(0)] + [Polygon(i['pts']).buffer(0) for i in ISLANDS])
+    edge = land.boundary
+    def inward(P, depth):
+        q = nearest_points(edge, P)[0]
+        for k in range(1, 40):                     # step inland from the shore until we are `depth` miles in
+            for a in range(0, 360, 15):
+                import math
+                c = Point(q.x + math.cos(math.radians(a)) * depth * k / 4, q.y + math.sin(math.radians(a)) * depth * k / 4)
+                if land.contains(c) and edge.distance(c) >= depth * 0.8: return c
+        return q
+    moved = {}
+    sub = lambda p: p[1] in ('landmark', 'tower') and any(q is not p and q[1] not in ('landmark', 'tower') and
+                                                          math_hypot(q[2] - p[2], q[3] - p[3]) < 8 for q in places)
+    for p in places:
+        if p[2] > 700 or sub(p): continue          # Westeros only; landmarks in a city wait for the city
+        P = Point(p[2], p[3]); d = edge.distance(P); inside = land.contains(P)
+        if p[1] == 'port' and (not inside or d > 1.5): Q = inward(P, 0.6)
+        elif not inside: Q = inward(P, 2.0)
+        else: continue
+        moved[p[0]] = (Q.x - p[2], Q.y - p[3])
+    for p in places:                               # a castle or sept within a moved city goes with it
+        if p[0] in moved or p[2] > 700 or not sub(p): continue
+        near = sorted((math_hypot(q[2] - p[2], q[3] - p[3]), v) for n, v in moved.items() for q in places if q[0] == n and q[1] not in ('landmark', 'tower'))
+        if near and near[0][0] < 8: moved[p[0]] = near[0][1]
+    for p in places:
+        if p[0] in moved:
+            dx, dy = moved[p[0]]; p[2], p[3] = round(p[2] + dx, 1), round(p[3] + dy, 1)
+            print(f'  settled {p[0]}: moved {math_hypot(dx, dy):.1f} mi')
+
+
+def math_hypot(a, b):
+    import math
+    return math.hypot(a, b)
+
+
+def prepare():
+    """Everything that settles the geography before the cast is built; returns the coast. Used by main() and the checks."""
+    coast_s = westeros_coast()
     snap_walls(coast_s)
     W0, W1 = WALLS[0]['pts'][0], WALLS[0]['pts'][-1]
     for p in PLACES:
@@ -452,10 +506,27 @@ def main():
     have = {p[0] for p in PLACES}
     for name, kind, x, y, people, realm, note, o in cast.EXTRA_PLACES:
         if name not in have: PLACES.append([name, kind, x, y, people, realm, note, o])
-    CAST, JOURNEYS, MODES, EVENTS, BATTLES = cast.build(PLACES, ROADS, STORIES)
+    # hand-drawn islands give way to the new mainland, then every place settles onto the land
+    from shapely.geometry import Polygon
+    main_poly = Polygon(coast_s).buffer(0)
+    for i in ISLANDS:
+        if i['name'] in ('Essos', 'Sothoryos') or i in DONOR: continue
+        g = Polygon(i['pts']).buffer(0).difference(main_poly)
+        if g.is_empty: i['pts'] = []; continue
+        g = max(getattr(g, 'geoms', [g]), key=lambda q: q.area)
+        i['pts'] = [[round(x, 2), round(y, 2)] for x, y in list(g.exterior.coords)[:-1]]
+    ISLANDS[:] = [i for i in ISLANDS if len(i['pts']) > 2]
+    settle(PLACES, coast_s)
+    return coast_s
+
+
+def main():
+    import cast
+    coast_s = prepare()
+    CAST, JOURNEYS, MODES, EVENTS, BATTLES = cast.build(PLACES, ROADS, STORIES, [coast_s] + [i['pts'] for i in ISLANDS])
     # realm borders fitted to our coasts, ranges, rivers and the Wall; peoples cut to the land
     import realms
-    coast = chaikin(WESTEROS, 2)
+    coast = westeros_coast()
     claims = REALMS['AC298']
     fitted = realms.fit(claims, PLACES, coast, ISLANDS, RANGES, RIVERS, WALLS, island_realms={'The Iron Islands'})
     byname = {r['name']: r for r in fitted}
@@ -482,7 +553,7 @@ def main():
 const GEO = (() => {
 """
     parts = [
-        ('COAST', chaikin(WESTEROS, 2)), ('ISLANDS', ISLANDS), ('COAST_ZONES', COAST_ZONES), ('RANGES', RANGES), ('HILLS', HILLS), ('PEAKS', PEAKS),
+        ('COAST', westeros_coast()), ('ISLANDS', ISLANDS), ('COAST_ZONES', COAST_ZONES), ('RANGES', RANGES), ('HILLS', HILLS), ('PEAKS', PEAKS),
         ('RIVERS', RIVERS), ('LAKES', LAKES), ('FORESTS', FORESTS), ('MARSHES', MARSHES), ('ARID', ARID), ('FARMS', FARMS),
         ('GRASS', GRASS), ('ASH', ASH), ('UPLIFT', UPLIFT), ('ICE', ICE), ('RELIEF', RELIEF), ('NUMENOR', None),
         ('PLACES', PLACES), ('REGION_LABELS', REGION_LABELS), ('SEA_LABELS', SEA_LABELS), ('REALMS', REALMS),

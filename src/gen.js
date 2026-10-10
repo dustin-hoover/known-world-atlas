@@ -112,8 +112,9 @@ let CO = null;
 const CS = { d: 0, u: 0, nx: 0, ny: 0, ring: -1, near: 0 };
 const CB = 10;            // bucket size, miles
 function initCoast(c) {
-  const ax = [], ay = [], bx = [], by = [], u0 = [], rg = [], buckets = new Map();
+  const ax = [], ay = [], bx = [], by = [], u0 = [], rg = [], buckets = new Map(), rs = [], re = [];
   c.rings.forEach((r, ri) => {
+    rs[ri] = ax.length;
     let area = 0;
     for (let i = 0; i < r.length; i++) { const p = r[i], q = r[(i + 1) % r.length]; area += p[0] * q[1] - q[0] * p[1]; }
     const pts = area < 0 ? r.slice().reverse() : r;          // anticlockwise: land lies to the left of every segment
@@ -127,9 +128,10 @@ function initCoast(c) {
           const key = gx * 100003 + gy; let b = buckets.get(key); if (!b) buckets.set(key, b = []); b.push(k);
         }
     }
+    re[ri] = ax.length - 1;
   });
   return { ax: Float64Array.from(ax), ay: Float64Array.from(ay), bx: Float64Array.from(bx), by: Float64Array.from(by), u0: Float64Array.from(u0),
-    rg: Int32Array.from(rg), buckets, sd: c.sd, w: c.w, h: c.h, x0: c.x0, y1: c.y1, res: c.res, zones: c.zones || [], mark: new Int32Array(ax.length), stamp: 0 };
+    rg: Int32Array.from(rg), rs, re, buckets, sd: c.sd, w: c.w, h: c.h, x0: c.x0, y1: c.y1, res: c.res, zones: c.zones || [], mark: new Int32Array(ax.length), stamp: 0 };
 }
 // the kind of shore here: [fjord, rocky, beach, marsh] weights 0..1 (the rest is mixed)
 const KZ = new Float32Array(4);
@@ -219,9 +221,16 @@ function coastSD(X, Y) {
   if (bk < 0) return c;
   const d = Math.sqrt(best);
   const ax = CO.ax[bk], ay = CO.ay[bk], dx = CO.bx[bk] - ax, dy = CO.by[bk] - ay, L = Math.hypot(dx, dy);
-  // which side: the nearest segment's left is land; at a corner, side with the coarse grid unless clearly away
-  let side = (dx * (Y - ay) - dy * (X - ax)) >= 0 ? 1 : -1;
-  if ((bt <= 0 || bt >= 1) && d < CO.res) side = c >= 0 ? 1 : -1;
+  // which side: the nearest segment's left is land; at a corner, the two segments' inward normals together decide
+  let side;
+  if (bt > 0 && bt < 1) side = (dx * (Y - ay) - dy * (X - ax)) >= 0 ? 1 : -1;
+  else {
+    const ri = CO.rg[bk], o = bt <= 0 ? (bk === CO.rs[ri] ? CO.re[ri] : bk - 1) : (bk === CO.re[ri] ? CO.rs[ri] : bk + 1);
+    const odx = CO.bx[o] - CO.ax[o], ody = CO.by[o] - CO.ay[o], oL = Math.hypot(odx, ody) || 1;
+    const vx = bt <= 0 ? ax : CO.bx[bk], vy = bt <= 0 ? ay : CO.by[bk];
+    const nx = -dy / L - ody / oL, ny = dx / L + odx / oL;          // sum of the inward (land-side) normals
+    side = ((X - vx) * nx + (Y - vy) * ny) >= 0 ? 1 : -1;
+  }
   CS.u = CO.u0[bk] + bt * L; CS.nx = dy / L; CS.ny = -dx / L; CS.ring = CO.rg[bk]; CS.near = 1;
   return CS.d = side * d;
 }

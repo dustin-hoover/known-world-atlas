@@ -14,6 +14,15 @@ Grades in the ledger: `text` (stated in the books), `map` (read from an official
 | `quartermaester/` | quartermaester.info place and seat data | fan, mixes book and TV data | flags only, and leads to chapters | positions, shapes, seat holders, or anything from its TV layer |
 | (online) | A Wiki of Ice and Fire | fan wiki, CC BY-SA | leads: which chapter names a place, a house or a holder | text, images or sigil art |
 
+## Real-world data (open; may be built into the map)
+
+| Folder | Source | Licence | Used for |
+|---|---|---|---|
+| `earth/` | Natural Earth 1:10m land and minor islands | public domain | Westeros's coast: Britain and Ireland bent onto our landmarks (`tools/known/donor.py`, output `tools/known/coast_donor.json`) |
+| `earth/dem/` | Copernicus DEM GLO-90 | free for any use; credit "© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA" | measuring the Earth analogues of our mountains (`tools/refs/analogues.py`, `docs/otherworldly/got/EARTH_ANALOGUES.md`) |
+
+Google Maps and Google Earth imagery and terrain are not used: their terms forbid copying or sampling them.
+
 Not used at all: HBO's maps and title sequence, the games, merchandise, and full-resolution scans of the
 official maps posted without the publisher's permission.
 

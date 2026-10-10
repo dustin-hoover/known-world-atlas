@@ -22,9 +22,9 @@ SRC = os.path.join(ROOT, 'tools', 'refs', 'earth', 'british-isles.json')
 
 # anchors: (name, lon, lat) on Earth -> (X, Y) in miles on our map (X east, Y north of Winterfell)
 BRITAIN = [
-    ('Bowness-on-Solway: the Wall, west end', -3.22, 54.95, -140, 452),
-    ('Wallsend: the Wall, east end', -1.53, 54.99, 152, 458),
-    ('Tynemouth: Eastwatch, the Bay of Seals', -1.42, 55.02, 158, 462),
+    ('Bowness-on-Solway: the Wall, west end', -3.22, 54.95, -154, 452),
+    ('Wallsend: the Wall, east end', -1.53, 54.99, 160, 458),
+    ('Tynemouth: Eastwatch, the Bay of Seals', -1.42, 55.02, 167, 462),
     ('Mull of Galloway', -4.86, 54.64, -300, 560),
     ('Mull of Kintyre', -5.80, 55.31, -420, 740),
     ('Ardnamurchan Point', -6.23, 56.73, -480, 930),
@@ -125,8 +125,34 @@ class TPS:
         return U @ self.w[:n] + self.w[n] + X @ self.w[n + 1:]
 
 
+# whole island groups moved bodily (scaled and turned, not bent): (name, lon range, lat range, centre X, Y, miles per km, turn°)
+TRANSPLANTS = [
+    ('The Iron Islands', (-3.5, -2.3), (58.65, 59.45), -370, -722, 3.0, 0),     # Orkney
+    ('Skagos', (-2.2, -0.6), (59.8, 60.95), 395, 520, 1.05, -15),                # Shetland
+]
+
+
+def transplant(rings):
+    out, rest = [], []
+    for r in rings:
+        lon = np.mean([p[0] for p in r]); lat = np.mean([p[1] for p in r])
+        t = next((t for t in TRANSPLANTS if t[1][0] <= lon <= t[1][1] and t[2][0] <= lat <= t[2][1]), None)
+        (out if t else rest).append((t, r))
+    res = []
+    for t in TRANSPLANTS:
+        grp = [r for tt, r in out if tt is t]
+        if not grp: continue
+        P = [np.array([km(lo, la) for lo, la in r]) for r in grp]
+        c = np.vstack(P).mean(axis=0); a = math.radians(t[6]); R = np.array([[math.cos(a), -math.sin(a)], [math.sin(a), math.cos(a)]])
+        for q in P:
+            w = ((q - c) @ R.T) * t[5] + np.array([t[3], t[4]])
+            res.append({'from': 'transplant', 'name': t[0], 'n': len(q), 'pts': [[round(float(x), 2), round(float(y), 2)] for x, y in w]})
+    return res, [r for _, r in rest]
+
+
 def build():
     rings = json.load(open(SRC))
+    moved, rings = transplant(rings)
     def side(r):                    # Ireland lies west of 5.4° W and south of 55.45° N, Britain the rest
         lon = np.mean([p[0] for p in r]); lat = np.mean([p[1] for p in r])
         if lon < -5.45 and lat < 55.45 and not (lon > -6.0 and lat > 54.9): return 'ireland'
@@ -143,8 +169,9 @@ def build():
         k = side(r)
         w = warps['britain' if k == 'man' else k]
         pts = w([km(lo, la) for lo, la in r])
-        out.append({'from': k, 'n': len(r), 'pts': [[round(float(x), 2), round(float(y), 2)] for x, y in pts]})
-    return out
+        out.append({'from': k, 'n': len(r), 'name': 'Bear Island' if k == 'man' else None,
+                    'pts': [[round(float(x), 2), round(float(y), 2)] for x, y in pts]})
+    return out + moved
 
 
 # what Britain and Ireland don't have, drawn by us: the Neck joining them, the Lands of Always Winter above Scotland,
@@ -159,11 +186,17 @@ def assemble(rings):
     """-> (mainland ring, [island rings]) after joining the pieces and cutting the Sea of Dorne."""
     from shapely.geometry import Polygon
     from shapely.ops import unary_union
-    polys = [Polygon(r['pts']).buffer(0) for r in rings if len(r['pts']) > 3]
-    land = unary_union(polys + [Polygon(NECK), Polygon(ALWAYS_WINTER)]).difference(Polygon(SEA_OF_DORNE))
+    polys = [(r.get('name'), Polygon(r['pts']).buffer(0)) for r in rings if len(r['pts']) > 3]
+    land = unary_union([g for _, g in polys] + [Polygon(NECK), Polygon(ALWAYS_WINTER)]).difference(Polygon(SEA_OF_DORNE))
+    # the warp can fold a narrow estuary into slivers: close water gaps and open land threads under about a mile
+    land = land.buffer(0.5, join_style=1).buffer(-1.0, join_style=1).buffer(0.5, join_style=1).simplify(0.05)
     parts = sorted(getattr(land, 'geoms', [land]), key=lambda g: -g.area)
     ring = lambda g: [[round(x, 2), round(y, 2)] for x, y in list(g.exterior.coords)[:-1]]
-    return ring(parts[0]), [ring(g) for g in parts[1:] if g.area > 0.5]
+    def name(g):
+        for n, q in polys:
+            if n and q.intersects(g) and q.intersection(g).area > 0.5 * min(q.area, g.area): return n
+        return None
+    return ring(parts[0]), [{'name': name(g), 'pts': ring(g)} for g in parts[1:] if g.area > 0.5]
 
 
 def preview(rings, path):
@@ -174,7 +207,7 @@ def preview(rings, path):
     f = lambda p: ((p[0] - x0) * s, (y1 - p[1]) * s)
     col = {'britain': (232, 236, 214), 'ireland': (226, 236, 210), 'man': (232, 236, 214)}
     main, isles = assemble(rings)
-    for r in [main] + isles: d.polygon([f(p) for p in r], fill=(230, 236, 214), outline=(60, 80, 70))
+    for r in [main] + [i['pts'] for i in isles]: d.polygon([f(p) for p in r], fill=(230, 236, 214), outline=(60, 80, 70))
     old = author.chaikin(author.WESTEROS, 2)
     d.line([f(p) for p in old + [old[0]]], fill=(150, 60, 60), width=1)
     for name, lo, la, X, Y in BRITAIN + IRELAND:

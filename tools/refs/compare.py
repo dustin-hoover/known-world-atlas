@@ -28,8 +28,8 @@ FAR, COAST, INLAND = 100, 6, 25           # miles: a position flag; "on the coas
 # ------------------------------------------------------------------ our map
 def ours():
     import author, cast
-    coast = author.chaikin(author.WESTEROS, 2)
-    author.snap_walls(coast)
+    import io, contextlib
+    with contextlib.redirect_stdout(io.StringIO()): coast = author.prepare()
     places = {}
     for p in author.PLACES: places[p[0]] = dict(X=p[2], Y=p[3], kind=p[1], realm=p[5])
     for e in cast.EXTRA_PLACES: places.setdefault(e[0], dict(X=e[2], Y=e[3], kind=e[1], realm=e[5]))

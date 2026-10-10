@@ -175,7 +175,7 @@ SEA = {  # sea lanes as [X, Y] waypoints (open water)
     'dragonstone-storms-end': [[400, -1192], [400, -1208], [464, -1384], [384, -1560], [374, -1576]],
     'tarth-mainland': [[562, -1520], [376, -1560]],
     'volon-therys-cape-wrath': [[1300, -2150], [1272, -2144], [936, -2048], [554, -1699]],
-    'bay-of-seals-skagos': [[322, 365], [352, 472], [350, 500]],
+    'bay-of-seals-skagos': [[306, 338], [352, 472], [365, 510]],
 }
 
 
@@ -210,7 +210,7 @@ PATHS = {
               ('The House of Black and White', '300 2 3'), ('The House of Black and White', '300 13 5')),
     'bran': J(('Winterfell', '297 13 1'), ('Winterfell', '299 5 1'), ([-30, 120], '299 5 20'), ([60, 300], '299 7 15'), ('Queenscrown', '299 8 1'), ('The Nightfort', '299 9 1'),
               ([-30, 520], '299 9 10'), ([-20, 700], '299 12 1'), ([20, 880], '300 2 1'), ('The cave of the three-eyed crow', '300 4 1'), ('The cave of the three-eyed crow', '300 13 5')),
-    'rickon': J(('Winterfell', '297 13 1'), ('Winterfell', '299 5 1'), ([200, 120], '299 5 25'), ([322, 365], '299 9 1'), ([322, 365], '299 11 20'), LANE('bay-of-seals-skagos', '299 11 21', '299 12 1'), ('Skagos', '300 13 5')),
+    'rickon': J(('Winterfell', '297 13 1'), ('Winterfell', '299 5 1'), ([200, 120], '299 5 25'), ([306, 338], '299 9 1'), ([306, 338], '299 11 20'), LANE('bay-of-seals-skagos', '299 11 21', '299 12 1'), ('Skagos', '300 13 5')),
     'jon': J(('Winterfell', '297 13 1'), ('Winterfell', '298 2 20'), ROAD('The Kingsroad', 'Winterfell', 'Castle Black', '298 2 20', '298 3 20'), ('Castle Black', '299 1 1'),
              ('Craster\'s Keep', '299 1 20'), ('The Fist of the First Men', '299 2 5'), ('The Skirling Pass', '299 3 20'), ([-150, 700], '299 5 1'), ([-60, 520], '299 7 20'),
              ('Queenscrown', '299 8 1'), ('Castle Black', '299 8 20'), ('Castle Black', '300 13 5')),
@@ -306,7 +306,7 @@ PATHS = {
     'meera': J(('Greywater Watch', '297 13 1'), ('Greywater Watch', '299 1 15'), ROAD('The Kingsroad', 'Moat Cailin', 'Winterfell', '299 1 20', '299 2 15'), ('Winterfell', '299 5 1'), ([-30, 120], '299 5 20'),
                ([60, 300], '299 7 15'), ('Queenscrown', '299 8 1'), ('The Nightfort', '299 9 1'), ([-30, 520], '299 9 10'), ([-20, 700], '299 12 1'), ([20, 880], '300 2 1'),
                ('The cave of the three-eyed crow', '300 4 1'), ('The cave of the three-eyed crow', '300 13 5')),
-    'osha': J(([-40, 120], '297 13 1'), ([-40, 120], '298 4 10'), ('Winterfell', '298 4 12'), ('Winterfell', '299 5 1'), ([200, 120], '299 5 25'), ([322, 365], '299 9 1'), ([322, 365], '299 11 20'), LANE('bay-of-seals-skagos', '299 11 21', '299 12 1'), ('Skagos', '300 13 5')),
+    'osha': J(([-40, 120], '297 13 1'), ([-40, 120], '298 4 10'), ('Winterfell', '298 4 12'), ('Winterfell', '299 5 1'), ([200, 120], '299 5 25'), ([306, 338], '299 9 1'), ([306, 338], '299 11 20'), LANE('bay-of-seals-skagos', '299 11 21', '299 12 1'), ('Skagos', '300 13 5')),
 }
 PATHS['jojen'] = PATHS['meera']
 # the wolves keep their people's roads while they are together
@@ -642,8 +642,8 @@ def _clip(pts, a, b):
     return res
 
 
-def build(places, roads, stories):
-    """-> (CAST, JOURNEYS, MODES, EVENTS) for geo.js."""
+def build(places, roads, stories, land_rings=None):
+    """-> (CAST, JOURNEYS, MODES, EVENTS) for geo.js. With land_rings, every leg is kept to its element (paths.py)."""
     where = {p[0]: (p[2], p[3]) for p in places}
     def XY(v):
         if isinstance(v, str):
@@ -654,6 +654,21 @@ def build(places, roads, stories):
     full = {}
     for k, steps in PATHS.items():
         if steps: full[k] = expand(steps, XY, road)
+    # every sea lane is sailed: the leg along a LANE is 'sea' whatever else the traveller is doing that season
+    lanes = [['^' + re.escape(k) + '$', s[2], s[3], 'sea'] for k, steps in PATHS.items() if 'dragon' not in CHARS[k]
+             for s in (steps or []) if s[0] == 'lane']
+    windows = sorted(lanes + MODES, key=lambda m: (T(m[2]) - T(m[1]), m[3] != 'wheelhouse'))
+    if land_rings:
+        import paths
+        land = paths.Land(land_rings)
+        for k in list(full):
+            if 'dragon' in CHARS[k]: continue
+            def element(t, k=k):
+                for rx, d0, d1, mode in windows:
+                    if T(d0) <= t <= T(d1) and re.search(rx, k):
+                        return 'sea' if mode in ('sea', 'blackship') else None if mode in ('boat', 'barrel', 'dragon', 'fly') else 'land'
+                return 'land'
+            full[k] = paths.keep_to(full[k], land, element)
     for k, (src, d0, d1) in DERIVED.items():
         a, b = T(d0), T(d1) if d1 else 1e9
         pts = [p for p in full[src] if a <= p[2] <= b]
@@ -674,13 +689,10 @@ def build(places, roads, stories):
             if full[k][-1][2] < last - 1: j['hide'] = 1         # dead or gone: no dot left behind
             JOURNEYS[sk].append(j)
             JCAST[sk][nm] = [c if isinstance(c, str) else [c[0], c[1], c[2]] for c in CASTS.get(k, [k])]
-    # every sea lane is sailed: the leg along a LANE is 'sea' whatever else the traveller is doing that season
-    lanes = [['^' + re.escape(k) + '$', s[2], s[3], 'sea'] for k, steps in PATHS.items() if 'dragon' not in CHARS[k]
-             for s in (steps or []) if s[0] == 'lane']
     # MODES name journeys, not ids; the app takes the first match, so the narrowest window comes first
     # (a voyage inside a season on horseback), and the wheelhouse before the riders beside it
     modes = []
-    for rx, d0, d1, mode in sorted(lanes + MODES, key=lambda m: (T(m[2]) - T(m[1]), m[3] != 'wheelhouse')):
+    for rx, d0, d1, mode in windows:
         ids = [k for k in CHARS if k in full and re.search(rx, k)]
         if not ids: continue
         modes.append(['^(' + '|'.join(re.escape(name_of(k)) for k in ids) + ')$', d0, d1, mode])

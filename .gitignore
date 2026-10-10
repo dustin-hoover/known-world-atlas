@@ -20,3 +20,4 @@ tools/borders/*.png
 tools/refs/*
 !tools/refs/SOURCES.md
 !tools/refs/compare.py
+!tools/refs/analogues.py
