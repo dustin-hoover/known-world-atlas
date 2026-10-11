@@ -79,7 +79,20 @@ function coastData(GEO) {
     for (let i = 0; i < a.length; i++) a[i] = d[i * 4];
     return boxBlur(a, cw, chh, 3, 2);
   });
-  return { rings, sd, w: cw, h: chh, x0: X0, y1: Y1, res: CR, zones };
+  // each region's colour factor (author.py COLOUR_ZONES, from Blue Marble), premultiplied by its weight so that
+  // blurring blends neighbouring regions instead of fading them toward black
+  const tint = [0, 1, 2, 3].map(c => {
+    g.fillStyle = '#000'; g.fillRect(0, 0, cw, chh);
+    for (const z of GEO.COLOUR_ZONES || []) {
+      const v = c === 3 ? 255 : Math.round(Math.min(2, z.f[c]) * 127.5);
+      g.fillStyle = `rgb(${v},${v},${v})`; g.beginPath();
+      z.pts.forEach((p, i) => { const x = (p[0] - X0) / CR, y = (Y1 - p[1]) / CR; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); g.fill();
+    }
+    const d = g.getImageData(0, 0, cw, chh).data, a = new Uint8Array(cw * chh);
+    for (let i = 0; i < a.length; i++) a[i] = d[i * 4];
+    return boxBlur(a, cw, chh, 5, 2);
+  });
+  return { rings, sd, w: cw, h: chh, x0: X0, y1: Y1, res: CR, zones, tint };
 }
 
 function build(GEO) {

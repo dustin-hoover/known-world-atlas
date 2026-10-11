@@ -1,0 +1,186 @@
+{
+ "Beyond the Wall": {
+  "analogue": "Lapland taiga",
+  "rgb": [
+   29,
+   41,
+   12
+  ]
+ },
+ "The North": {
+  "analogue": "the Scottish Highlands and moors",
+  "rgb": [
+   37,
+   45,
+   17
+  ]
+ },
+ "The Iron Islands": {
+  "analogue": "Orkney",
+  "rgb": [
+   14,
+   24,
+   11
+  ]
+ },
+ "The Vale": {
+  "analogue": "the Swiss Alps and pre-Alps",
+  "rgb": [
+   43,
+   57,
+   24
+  ]
+ },
+ "The Riverlands": {
+  "analogue": "the Po valley",
+  "rgb": [
+   60,
+   68,
+   34
+  ]
+ },
+ "The Westerlands": {
+  "analogue": "Asturias and Le\u00f3n",
+  "rgb": [
+   42,
+   52,
+   20
+  ]
+ },
+ "The Crownlands": {
+  "analogue": "Lazio",
+  "rgb": [
+   65,
+   64,
+   33
+  ]
+ },
+ "The Reach": {
+  "analogue": "Andalusia, the Guadalquivir",
+  "rgb": [
+   125,
+   107,
+   67
+  ]
+ },
+ "The Stormlands": {
+  "analogue": "Cantabria and the Basque coast",
+  "rgb": [
+   40,
+   49,
+   20
+  ]
+ },
+ "Dorne": {
+  "analogue": "the Anti-Atlas and the Draa",
+  "rgb": [
+   144,
+   117,
+   86
+  ]
+ },
+ "The Dornish sands": {
+  "analogue": "the Rub' al Khali",
+  "rgb": [
+   197,
+   169,
+   127
+  ]
+ },
+ "Braavos": {
+  "analogue": "the Dutch coast",
+  "rgb": [
+   43,
+   59,
+   22
+  ]
+ },
+ "Pentos": {
+  "analogue": "Tuscany",
+  "rgb": [
+   70,
+   69,
+   34
+  ]
+ },
+ "Norvos": {
+  "analogue": "the Bavarian foothills",
+  "rgb": [
+   34,
+   51,
+   16
+  ]
+ },
+ "Qohor": {
+  "analogue": "the Carpathian forests",
+  "rgb": [
+   32,
+   50,
+   15
+  ]
+ },
+ "Myr": {
+  "analogue": "Apulia",
+  "rgb": [
+   99,
+   86,
+   56
+  ]
+ },
+ "Volantis": {
+  "analogue": "the Nile delta",
+  "rgb": [
+   52,
+   62,
+   33
+  ]
+ },
+ "The Dothraki Sea": {
+  "analogue": "the Kazakh steppe",
+  "rgb": [
+   99,
+   85,
+   55
+  ]
+ },
+ "Slaver's Bay": {
+  "analogue": "Mesopotamia",
+  "rgb": [
+   155,
+   136,
+   98
+  ]
+ },
+ "The Red Waste": {
+  "analogue": "the Nafud",
+  "rgb": [
+   197,
+   155,
+   109
+  ]
+ },
+ "Lhazar": {
+  "analogue": "the Zagros foothills",
+  "rgb": [
+   147,
+   123,
+   82
+  ]
+ },
+ "Qarth": {
+  "analogue": "the Hadhramaut",
+  "rgb": [
+   168,
+   145,
+   114
+  ]
+ },
+ "Yi Ti": {
+  "analogue": "the Yangtze plain",
+  "rgb": [
+   53,
+   69,
+   28
+  ]
+ }
+}

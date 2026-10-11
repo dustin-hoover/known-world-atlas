@@ -561,6 +561,25 @@ def river_mouths(coast_s):
     return ring(cut(main, cuts['main']))
 
 
+def colours(fitted):
+    """Each region's ground colour, as a factor on our own colours: its Earth analogue's colour in Blue Marble
+    (tools/known/colours.py) relative to the average of all regions, softened. Realms first, then the deserts over them."""
+    import math
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'colours.json')
+    if not os.path.exists(path): return []
+    c = json.load(open(path))
+    gm = [math.exp(sum(math.log(max(4, v['rgb'][i])) for v in c.values()) / len(c)) for i in range(3)]
+    fac = lambda rgb: [round(min(1.6, max(0.72, (max(4, rgb[i]) / gm[i]) ** 0.35)), 3) for i in range(3)]
+    out = []
+    for r in fitted:
+        if r['name'] in c:
+            for part in [r['pts']] + [q for q in r.get('parts', [])]:
+                out.append({'name': r['name'], 'f': fac(c[r['name']]['rgb']), 'pts': part})
+    for a in ARID:
+        if a['name'] in c: out.append({'name': a['name'], 'f': fac(c[a['name']]['rgb']), 'pts': a['pts']})
+    return out
+
+
 def prepare():
     """Everything that settles the geography before the cast is built; returns the coast. Used by main() and the checks."""
     coast_s = river_mouths(westeros_coast())
@@ -623,6 +642,7 @@ def main():
     claims = REALMS['AC298']
     fitted = realms.fit(claims, PLACES, coast, ISLANDS, RANGES, RIVERS, WALLS, island_realms={'The Iron Islands'})
     byname = {r['name']: r for r in fitted}
+    colour_zones = colours(fitted)
     claim_of = {id(c['pts']): c['name'] for c in claims}
     out = []
     for p in PEOPLES:
@@ -646,7 +666,7 @@ def main():
 const GEO = (() => {
 """
     parts = [
-        ('COAST', coast_s), ('ISLANDS', ISLANDS), ('COAST_ZONES', COAST_ZONES), ('TERRAIN_ZONES', terrain_zones()), ('RANGES', RANGES), ('HILLS', HILLS), ('PEAKS', PEAKS),
+        ('COAST', coast_s), ('ISLANDS', ISLANDS), ('COAST_ZONES', COAST_ZONES), ('TERRAIN_ZONES', terrain_zones()), ('COLOUR_ZONES', colour_zones), ('RANGES', RANGES), ('HILLS', HILLS), ('PEAKS', PEAKS),
         ('RIVERS', RIVERS), ('LAKES', LAKES), ('FORESTS', FORESTS), ('MARSHES', MARSHES), ('ARID', ARID), ('FARMS', FARMS),
         ('GRASS', GRASS), ('ASH', ASH), ('UPLIFT', UPLIFT), ('ICE', ICE), ('RELIEF', RELIEF), ('NUMENOR', None),
         ('PLACES', PLACES), ('REGION_LABELS', REGION_LABELS), ('SEA_LABELS', SEA_LABELS), ('REALMS', REALMS),

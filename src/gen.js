@@ -131,10 +131,23 @@ function initCoast(c) {
     re[ri] = ax.length - 1;
   });
   return { ax: Float64Array.from(ax), ay: Float64Array.from(ay), bx: Float64Array.from(bx), by: Float64Array.from(by), u0: Float64Array.from(u0),
-    rg: Int32Array.from(rg), rs, re, buckets, sd: c.sd, w: c.w, h: c.h, x0: c.x0, y1: c.y1, res: c.res, zones: c.zones || [], mark: new Int32Array(ax.length), stamp: 0 };
+    rg: Int32Array.from(rg), rs, re, buckets, tint: c.tint || null, sd: c.sd, w: c.w, h: c.h, x0: c.x0, y1: c.y1, res: c.res, zones: c.zones || [], mark: new Int32Array(ax.length), stamp: 0 };
 }
 // the kind of shore here: [fjord, rocky, beach, marsh] weights 0..1 (the rest is mixed)
-const KZ = new Float32Array(6);
+const KZ = new Float32Array(6), TINT = new Float32Array(3);
+// the region's colour factor here (from its Earth analogue in Blue Marble), 1 where no region lies; returns the weight
+function tintAt(X, Y) {
+  TINT.fill(1);
+  if (!CO || !CO.tint) return 0;
+  const px = (X - CO.x0) / CO.res - 0.5, py = (CO.y1 - Y) / CO.res - 0.5;
+  if (px < 0 || py < 0 || px >= CO.w - 1 || py >= CO.h - 1) return 0;
+  const ix = px | 0, iy = py | 0, fx = px - ix, fy = py - iy, i = iy * CO.w + ix, W = CO.w;
+  const s = a => ((a[i] * (1 - fx) + a[i + 1] * fx) * (1 - fy) + (a[i + W] * (1 - fx) + a[i + W + 1] * fx) * fy) / 255;
+  const w = s(CO.tint[3]);
+  if (w < 0.02) return 0;
+  for (let c = 0; c < 3; c++) TINT[c] = s(CO.tint[c]) * 2 / w;
+  return Math.min(1, w);
+}
 function shoreKind(X, Y) {
   const px = (X - CO.x0) / CO.res - 0.5, py = (CO.y1 - Y) / CO.res - 0.5;
   KZ.fill(0);
@@ -715,6 +728,9 @@ function colorAt(X, Y, h, slope, pix, mode, dsea) {
       blend(40, 36, 36, sat(1 - dO / (R0 * 0.4)) * 0.6);
     }
   }
+  // each region's own colour, graded from its Earth analogue (tools/known/colours.py): Dorne toward the Anti-Atlas,
+  // the North toward the Scottish moors; a factor on our colours, so fields, woods and marsh keep their detail
+  { const w = tintAt(X, Y) * 0.9; if (w > 0) for (let c = 0; c < 3; c++) tmp3[c] *= 1 + (TINT[c] - 1) * w; }
   // alpine: rock on steep slopes and high ground, snow above the snowline
   const rock = Math.max(sstep(0.5, 0.95, slope), sstep(treeline + 200, treeline + 900, h) * 0.85);
   if (rock > 0.01) {

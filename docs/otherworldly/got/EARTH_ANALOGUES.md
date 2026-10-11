@@ -95,5 +95,7 @@ of measurements.
    and how far apart its ridges run) sets the parameters of our ridge noise for that range.
 2. **Terrain from the real thing:** later, a range can take its relief straight from its analogue's elevation,
    bent onto our range's line the way the coast is bent onto our landmarks (the same open data, credited).
-3. **Colours:** Blue Marble's colours for each analogue set the palette of the ground in each region.
+3. **Colours (done):** `tools/known/colours.py` samples each region's analogue in Blue Marble (July) and writes
+   `tools/known/colours.json`; each realm, and each desert, grades our ground toward its analogue's colour
+   relative to the average of all regions (so Dorne reads like the Anti-Atlas, the North like the Scottish moors).
 4. **Rivers:** the real river's sinuosity and how its tributaries branch set how ours wind and divide.
