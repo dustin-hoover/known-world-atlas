@@ -91,6 +91,14 @@ class Land:
 
 def keep_to(pts, land, mode_at):
     """pts: [(x, y, t)] -> the same journey with every leg kept to its element. mode_at(t) -> 'land' | 'sea' | None."""
+    pts = list(pts)
+    for i, p in enumerate(pts):             # a stop between two legs on the same element stands on that element
+        a = mode_at((pts[i - 1][2] + p[2]) / 2) if i else None
+        b = mode_at((p[2] + pts[i + 1][2]) / 2) if i + 1 < len(pts) else None
+        m = a if a == b or b is None else b if a is None else None
+        if m is None or land.at(p[0], p[1]) == (m == 'land') or land.clear(p, m != 'land') < 1.0: continue
+        q = land.nearest(p, m == 'land', reach=20.0)
+        pts[i] = (q[0], q[1], p[2])
     out = [pts[0]]
     for a, b in zip(pts, pts[1:]):
         m = mode_at((a[2] + b[2]) / 2)

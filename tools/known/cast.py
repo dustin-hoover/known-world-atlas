@@ -656,10 +656,9 @@ def build(places, roads, stories, land_rings=None):
         import paths
         land = paths.Land(land_rings)
         for lane, pts in SEA.items():
-            for i in (0, len(pts) - 1):          # a lane's end on land is its port: it follows the port to the shore
-                if not land.at(*pts[i]): continue
-                q = min(places, key=lambda p: math.hypot(p[2] - pts[i][0], p[3] - pts[i][1]))
-                if math.hypot(q[2] - pts[i][0], q[3] - pts[i][1]) < 15: pts[i] = [q[2], q[3]]
+            for i in (0, len(pts) - 1):          # a lane's end is its port: it follows the port to the shore
+                q = min((p for p in places if p[1] not in ('landmark', 'wonder', 'tower')), key=lambda p: math.hypot(p[2] - pts[i][0], p[3] - pts[i][1]))
+                if math.hypot(q[2] - pts[i][0], q[3] - pts[i][1]) < 20: pts[i] = [q[2], q[3]]
             for i in range(1, len(pts) - 1):     # the rest is open water: a waypoint the coast now covers moves offshore
                 if land.clear(pts[i]) < 4: pts[i] = [round(v, 1) for v in land.nearest(pts[i], False, clear=6)]
     full = {}

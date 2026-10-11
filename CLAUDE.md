@@ -9,7 +9,8 @@ Arda's engine notes below still apply; what differs in this world:
 - **Coasts from Earth:** Westeros's coast is Britain and upside-down Ireland bent onto our landmarks (`tools/known/donor.py`
   → `coast_donor.json`); Essos and Sothoryos keep our outline (author.py `ESSOS`, `SOTHORYOS`) with real shores laid
   along it and real islands moved bodily (`tools/known/shores.py` → `coast_shores.json`, pins move Braavos, Valyria, the
-  Fourteen Flames, Ib Nefer). Both read Natural Earth from `tools/refs/earth/` (git-ignored); re-run them, then `npm run author`.
+  Fourteen Flames, Ib Nefer); shores.py also lays real detail on Westeros's long straight edges (its output wins over
+  the donor's) and gives each river its Earth analogue's bends (`RIVERS_DRAWN_LIST` keeps our own courses). Both read Natural Earth from `tools/refs/earth/` (git-ignored); re-run them, then `npm run author`.
 - **Frame:** `gen.js` LAT0 = 58 (Winterfell). `rasters.js` extent X −954…5850, Y −5502…1500 at 6 mi/px (extents must
   divide by RES into whole pixels, or every height is NaN).
 - **Calendar (`wx.js`):** years AC (negative = BC, no year 0), 12 moons of 30 days + 5 closing days (our convention);

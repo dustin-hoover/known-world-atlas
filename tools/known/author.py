@@ -49,15 +49,27 @@ WESTEROS = [  # clockwise from the north-west of the Land of Always Winter
     [-520, -40], [-600, 40], [-560, 110], [-440, 120], [-330, 180], [-260, 250], [-220, 320], [-180, 400],  # Sea Dragon Point, the Bay of Ice
     [-150, 425], [-136, 444], [-142, 462], [-220, 520], [-320, 600], [-400, 700], [-470, 850], [-480, 1000],                 # the Wall's west end, the Frozen Shore
 ]
+def shores():
+    """Essos and Sothoryos laid with real shores, and Westeros with real detail on its straight edges, by
+    tools/known/shores.py (coast_shores.json), when it exists."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'coast_shores.json')
+    return json.load(open(path)) if os.path.exists(path) else {}
+
+
+SHORES = shores()
+SHORE_ISLES = [{'name': i['name'] or 'isle', 'pts': i['pts']} for k in ('Essos', 'Sothoryos') for i in SHORES.get(k, {}).get('islands', [])]
+
 def westeros_coast():
     """Westeros's coast: built from Britain and Ireland by tools/known/donor.py when coast_donor.json exists,
     else the hand-drawn outline above."""
+    if 'Westeros' in SHORES: return SHORES['Westeros']['coast']       # with real detail on its straight edges (shores.py)
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'coast_donor.json')
     if os.path.exists(path): return json.load(open(path))['coast']
     return chaikin(WESTEROS, 2)
 
 
 def donor_islands():
+    if 'Westeros' in SHORES: return [{'name': i['name'] or 'isle', 'pts': i['pts']} for i in SHORES['Westeros']['islands']]
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'coast_donor.json')
     if not os.path.exists(path): return []
     return [{'name': i['name'] or 'isle', 'pts': i['pts']} for i in json.load(open(path))['islands']]
@@ -79,14 +91,6 @@ SOTHORYOS = [
 ]
 
 
-def shores():
-    """Essos and Sothoryos laid with real shores by tools/known/shores.py (coast_shores.json), when it exists."""
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'coast_shores.json')
-    return json.load(open(path)) if os.path.exists(path) else {}
-
-
-SHORES = shores()
-SHORE_ISLES = [{'name': i['name'] or 'isle', 'pts': i['pts']} for k in ('Essos', 'Sothoryos') for i in SHORES.get(k, {}).get('islands', [])]
 SHORE_MADE = {i['name'] for i in SHORE_ISLES if i['name'] != 'isle'}      # hand-drawn islands that real ones replace
 
 
@@ -206,6 +210,10 @@ RIVERS = [
     {'name': 'The Rhoyne', 'alt': 'the Mother Rhoyne', 'w0': 60, 'w1': 900, 'rank': 1, 'pts': [[1150, -650], [1180, -850], [1230, -1050], [1300, -1500], [1360, -1800], [1420, -2205]]},
     {'name': 'The Skahazadhan', 'w0': 40, 'w1': 300, 'rank': 2, 'pts': [[2900, -1650], [2800, -1820], [2700, -1960]]},
 ]
+# our own courses, before shores.py gives each river the bends of its Earth analogue (the Rhoyne the Danube's...)
+RIVERS_DRAWN_LIST = [{'name': r['name'], 'pts': [list(p) for p in r['pts']]} for r in RIVERS]
+for r in RIVERS:
+    if r['name'] in SHORES.get('rivers', {}): r['pts'] = SHORES['rivers'][r['name']]
 LAKES = [
     {'name': 'The Gods Eye', 'pts': chaikin([[70, -960], [140, -950], [175, -990], [150, -1035], [90, -1035], [60, -1000]], 2)},
     {'name': 'The Long Lake', 'pts': chaikin([[30, 180], [60, 185], [62, 215], [36, 220]], 2)},
@@ -260,7 +268,7 @@ PLACES = [
     P('Karhold', 'fortress', 380, 170, 'north', 'The North', 'Seat of House Karstark in the east of the North.', rank=4),
     P('The Dreadfort', 'fortress', 260, 60, 'north', 'The North', 'Seat of House Bolton.', rank=3),
     P('Deepwood Motte', 'fortress', -260, 60, 'north', 'The North', 'Seat of House Glover in the Wolfswood.', rank=3),
-    P('Bear Island', 'fortress', -300, 262, 'north', 'The North', 'Island seat of House Mormont.', rank=4),
+    P('Bear Island', 'fortress', -318, 400, 'north', 'The North', 'Island seat of House Mormont.', rank=4),
     P('Torrhen\'s Square', 'fortress', -130, -170, 'north', 'The North', 'Seat of House Tallhart.', rank=4),
     P('Barrowton', 'town', -90, -240, 'north', 'The North', 'Town of the barrowlands beside the First King\'s barrow.', rank=4, culture='bree', r=0.25, pop=2500),
     P('White Harbor', 'port', 185, -275, 'north', 'The North', 'The North\'s great port, seat of House Manderly, at the mouth of the White Knife.', rank=2, culture='gondor', r=0.5, pop=12000),
@@ -382,7 +390,7 @@ SEA_LABELS = [
     ['The Sunset Sea', -1200, -900, 1.6, 0, 6.5], ['The Narrow Sea', 640, -1050, 1.2, 2.5, 7], ['The Summer Sea', 1200, -2750, 1.6, 0, 6.5],
     ['The Shivering Sea', 2400, 250, 1.4, 0, 6.5], ['The Jade Sea', 4300, -3100, 1.4, 0, 6.5], ['Slaver\'s Bay', 2560, -2150, 0.9, 4, 8.5],
     ['The Bite', 300, -330, 0.9, 4, 8.5], ['Blackwater Bay', 320, -1250, 0.8, 5, 9], ['Shipbreaker Bay', 430, -1490, 0.8, 5, 9],
-    ['The Sea of Dorne', 250, -2000, 0.9, 4, 8.5], ['Ironman\'s Bay', -250, -720, 0.9, 4, 8.5], ['The Bay of Ice', -320, 380, 0.8, 4, 8.5],
+    ['The Sea of Dorne', 250, -2000, 0.9, 4, 8.5], ['Ironman\'s Bay', -250, -720, 0.9, 4, 8.5], ['The Bay of Ice', -238, 400, 0.8, 4, 8.5],
     ['The Bay of Seals', 300, 470, 0.8, 4, 8.5], ['The Smoking Sea', 1850, -2610, 0.9, 4, 8.5], ['The Bay of Crabs', 400, -930, 0.8, 5, 9],
 ]
 
@@ -597,8 +605,26 @@ def colours(fitted):
     return out
 
 
+def river_towns():
+    """A place that stood on one of our drawn rivers stands on its real-shaped course, its landmarks with it."""
+    import math
+    from shapely.geometry import LineString, Point
+    drawn = {r['name']: r['pts'] for r in RIVERS_DRAWN_LIST}
+    for r in RIVERS:
+        if r['pts'] == drawn.get(r['name']): continue
+        old, new = LineString(drawn[r['name']]), LineString(r['pts'])
+        for t in PLACES:
+            P = Point(t[2], t[3])
+            if t[1] in ('landmark', 'tower') or old.distance(P) > 3 or new.distance(P) < 0.5: continue
+            q = new.interpolate(new.project(P)); dx, dy = q.x - t[2], q.y - t[3]
+            group = [p for p in PLACES if p is t or (p[1] in ('landmark', 'tower') and math.hypot(p[2] - t[2], p[3] - t[3]) < 8)]
+            for p in group: p[2], p[3] = round(p[2] + dx, 1), round(p[3] + dy, 1)
+            print(f'  {t[0]} stays on {r["name"]} (moved {math.hypot(dx, dy):.1f} mi)')
+
+
 def prepare():
     """Everything that settles the geography before the cast is built; returns the coast. Used by main() and the checks."""
+    river_towns()
     coast_s = river_mouths(westeros_coast())
     snap_walls(coast_s)
     W0, W1 = WALLS[0]['pts'][0], WALLS[0]['pts'][-1]

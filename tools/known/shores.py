@@ -85,55 +85,124 @@ REGIONS = [              # (pool, X0, X1, Y0, Y1): the first that holds an edge'
 EDGE = 7.0               # miles
 
 
-def westeros(ring):
-    """-> (coast ring, [island rings]) with real detail laid on the long straight edges."""
+def westeros(ring, donor_isles=()):
+    """-> (coast ring, [{'name', 'pts'}] islands) with real detail laid on the long straight edges."""
     ring = np.asarray(ring, float)
     if not Polygon(ring).exterior.is_ccw: ring = ring[::-1]
-    n = len(ring); out = []; isles = []
+    n = len(ring); isles = []
     # the two stretches, smoothed (our corners there are only a drawing's) and laid whole
-    done = np.zeros(n, bool); spans = []
+    done = np.zeros(n, bool); spans = {}
     for a, b, ra, rb, what, sig in WESTEROS_STRETCHES:
         ia = int(np.argmin(((ring - a) ** 2).sum(1))); ib = int(np.argmin(((ring - b) ** 2).sum(1)))
         idx = (ia + np.arange((ib - ia) % n + 1)) % n; done[idx[:-1]] = True
         P = resample(ring[idx], 0.5); P = smooth(P, 20 / 0.5)
         c, il, _, info = lay(P, ra, rb, sig=sig)
         print(f'  Westeros: {what:40s} k={info["k"]:.2f} mi/km, {info["ours_mi"]} mi, {len(il)} islands')
-        spans.append((ia, c)); isles += il
+        spans[ia] = c; isles += [{'name': None, 'pts': q} for q in il]
     pieces = {k: piece_of(a, b) for k, (a, b, _) in POOLS.items()}
-    # room around each edge: the nearest coast that is not this stretch of it (across a firth, a sea loch, a strait)
-    from scipy.spatial import cKDTree
-    D = resample(np.vstack([ring, ring[:1]]), 0.5); sD = np.arange(len(D)) * 0.5; LD = sD[-1]
-    tD = cKDTree(D)
-    def room(m, sm, L):
-        d, j = tD.query(m, k=200, distance_upper_bound=60)
-        far = np.isfinite(d) & (np.minimum(abs(sD[np.minimum(j, len(D) - 1)] - sm), LD - abs(sD[np.minimum(j, len(D) - 1)] - sm)) > L / 2 + 6)
-        return float(d[far].min()) if far.any() else 60.0
-    s_at = np.r_[0, np.cumsum(np.hypot(*np.diff(ring, axis=0).T))]
-    at = {k: 0 for k in POOLS}; used = 0
-    lay_on = {ia: c for ia, c in spans}
-    i = 0
-    while i < n:
-        if i in lay_on:
-            out.append(lay_on[i][:-1]); i += 1
-            while i < n and done[i]: i += 1
-            continue
-        if done[i]: i += 1; continue
-        P, Q = ring[i], ring[(i + 1) % n]; L = math.hypot(*(Q - P))
-        if L < EDGE: out.append(P[None]); i += 1; continue
-        m = (P + Q) / 2
-        pool = next(k for k, x0, x1, y0, y1 in REGIONS if x0 <= m[0] <= x1 and y0 <= m[1] <= y1)
-        pts, poly, left, lat0, R = pieces[pool]
-        need = int(L * 1.6 / 0.4) + 2                                  # about as much real coast as the edge is long
-        o = at[pool] if at[pool] + need < len(R) else 0; at[pool] = o + need + 25
-        sub = R[o:o + need]
-        ll = np.c_[sub[:, 0] / (111.32 * math.cos(math.radians(lat0))), sub[:, 1] / 110.57]
-        sig = max(2.0, min(L / 4, 12.0))
-        amp = min(1.0, room(m, s_at[i] + L / 2, L) / (3 * sig))         # a narrow sea loch keeps its width
-        c, il, _, _ = lay(np.array([P, Q]), None, None, sig=sig, taper=min(TAPER, L / 5),
-                          piece=(ll, poly, left, lat0, sub), isle_km=8.0 if amp > 0.6 else 0.0, amp=amp)
-        out.append(c[:-1]); isles += il; used += 1; i += 1
-    print(f'  Westeros: real detail laid on {used} straight edges')
-    return np.vstack(out), isles
+    at = {k: 0 for k in POOLS}; count = [0]
+
+    def detail(ring, done=None, spans={}):
+        """Every edge longer than EDGE takes a piece of real coast from its region's pool, its ends held."""
+        n = len(ring); done = np.zeros(n, bool) if done is None else done; out = []; got = []
+        from scipy.spatial import cKDTree
+        D = resample(np.vstack([ring, ring[:1]]), 0.5); sD = np.arange(len(D)) * 0.5; LD = sD[-1]; tD = cKDTree(D)
+        def room(m, sm, L):
+            # the nearest coast that is not this stretch of it (across a firth, a sea loch, a strait)
+            d, j = tD.query(m, k=200, distance_upper_bound=60); j = np.minimum(j, len(D) - 1)
+            far = np.isfinite(d) & (np.minimum(abs(sD[j] - sm), LD - abs(sD[j] - sm)) > L / 2 + 6)
+            return float(d[far].min()) if far.any() else 60.0
+        s_at = np.r_[0, np.cumsum(np.hypot(*np.diff(ring, axis=0).T))]
+        i = 0
+        while i < n:
+            if i in spans:
+                out.append(spans[i][:-1]); i += 1
+                while i < n and done[i]: i += 1
+                continue
+            if done[i]: i += 1; continue
+            P, Q = ring[i], ring[(i + 1) % n]; L = math.hypot(*(Q - P))
+            if L < EDGE: out.append(P[None]); i += 1; continue
+            m = (P + Q) / 2
+            pool = next(k for k, x0, x1, y0, y1 in REGIONS if x0 <= m[0] <= x1 and y0 <= m[1] <= y1)
+            pts, poly, left, lat0, R = pieces[pool]
+            need = int(L * 1.6 / 0.4) + 2                              # about as much real coast as the edge is long
+            o = at[pool] if at[pool] + need < len(R) else 0; at[pool] = o + need + 25
+            sub = R[o:o + need]
+            ll = np.c_[sub[:, 0] / (111.32 * math.cos(math.radians(lat0))), sub[:, 1] / 110.57]
+            sig = max(2.0, min(L / 4, 12.0))
+            amp = min(1.0, room(m, s_at[i] + L / 2, L) / (3 * sig))     # a narrow sea loch keeps its width
+            c, il, _, _ = lay(np.array([P, Q]), None, None, sig=sig, taper=min(TAPER, L / 5),
+                              piece=(ll, poly, left, lat0, sub), isle_km=8.0 if amp > 0.6 else 0.0, amp=amp)
+            out.append(c[:-1]); got += il; count[0] += 1; i += 1
+        return np.vstack(out), got
+
+    coast, il = detail(ring, done, spans)
+    isles += [{'name': None, 'pts': q} for q in il]
+    for d in donor_isles:                                              # Britain's islands, stretched with it
+        r = np.asarray(d['pts'], float)
+        if not Polygon(r).exterior.is_ccw: r = r[::-1]
+        c, _ = detail(r) if len(r) > 3 else (r, [])
+        isles.append({'name': d.get('name'), 'pts': c})
+    print(f'  Westeros: real detail laid on {count[0]} straight edges')
+    return coast, isles
+
+
+# ------------------------------------------------------------------ rivers: the bends of a real river laid along ours
+# our river: (Natural Earth river names, the real reach from (lon, lat) to its mouth (lon, lat), the analogue)
+RIVERS = {
+    'The White Knife': (['Severn'], (-3.55, 52.45), (-2.70, 51.60), 'the Severn'),
+    'The Last River': (['Dalälven'], (15.00, 60.75), (17.30, 60.65), 'the Dalälven below Siljan'),
+    'The Milkwater': (['Tornelven'], (19.50, 68.20), (24.15, 65.85), 'the Torne'),
+    'The Green Fork': (['Ticino'], (8.85, 45.90), (9.15, 45.15), 'the Ticino'),
+    'The Blue Fork': (['Mincio'], (10.70, 45.45), (10.95, 45.06), 'the Mincio'),
+    'The Red Fork': (['Drau', 'Mur'], (12.40, 46.75), (18.90, 45.55), 'the Drava'),
+    'The Trident': (['Po'], (9.20, 45.10), (12.45, 44.95), 'the lower Po'),
+    'The Blackwater Rush': (['Tajo', 'Tejo'], (-3.00, 40.30), (-9.10, 38.70), 'the Tagus'),
+    'The Mander': (['Guadalquivir'], (-3.20, 37.95), (-6.35, 36.80), 'the Guadalquivir'),
+    'The Honeywine': (['Oued Sebou'], (-4.70, 34.00), (-6.65, 34.27), 'the Sebou'),
+    'The Torrentine': (['Moulouya'], (-4.60, 33.00), (-2.33, 35.10), 'the Moulouya'),
+    'The Greenblood': (['Nile'], (32.90, 24.10), (31.25, 30.05), 'the Nile below Aswan'),
+    'The Rhoyne': (['Danube', 'Donau'], (8.60, 47.95), (29.60, 45.20), 'the Danube'),
+    'The Skahazadhan': (['Tigris', 'Shatt al Arab'], (43.10, 36.40), (48.50, 29.95), 'the Tigris'),
+}
+RSIG, RSIG_MAX = 8.0, 30.0       # miles: bends smaller than this (more on a long river) are the real river's
+
+
+def real_river(names, src, mouth):
+    """The named real river from src to its mouth, as (lon, lat) points."""
+    from shapely.ops import linemerge, snap
+    if not hasattr(real_river, 'f'):
+        real_river.f = json.load(open(os.path.join(WORLD, 'ne_10m_rivers_lake_centerlines.geojson')))['features']
+    parts, near = [], box(min(src[0], mouth[0]) - 1.5, min(src[1], mouth[1]) - 1.5, max(src[0], mouth[0]) + 1.5, max(src[1], mouth[1]) + 1.5)
+    for ft in real_river.f:                  # the named river near its reach (not another of the same name)
+        if (ft['properties'].get('name') or '') in names:
+            g = shapely.geometry.shape(ft['geometry'])
+            parts += [q for q in getattr(g, 'geoms', [g]) if q.intersects(near)]
+    g = unary_union(parts); g = snap(g, g, 0.08)
+    if g.geom_type == 'MultiLineString': g = linemerge(g)
+    A, Bm = Point(src), Point(mouth)
+    line = min(getattr(g, 'geoms', [g]), key=lambda q: q.distance(A) + q.distance(Bm) - 0.01 * q.length)
+    a, b = line.project(Point(src)), line.project(Point(mouth))
+    sub = shapely.ops.substring(line, min(a, b), max(a, b))
+    P = np.array(sub.coords)
+    return P if a <= b else P[::-1]
+
+
+def rivers(ours):
+    """-> {name: points}: each of our rivers (author.RIVERS) with the bends of its real analogue."""
+    out = {}
+    for r in ours:
+        if r['name'] not in RIVERS: continue
+        names, src, mouth, what = RIVERS[r['name']]
+        ll = real_river(names, src, mouth); lat0 = float(ll[:, 1].mean())
+        R = resample(km(ll[:, 0], ll[:, 1], lat0), 0.3)
+        P = resample(np.asarray(r['pts'], float), 0.5); P = smooth(P, 10 / 0.5)      # our course, its corners rounded
+        sig = min(RSIG_MAX, max(RSIG, LineString(P).length / 15))     # a long river keeps bigger real bends
+        c, _, _, info = lay(P, None, None, sig=sig, taper=4.0, piece=(ll, None, True, lat0, R), isle_km=0.0)
+        c = LineString(c).simplify(0.05)
+        out[r['name']] = [[round(x, 2), round(y, 2)] for x, y in c.coords]
+        print(f"  {r['name']:20s} {what:24s} k={info['k']:.2f} mi/km, {info['ours_mi']} mi, {len(out[r['name']])} points")
+    return out
 
 
 # ------------------------------------------------------------------ real islands and peninsulas moved bodily
@@ -268,7 +337,7 @@ def lay(ours, a, b, pins=None, sig=SIG, taper=TAPER, piece=None, isle_km=ISLE_KM
     coast = carry(R, np.arange(len(R)))
     # the islands just off this stretch of real coast
     line_ll = LineString(pts); isles = []
-    for j in world_land.tree.query(line_ll.buffer(isle_km / 80)):
+    for j in (world_land.tree.query(line_ll.buffer(isle_km / 80)) if isle_km > 0 else []):
         g = world_land.g[j]
         if g.equals(poly) or g is poly: continue
         Q = km(*np.array(g.exterior.coords).T, lat0)
@@ -398,15 +467,20 @@ def run(write=False):
     tp = {}; extra = transplants(tp)
     out = {}
     donor = json.load(open(os.path.join(HERE, 'coast_donor.json')))
-    wc, wi = westeros(donor['coast'])
-    g = unary_union([shapely.make_valid(Polygon(wc))] + [shapely.make_valid(Polygon(q)) for q in wi if len(q) > 3])
-    g = g.buffer(0.5, join_style=1).buffer(-1.0, join_style=1).buffer(0.5, join_style=1).simplify(0.08)
-    polys = sorted([q for q in getattr(g, 'geoms', [g]) if q.geom_type == 'Polygon'], key=lambda q: -q.area)
+    wc, wi = westeros(donor['coast'], donor['islands'])
+    clean = lambda g: g.buffer(0.5, join_style=1).buffer(-1.0, join_style=1).buffer(0.5, join_style=1).simplify(0.08)
     ringify = lambda q: [[round(x, 2), round(y, 2)] for x, y in list(q.exterior.coords)[:-1]]
-    out['Westeros'] = {'coast': ringify(polys[0]), 'islands': [{'name': None, 'pts': ringify(q)} for q in polys[1:] if q.area > 0.4]}
-    print(f"  Westeros: {len(out['Westeros']['coast'])} points, {len(out['Westeros']['islands'])} new islands")
+    g = clean(unary_union([shapely.make_valid(Polygon(wc))] + [shapely.make_valid(Polygon(i['pts'])) for i in wi if not i['name'] and len(i['pts']) > 3]))
+    polys = sorted([q for q in getattr(g, 'geoms', [g]) if q.geom_type == 'Polygon'], key=lambda q: -q.area)
+    named = []
+    for i in wi:                                                       # the named islands (the Iron Islands...) keep their names
+        if not i['name'] or len(i['pts']) < 4: continue
+        h = clean(shapely.make_valid(Polygon(i['pts'])))
+        named += [{'name': i['name'], 'pts': ringify(q)} for q in getattr(h, 'geoms', [h]) if q.geom_type == 'Polygon' and q.area > 0.4]
+    out['Westeros'] = {'coast': ringify(polys[0]), 'islands': [{'name': None, 'pts': ringify(q)} for q in polys[1:] if q.area > 0.4] + named}
+    print(f"  Westeros: {len(out['Westeros']['coast'])} points, {len(out['Westeros']['islands'])} islands")
     for nm, (cx, cy, half) in WZOOMS.items():
-        preview(os.path.join(ROOT, 'tools', 'shots', f'shores-{nm}.png'), out['Westeros']['coast'], out['Westeros']['islands'] + donor['islands'],
+        preview(os.path.join(ROOT, 'tools', 'shots', f'shores-{nm}.png'), out['Westeros']['coast'], out['Westeros']['islands'],
                 (cx - half, cx + half, cy - half, cy + half, 700 / (2 * half)), donor['coast'], author.PLACES)
     for name, shores, box_ in (('Essos', ESSOS_SHORES, (600, 5800, -2950, 150, 0.2)),
                                ('Sothoryos', SOTHORYOS_SHORES, (400, 3900, -5500, -2900, 0.25))):
@@ -423,6 +497,7 @@ def run(write=False):
         land = out['Essos' if cx > 700 and cy > -2950 else 'Sothoryos']
         preview(os.path.join(ROOT, 'tools', 'shots', f'shores-{nm}.png'), land['coast'], land['islands'],
                 (cx - half, cx + half, cy - half, cy + half, 700 / (2 * half)), old['Essos'], author.PLACES)
+    out['rivers'] = rivers(author.RIVERS_DRAWN_LIST if hasattr(author, 'RIVERS_DRAWN_LIST') else author.RIVERS)
     if write: json.dump(out, open(OUT, 'w'))
     return out
 

@@ -43,17 +43,17 @@ of measurements.
 
 | Our feature | Our latitude | Analogue | Why |
 |---|---|---|---|
-| The Milkwater | 66–72° N | Jökulsá á Fjöllum, Iceland | glacial meltwater river, milky with silt |
-| The Last River | 62–64° N | Ångermanälven, Sweden | a cold northern river through forest to the sea |
-| The White Knife | 54–57° N | the Spey, Scotland | a fast, clear river; its mouth on our map is the Thames |
-| The Trident and its forks | 44–50° N | the Po and its Alpine tributaries | three rivers joining in a broad fertile plain |
+| The Milkwater | 66–72° N | the Torne (Jökulsá á Fjöllum for colour) | a cold river running out of the fells to the sea |
+| The Last River | 62–64° N | the Dalälven, Sweden | a cold northern river through forest to the sea |
+| The White Knife | 54–57° N | the Severn | a long river to a great estuary; its mouth on our map is the Thames |
+| The Trident and its forks | 44–50° N | the lower Po; the Ticino (Green Fork), the Mincio (Blue Fork), the Drava (Red Fork) | three rivers joining in a broad fertile plain |
 | The Blackwater Rush | 39–42° N | the Tagus to Lisbon | a river reaching a great harbour city at its mouth |
 | The Mander | 33–37° N | the Guadalquivir | a long river through the richest farmland |
 | The Honeywine | 27–30° N | the Sebou, Morocco | a short river reaching the sea past an old city |
-| The Torrentine | 23–26° N | the Draa, Morocco | a mountain torrent running dry toward the sea |
+| The Torrentine | 23–26° N | the Moulouya, Morocco | a mountain river crossing dry country to the sea |
 | The Greenblood | 23–25° N | the Nile in Upper Egypt | a green ribbon of life through desert |
 | The Rhoyne | 26–49° N | the Danube | a great river with gorges, ruined cities and a delta |
-| The Skahazadhan | 30–34° N | the Tigris and Euphrates | a river of ancient cities on a hot plain |
+| The Skahazadhan | 30–34° N | the Tigris | a river of ancient cities on a hot plain |
 | The Gods Eye | 43–44° N | Lake Constance | a large lake with an island (the Isle of Faces) |
 | The Long Lake | 61° N | Loch Ness | long, narrow and deep in a glen |
 
@@ -120,6 +120,21 @@ offshore, at about their real size), and moves a few real islands and one penins
 | Sothoryos, north (Naath's shore) | the north coast of New Guinea | jungle mountains to the sea |
 | Sothoryos, north-west (the Basilisk shore) | the Caribbean coast of Colombia and Panama | the Darién's coast and the San Blas islands |
 
+Westeros keeps Britain and upside-down Ireland (`tools/known/donor.py`), but those are stretched to several times
+their size in places, and our own additions are drawn as polygons, so the coast had straight edges miles long.
+`shores.py` lays real detail on every edge longer than 7 miles, its corners held, from a real coast of the same
+character (and narrowed where a sea loch or strait leaves little room), and lays two stretches whole:
+
+| Our coast | Real detail from | Why |
+|---|---|---|
+| the Lands of Always Winter | the fjords of northern Labrador | ice-worn fjords and skerries at the edge of the ice |
+| the Sea of Dorne | the Gulf of Suez | a long, narrow, hot sea between desert and hills |
+| beyond the Wall | northern Labrador | fjords and skerries |
+| the Neck and the Bite | the Wadden Sea | mudflats, creeks and barrier islands |
+| the Reach | the Gulf of Cádiz and the Algarve | sand, lagoons and low cliffs |
+| Dorne | Tripolitania and the Gulf of Gabès | hot shores, lagoons and sebkhas |
+| everywhere else | Brittany | granite headlands, rias and islets |
+
 | Moved bodily | From | Why |
 |---|---|---|
 | Valyria (the peninsula) | the Peloponnese | a peninsula on a narrow isthmus, broken into fingers |
@@ -137,4 +152,6 @@ offshore, at about their real size), and moves a few real islands and one penins
 3. **Colours (done):** `tools/known/colours.py` samples each region's analogue in Blue Marble (July) and writes
    `tools/known/colours.json`; each realm, and each desert, grades our ground toward its analogue's colour
    relative to the average of all regions (so Dorne reads like the Anti-Atlas, the North like the Scottish moors).
-4. **Rivers:** the real river's sinuosity and how its tributaries branch set how ours wind and divide.
+4. **Rivers (done for the courses):** `tools/known/shores.py` lays each analogue's centreline (Natural Earth) along
+   our river, so the Rhoyne bends like the Danube and the Mander like the Guadalquivir; bends larger than a
+   river's own scale (8–30 miles) stay ours. Towns that stood on a river move onto its new course.
