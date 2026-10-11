@@ -651,6 +651,17 @@ def build(places, roads, stories, land_rings=None):
             return list(where[v])
         return list(v)
     road = {r['name']: r['pts'] for r in roads}
+    land = None
+    if land_rings:
+        import paths
+        land = paths.Land(land_rings)
+        for lane, pts in SEA.items():
+            for i in (0, len(pts) - 1):          # a lane's end on land is its port: it follows the port to the shore
+                if not land.at(*pts[i]): continue
+                q = min(places, key=lambda p: math.hypot(p[2] - pts[i][0], p[3] - pts[i][1]))
+                if math.hypot(q[2] - pts[i][0], q[3] - pts[i][1]) < 15: pts[i] = [q[2], q[3]]
+            for i in range(1, len(pts) - 1):     # the rest is open water: a waypoint the coast now covers moves offshore
+                if land.clear(pts[i]) < 4: pts[i] = [round(v, 1) for v in land.nearest(pts[i], False, clear=6)]
     full = {}
     for k, steps in PATHS.items():
         if steps: full[k] = expand(steps, XY, road)
@@ -658,9 +669,7 @@ def build(places, roads, stories, land_rings=None):
     lanes = [['^' + re.escape(k) + '$', s[2], s[3], 'sea'] for k, steps in PATHS.items() if 'dragon' not in CHARS[k]
              for s in (steps or []) if s[0] == 'lane']
     windows = sorted(lanes + MODES, key=lambda m: (T(m[2]) - T(m[1]), m[3] != 'wheelhouse'))
-    if land_rings:
-        import paths
-        land = paths.Land(land_rings)
+    if land:
         for k in list(full):
             if 'dragon' in CHARS[k]: continue
             def element(t, k=k):

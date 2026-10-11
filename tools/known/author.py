@@ -69,7 +69,7 @@ ESSOS = [
     [5500, -760], [5650, -1100], [5600, -1500], [5450, -1900], [5300, -2300], [5150, -2660], [4800, -2800],
     [4600, -2700], [4100, -2620], [3700, -2560], [3420, -2610], [3200, -2500], [2900, -2400], [2800, -2300],
     [2760, -2100], [2700, -1960], [2600, -2010], [2470, -2140], [2350, -2300], [2200, -2350], [2000, -2400],
-    [1850, -2550], [1760, -2700], [1650, -2560], [1550, -2350], [1420, -2205], [1300, -2150], [1150, -2100],
+    [1860, -2425], [1760, -2397], [1690, -2398], [1610, -2335], [1520, -2305], [1460, -2262], [1420, -2205], [1300, -2150], [1150, -2100],
     [1000, -1900], [905, -1565], [950, -1450], [880, -1400], [782, -1122], [760, -900], [800, -700], [762, -500],
 ]
 SOTHORYOS = [
@@ -77,6 +77,17 @@ SOTHORYOS = [
     [3400, -3350], [3600, -3600], [3700, -4000], [3600, -4500], [3300, -5000], [2800, -5300], [2200, -5350],
     [1600, -5200], [1100, -4900], [800, -4500], [650, -4000], [600, -3600],
 ]
+
+
+def shores():
+    """Essos and Sothoryos laid with real shores by tools/known/shores.py (coast_shores.json), when it exists."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'coast_shores.json')
+    return json.load(open(path)) if os.path.exists(path) else {}
+
+
+SHORES = shores()
+SHORE_ISLES = [{'name': i['name'] or 'isle', 'pts': i['pts']} for k in ('Essos', 'Sothoryos') for i in SHORES.get(k, {}).get('islands', [])]
+SHORE_MADE = {i['name'] for i in SHORE_ISLES if i['name'] != 'isle'}      # hand-drawn islands that real ones replace
 
 
 def isle(name, cx, cy, rx, ry, k=9, jag=0.18, seed=1):
@@ -90,8 +101,8 @@ def isle(name, cx, cy, rx, ry, k=9, jag=0.18, seed=1):
 
 
 ISLANDS = [
-    {'name': 'Essos', 'pts': chaikin(ESSOS, 2)},
-    {'name': 'Sothoryos', 'pts': chaikin(SOTHORYOS, 2)},
+    {'name': 'Essos', 'pts': SHORES['Essos']['coast'] if SHORES else chaikin(ESSOS, 2)},
+    {'name': 'Sothoryos', 'pts': SHORES['Sothoryos']['coast'] if SHORES else chaikin(SOTHORYOS, 2)},
     isle('The Three Sisters', 330, -300, 34, 12, seed=4),
     isle('Fair Isle', -480, -1062, 14, 10, seed=11), isle('Dragonstone', 402, -1190, 18, 15, seed=12), isle('Driftmark', 362, -1212, 18, 10, seed=13),
     isle('Claw Isle', 432, -1090, 9, 7, seed=14), isle('Tarth', 565, -1520, 30, 14, seed=15), isle('The Arbor', -570, -2232, 32, 22, seed=16),
@@ -101,7 +112,9 @@ ISLANDS = [
     isle('Lorath', 1242, -246, 40, 26, seed=22), isle('Ib', 2800, -40, 220, 120, k=11, seed=23),
     isle('The Summer Isles', -150, -2970, 120, 70, k=11, seed=24), isle('Naath', 2050, -2950, 60, 34, seed=25),
     isle('The Basilisk Isles', 1700, -2880, 70, 30, seed=26), isle('New Ghis', 2240, -2455, 30, 22, seed=27),
-] + (DONOR := donor_islands())    # Bear Island (the Isle of Man), Skagos (Shetland), the Iron Islands (Orkney), the Hebrides and the rest
+] + (DONOR := donor_islands()) + SHORE_ISLES    # Bear Island (the Isle of Man), Skagos (Shetland), the Iron Islands (Orkney),
+                                                # the Hebrides and the rest; Ib (Iceland), Valyria's isles (the Cyclades)...
+ISLANDS[:] = [i for i in ISLANDS if i['name'] not in SHORE_MADE or i in SHORE_ISLES]
 
 # ---------------------------------------------------------------- the character of the shore
 # Each stretch of coast gets a kind, which the terrain turns into its own detail (gen.js coastDetail):
@@ -173,7 +186,7 @@ PEAKS = [
     {'name': 'Dragonmont', 'alt': 'the smoking mountain of Dragonstone', 'x': 402, 'y': -1186, 'h': 1100, 'r': 9, 'kind': 'volcano'},
     {'name': 'The Giant\'s Lance', 'alt': 'with the Eyrie on its shoulder', 'x': 368, 'y': -752, 'h': 4300, 'r': 14, 'kind': 'mountain'},
     {'name': 'The Mother of Mountains', 'alt': 'above Vaes Dothrak', 'x': 2700, 'y': -985, 'h': 1500, 'r': 12, 'kind': 'mountain'},
-    {'name': 'The Fourteen Flames', 'alt': 'the fires of the Doom', 'x': 1790, 'y': -2560, 'h': 2600, 'r': 22, 'kind': 'volcano'},
+    {'name': 'The Fourteen Flames', 'alt': 'the fires of the Doom', 'x': 1790, 'y': -2560, 'h': 2600, 'r': 14, 'kind': 'volcano'},
 ]
 
 # ---------------------------------------------------------------- water
@@ -225,7 +238,7 @@ FARMS = [
     area('The Rhoyne valley', [[1150, -1500], [1450, -1500], [1450, -2150], [1150, -2150]], v=0.8),
 ]
 GRASS = [area('The Dothraki Sea', [[1500, -700], [2600, -700], [2900, -1000], [2900, -1500], [2400, -1600], [1700, -1500], [1500, -1100]], v=1)]
-ASH = [area('The Smoking Sea', [[1650, -2400], [1950, -2400], [1900, -2680], [1700, -2720]], v=1)]
+ASH = [area('The Smoking Sea', [[1850, -2560], [2160, -2560], [2160, -2820], [1850, -2820]], v=1)]   # the isles moved from the Cyclades
 UPLIFT = []
 ICE = [area('The Land of Always Winter', [[-420, 1080], [420, 1080], [420, 1360], [-420, 1360]], v=1)]
 RELIEF = []
@@ -370,7 +383,7 @@ SEA_LABELS = [
     ['The Shivering Sea', 2400, 250, 1.4, 0, 6.5], ['The Jade Sea', 4300, -3100, 1.4, 0, 6.5], ['Slaver\'s Bay', 2560, -2150, 0.9, 4, 8.5],
     ['The Bite', 300, -330, 0.9, 4, 8.5], ['Blackwater Bay', 320, -1250, 0.8, 5, 9], ['Shipbreaker Bay', 430, -1490, 0.8, 5, 9],
     ['The Sea of Dorne', 250, -2000, 0.9, 4, 8.5], ['Ironman\'s Bay', -250, -720, 0.9, 4, 8.5], ['The Bay of Ice', -320, 380, 0.8, 4, 8.5],
-    ['The Bay of Seals', 300, 470, 0.8, 4, 8.5], ['The Smoking Sea', 1800, -2650, 0.9, 4, 8.5], ['The Bay of Crabs', 400, -930, 0.8, 5, 9],
+    ['The Bay of Seals', 300, 470, 0.8, 4, 8.5], ['The Smoking Sea', 1850, -2610, 0.9, 4, 8.5], ['The Bay of Crabs', 400, -930, 0.8, 5, 9],
 ]
 
 # ---------------------------------------------------------------- realms (coarse; tools/borders/borders.py tightens them)
@@ -487,20 +500,24 @@ def settle(places, coast):
     sub = lambda p: p[1] in ('landmark', 'tower') and any(q is not p and q[1] not in ('landmark', 'tower') and
                                                           math_hypot(q[2] - p[2], q[3] - p[3]) < 8 for q in places)
     for p in places:
-        if p[2] > 700 or sub(p): continue          # Westeros only; landmarks in a city wait for the city
+        if sub(p) or p[1] == 'wonder': continue  # landmarks in a city wait for the city; the Titan stands in the water
         P = Point(p[2], p[3]); d = edge.distance(P); inside = land.contains(P)
-        if p[1] == 'port' and (not inside or d > 1.5): Q = inward(P, 0.6)
+        if (p[1] == 'port' or p[0] in ON_SEA) and (not inside or d > 1.5): Q = inward(P, 0.6)
         elif not inside: Q = inward(P, 2.0)
         else: continue
         moved[p[0]] = (Q.x - p[2], Q.y - p[3])
     for p in places:                               # a castle or sept within a moved city goes with it
-        if p[0] in moved or p[2] > 700 or not sub(p): continue
+        if p[0] in moved or not sub(p): continue
         near = sorted((math_hypot(q[2] - p[2], q[3] - p[3]), v) for n, v in moved.items() for q in places if q[0] == n and q[1] not in ('landmark', 'tower'))
         if near and near[0][0] < 8: moved[p[0]] = near[0][1]
     for p in places:
         if p[0] in moved:
             dx, dy = moved[p[0]]; p[2], p[3] = round(p[2] + dx, 1), round(p[3] + dy, 1)
             print(f'  settled {p[0]}: moved {math_hypot(dx, dy):.1f} mi')
+
+
+# cities the books set on the sea itself, which sit on the waterline like ports
+ON_SEA = {'Braavos', 'Pentos', 'Myr', 'Tyrosh', 'Lys', 'Lorath', 'Astapor', 'Yunkai', 'Qarth', 'New Ghis', 'Asshai'}
 
 
 def math_hypot(a, b):
@@ -597,6 +614,12 @@ def prepare():
     have = {p[0] for p in PLACES}
     for name, kind, x, y, people, realm, note, o in cast.EXTRA_PLACES:
         if name not in have: PLACES.append([name, kind, x, y, people, realm, note, o])
+    # places that stand on land moved from Earth, or on a real shore's lagoon (tools/known/shores.py)
+    pins = {k: v for land in SHORES.values() for k, v in land.get('pins', {}).items()}
+    for p in PLACES:
+        if p[0] in pins: p[2], p[3] = round(pins[p[0]][0], 1), round(pins[p[0]][1], 1)
+    for k in PEAKS:
+        if k['name'] in pins: k['x'], k['y'] = round(pins[k['name']][0], 1), round(pins[k['name']][1], 1)
     # hand-drawn islands give way to the new mainland, then every place settles onto the land
     from shapely.geometry import Polygon
     main_poly = Polygon(coast_s).buffer(0)

@@ -89,6 +89,45 @@ of measurements.
 | The Basilisk Isles | the Bahamas | low tropical islands and reefs |
 | Valyria | Santorini's caldera | a drowned volcanic land |
 
+## The shores of Essos and Sothoryos
+
+`tools/known/shores.py` lays a real coast along each stretch of our own outline (the outline stays ours, from the
+books and the official maps' positions; the real coast gives the bays, spits, deltas, lagoons and the islands just
+offshore, at about their real size), and moves a few real islands and one peninsula bodily.
+
+| Our coast | Real shore laid along it | Why |
+|---|---|---|
+| Braavos and the north-west corner | the Venetian lagoons and Istria | a city of a hundred islands in a lagoon; Braavos stands where Venice falls |
+| Braavos to Pentos | the Costa Brava and the Camargue | rocky coves, then a delta plain; Pentos takes Marseille's place, an old trading port |
+| Pentos to Myr | Apulia and the Gargano | a long warm shore with one great headland |
+| Myr to the Orange Shore | the Valencian coast (the Orange Blossom Coast) | lagoons, deltas and orange groves |
+| Volantis and the mouths of the Rhoyne | the Nile delta | a great river's delta and lagoons at a city of many peoples |
+| facing Valyria | the north shore of the Gulf of Corinth | the other side of the gulf from the Peloponnese |
+| the Gulf of Grief to Astapor | the Aegean coast of Anatolia | the ragged coast of an old empire, many islands |
+| Slaver's Bay | the head of the Persian Gulf | a hot, shallow gulf with a great river at its head (Meereen, the Skahazadhan) |
+| Qarth's coast | the Gulf of Aden | a dry coast near a famous strait |
+| the shore of the Red Waste | the coast of Oman | desert meeting the sea |
+| Asshai | the Pearl River and the Guangdong coast | a city at a river's mouth at the end of the world |
+| Yi Ti and the Jade Sea | the coasts of Fujian and Zhejiang | drowned river valleys and a thousand islands |
+| the far north-east | the Primorye coast | a cold, steep, straight shore |
+| the Grey Waste | the Pechora Sea | low tundra coast, lagoons and a delta |
+| the Shivering Sea | the Black Sea coast of Anatolia | a long north-facing shore with deltas and one great headland |
+| facing Ib | the south shore of the Baltic | spits, lagoons and dunes |
+| Lorath's bay | the north coast of Estonia | low cliffs and bays |
+| Sothoryos, west | Guinea and the Bijagós | mangrove coast and an archipelago |
+| Sothoryos, south | the Gulf of Guinea and the Niger delta | rain forest to the sea, a vast delta |
+| Sothoryos, east | the Swahili coast | coral islands and creeks |
+| Sothoryos, north (Naath's shore) | the north coast of New Guinea | jungle mountains to the sea |
+| Sothoryos, north-west (the Basilisk shore) | the Caribbean coast of Colombia and Panama | the Darién's coast and the San Blas islands |
+
+| Moved bodily | From | Why |
+|---|---|---|
+| Valyria (the peninsula) | the Peloponnese | a peninsula on a narrow isthmus, broken into fingers |
+| the isles of the Smoking Sea | the Cyclades | Valyria's ruins on Santorini's drowned caldera, the Fourteen Flames on Naxos |
+| Ib | Iceland | a large cold island across a northern sea (Ib Nefer where Reykjavík is) |
+| Tyrosh, Lys, Bloodstone | Brač, Hvar, Vis | the Dalmatian islands' size and shape |
+| the Stepstones | the Kornati | a scatter of small bare islands |
+
 ## How the samples are used
 
 1. **Heights and shape:** each range's real profile (crest height, valley floors, how steep its sides are,

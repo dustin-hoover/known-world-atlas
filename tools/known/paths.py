@@ -25,6 +25,24 @@ class Land:
         i, j = int((self.y1 - y) / self.R), int((x - self.x0) / self.R)
         return bool(0 <= i < self.H and 0 <= j < self.W and self.M[i, j])
 
+    def clear(self, p, want_land=False):
+        """Miles from p to the other element (0 if p is not in the wanted one)."""
+        if not hasattr(self, 'D'):
+            from scipy.ndimage import distance_transform_edt
+            self.D = {False: distance_transform_edt(~self.M) * self.R, True: distance_transform_edt(self.M) * self.R}
+        i, j = int((self.y1 - p[1]) / self.R), int((p[0] - self.x0) / self.R)
+        return float(self.D[want_land][i, j]) if 0 <= i < self.H and 0 <= j < self.W else (0.0 if want_land else 99.0)
+
+    def nearest(self, p, want_land, clear=0.0, reach=120.0):
+        """The nearest point at least `clear` miles inside the wanted element (within `reach`), else p itself."""
+        self.clear(p)
+        i, j = int((self.y1 - p[1]) / self.R), int((p[0] - self.x0) / self.R); r = int(reach / self.R)
+        i0, i1, j0, j1 = max(0, i - r), min(self.H, i + r + 1), max(0, j - r), min(self.W, j + r + 1)
+        ok = self.D[want_land][i0:i1, j0:j1] > max(clear, 0.1)
+        if not ok.any(): return tuple(p[:2])
+        ii, jj = np.nonzero(ok); k = np.argmin((ii + i0 - i) ** 2 + (jj + j0 - j) ** 2)
+        return (self.x0 + (jj[k] + j0 + 0.5) * self.R, self.y1 - (ii[k] + i0 + 0.5) * self.R)
+
     def crosses(self, a, b, want_land, slack=4.0):
         """True if the segment leaves its element by more than `slack` miles from either end."""
         L = math.hypot(b[0] - a[0], b[1] - a[1]); n = max(2, int(L / 1.5))
@@ -37,6 +55,11 @@ class Land:
     def route(self, a, b, want_land, step=3.0):
         """Shortest way from a to b keeping to land (or sea), string-pulled; None if there is none."""
         key = lambda p: (round(p[0] / step), round(p[1] / step))
+        # an end out of its element (a ship's port inland, a walker's landing in the shallows) starts from the
+        # nearest point of the element
+        a0, b0 = a, b
+        if self.at(a[0], a[1]) != want_land: a = self.nearest(a, want_land)
+        if self.at(b[0], b[1]) != want_land: b = self.nearest(b, want_land)
         s, g = key(a), key(b)
         ok = lambda c: self.at(c[0] * step, c[1] * step) == want_land
         near = lambda c, e: max(abs(c[0] - e[0]), abs(c[1] - e[1])) <= 1
@@ -55,12 +78,14 @@ class Land:
         if g not in came: return None
         path, c = [], g
         while c is not None: path.append((c[0] * step, c[1] * step)); c = came[c]
-        path = [tuple(a)] + path[::-1][1:-1] + [tuple(b)]
+        path = [tuple(a[:2])] + path[::-1][1:-1] + [tuple(b[:2])]
         out, i = [path[0]], 0
         while i < len(path) - 1:
             j = len(path) - 1
             while j > i + 1 and self.crosses(path[i], path[j], want_land, slack=0.0 if 0 < i and j < len(path) - 1 else 4.0): j -= 1
             out.append(path[j]); i = j
+        if tuple(a0[:2]) != out[0]: out.insert(0, tuple(a0[:2]))
+        if tuple(b0[:2]) != out[-1]: out.append(tuple(b0[:2]))
         return out
 
 
