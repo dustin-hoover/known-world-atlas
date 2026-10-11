@@ -136,6 +136,25 @@ COAST_ZONES = [
     zone('marsh', [[1350, -2280], [1480, -2280], [1480, -2150], [1350, -2150]]),          # the mouths of the Rhoyne at Volantis
 ]
 
+# ---------------------------------------------------------------- the style of each mountain range
+# measured against its Earth analogue (docs/otherworldly/got/EARTH_ANALOGUES.md, tools/refs/analogues.py):
+#   dry    - rises sharply from flat, low plains, few foothills (the Hajar, the Sierra Nevada's east face, Yemen)
+#   alpine - sharp, glaciated, deeply cut (the Bernese Alps)
+TERRAIN_STYLE = {'The Red Mountains': 'dry', 'The Bones': 'dry', 'Mountains of the Shadow': 'dry',
+                 'Mountains of the Moon': 'alpine', 'The Frostfangs': 'alpine'}
+
+
+def terrain_zones():
+    from shapely.geometry import LineString
+    out = []
+    for r in RANGES:
+        k = TERRAIN_STYLE.get(r['name'])
+        if not k: continue
+        g = LineString(r['pts']).buffer(r.get('w', 60) / 2 + 40)
+        out.append({'kind': k, 'pts': [[round(x, 1), round(y, 1)] for x, y in list(g.exterior.coords)[:-1]]})
+    return out
+
+
 # ---------------------------------------------------------------- relief
 RANGES = [
     {'name': 'The Frostfangs', 'h': 3000, 'w': 50, 'label': True, 'pts': [[-300, 560], [-250, 700], [-210, 850], [-190, 1000]]},
@@ -143,12 +162,12 @@ RANGES = [
     {'name': 'The Red Mountains', 'h': 3000, 'w': 55, 'label': True, 'pts': [[-280, -2250], [-160, -2185], [-40, -2140], [40, -2100]]},
     {'name': 'The Bones', 'alt': 'The Bone Mountains', 'h': 3600, 'w': 80, 'label': True, 'pts': [[3020, -900], [3060, -1300], [3110, -1700], [3160, -2100]]},
     {'name': 'Mountains of the Shadow', 'h': 4200, 'w': 70, 'label': True, 'pts': [[4880, -2250], [5000, -2400], [5120, -2520]]},
-    {'name': 'The Velvet Hills', 'h': 900, 'w': 50, 'label': False, 'pts': [[1000, -680], [1060, -880], [1080, -1020]]},
+    {'name': 'The Velvet Hills', 'h': 1500, 'w': 50, 'label': False, 'pts': [[1000, -680], [1060, -880], [1080, -1020]]},
 ]
 HILLS = [
-    {'name': 'The Westerlands hills', 'h': 900, 'w': 50, 'pts': [[-360, -900], [-300, -1000], [-270, -1100]]},
+    {'name': 'The Westerlands hills', 'h': 2700, 'w': 50, 'pts': [[-360, -900], [-300, -1000], [-270, -1100]]},
     {'name': 'The Barrowlands', 'h': 260, 'w': 30, 'pts': [[-120, -200], [-60, -260]]},
-    {'name': 'The Dornish Marches', 'h': 500, 'w': 30, 'pts': [[-200, -2050], [40, -2030]]},
+    {'name': 'The Dornish Marches', 'h': 2200, 'w': 30, 'pts': [[-200, -2050], [40, -2030]]},
 ]
 PEAKS = [
     {'name': 'Dragonmont', 'alt': 'the smoking mountain of Dragonstone', 'x': 402, 'y': -1186, 'h': 1100, 'r': 9, 'kind': 'volcano'},
@@ -627,7 +646,7 @@ def main():
 const GEO = (() => {
 """
     parts = [
-        ('COAST', coast_s), ('ISLANDS', ISLANDS), ('COAST_ZONES', COAST_ZONES), ('RANGES', RANGES), ('HILLS', HILLS), ('PEAKS', PEAKS),
+        ('COAST', coast_s), ('ISLANDS', ISLANDS), ('COAST_ZONES', COAST_ZONES), ('TERRAIN_ZONES', terrain_zones()), ('RANGES', RANGES), ('HILLS', HILLS), ('PEAKS', PEAKS),
         ('RIVERS', RIVERS), ('LAKES', LAKES), ('FORESTS', FORESTS), ('MARSHES', MARSHES), ('ARID', ARID), ('FARMS', FARMS),
         ('GRASS', GRASS), ('ASH', ASH), ('UPLIFT', UPLIFT), ('ICE', ICE), ('RELIEF', RELIEF), ('NUMENOR', None),
         ('PLACES', PLACES), ('REGION_LABELS', REGION_LABELS), ('SEA_LABELS', SEA_LABELS), ('REALMS', REALMS),

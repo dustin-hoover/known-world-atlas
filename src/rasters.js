@@ -71,10 +71,10 @@ function coastData(GEO) {
     sd[i] = Math.max(-32000, Math.min(32000, Math.round(v * CR * 10)));
   }
   // the character of each shore (fjord, rocky, beach, marsh), blurred so one kind fades into the next
-  const kinds = ['fjord', 'rocky', 'beach', 'marsh'];
+  const kinds = ['fjord', 'rocky', 'beach', 'marsh', 'dry', 'alpine'];   // shores, then the style of mountain ranges
   const zones = kinds.map(k => {
     g.fillStyle = '#000'; g.fillRect(0, 0, cw, chh); g.fillStyle = '#fff';
-    for (const z of (GEO.COAST_ZONES || []).filter(z => z.kind === k)) { g.beginPath(); z.pts.forEach((p, i) => { const x = (p[0] - X0) / CR, y = (Y1 - p[1]) / CR; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); g.fill(); }
+    for (const z of (GEO.COAST_ZONES || []).concat(GEO.TERRAIN_ZONES || []).filter(z => z.kind === k)) { g.beginPath(); z.pts.forEach((p, i) => { const x = (p[0] - X0) / CR, y = (Y1 - p[1]) / CR; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); g.fill(); }
     const d = g.getImageData(0, 0, cw, chh).data, a = new Uint8Array(cw * chh);
     for (let i = 0; i < a.length; i++) a[i] = d[i * 4];
     return boxBlur(a, cw, chh, 3, 2);
@@ -100,8 +100,8 @@ function build(GEO) {
   ch[0] = boxBlur(landRaw, W, H, 1, 2);
   ch[1] = boxBlur(landRaw, W, H, 18, 3);
   begin(); lines(GEO.RANGES, f => f.w / RES, f => f.h / 5200); ch[2] = boxBlur(grab(), W, H, 2, 2);
-  begin(); lines(GEO.HILLS, f => f.w / RES, f => f.h / 1200); polys(GEO.RELIEF || [], f => f.v); ch[3] = boxBlur(grab(), W, H, 2, 2);
-  { const foot = boxBlur(ch[2], W, H, 7, 3); for (let i = 0; i < foot.length; i++) ch[3][i] = Math.max(ch[3][i], Math.min(255, foot[i] * 1.6)); }
+  begin(); lines(GEO.HILLS, f => f.w / RES, f => f.h / 2400); polys(GEO.RELIEF || [], f => f.v * 0.5); ch[3] = boxBlur(grab(), W, H, 2, 2);
+  { const foot = boxBlur(ch[2], W, H, 7, 3); for (let i = 0; i < foot.length; i++) ch[3][i] = Math.max(ch[3][i], Math.min(255, foot[i] * 0.8)); }
   begin(); polys(GEO.FORESTS, f => f.dens); ch[4] = boxBlur(grab(), W, H, 1, 2);
   begin(); polys(GEO.FORESTS.filter(f => f.gold), f => f.gold); ch[5] = boxBlur(grab(), W, H, 1, 2);
   begin(); polys(GEO.FORESTS.filter(f => f.dark), f => f.dark); ch[6] = boxBlur(grab(), W, H, 2, 2);

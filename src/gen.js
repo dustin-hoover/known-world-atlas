@@ -134,7 +134,7 @@ function initCoast(c) {
     rg: Int32Array.from(rg), rs, re, buckets, sd: c.sd, w: c.w, h: c.h, x0: c.x0, y1: c.y1, res: c.res, zones: c.zones || [], mark: new Int32Array(ax.length), stamp: 0 };
 }
 // the kind of shore here: [fjord, rocky, beach, marsh] weights 0..1 (the rest is mixed)
-const KZ = new Float32Array(4);
+const KZ = new Float32Array(6);
 function shoreKind(X, Y) {
   const px = (X - CO.x0) / CO.res - 0.5, py = (CO.y1 - Y) / CO.res - 0.5;
   KZ.fill(0);
@@ -397,21 +397,29 @@ function evaluate(X, Y, pix) {
   let h;
   if (s > 0) {
     const inland = sat((cont - 0.5) * 2.2);
-    let base = 12 + 250 * inland + 1500 * F[12];
+    // low country by the sea: the ground rises over the first forty miles inland (as the Yorkshire Wolds or the Fens)
+    const nearSea = 0.35 + 0.65 * sstep(0, 40, R.sd);
+    const st = CO ? shoreKind(X, Y) : KZ;            // the style of the range here (author.py TERRAIN_ZONES)
+    const dry = Math.max(F[8], st[4]), alpine = st[5]; // dry ranges rise sharply from flat plains (Hajar, Sierra Nevada)
+    let base = 12 + 180 * inland * nearSea * (1 - 0.7 * dry) + 1500 * F[12];
     base += 110 * fbm(X * 0.011, Y * 0.011, 3) * (0.3 + inland);
     // procedural uplands outside the authored world
     if (wm < 1) base += (1 - wm) * 500 * sat(fbm(X * 0.002 + 40, Y * 0.002, 3) + 0.2);
     h = base;
-    const hill = F[3];
-    if (hill > 0.004) h += hill * 1200 * (0.5 + 0.5 * fbm(X * 0.09 + 40, Y * 0.09, 4));
+    const hill = F[3] * (1 - 0.5 * dry * sstep(0.01, 0.2, mtn));       // fewer foothills round a desert range
+    if (hill > 0.004) h += hill * 2400 * (0.12 + 0.88 * Math.pow(sat(0.5 + 0.5 * fbm(X * 0.09 + 40, Y * 0.09, 4)), 1.15));
     if (mtn > 0.002) {
       const r = ridgedA(X, Y, 26, Math.max(pix * 1.1, 0.003));
       const mm = sstep(0, 0.35, mtn) * mtn;
-      h += mm * 5200 * (0.12 + 0.88 * Math.pow(r, 1.35));
+      // measured against the Earth analogues (docs/otherworldly/got/EARTH_ANALOGUES.md): crests near the authored
+      // height, valley floors low in dry ranges, sharper and more broken in wet high ranges (glaciated, like the Alps)
+      const floor = 0.12 * (1 - 0.75 * dry), sharp = 1.35 + 0.8 * dry;
+      h += mm * 4500 * (1 - 0.18 * alpine) * (floor + (1 - floor) * Math.pow(r, sharp));
+      if (dry < 0.6) h += mm * (1100 + 900 * alpine) * (1 - dry) * (ridgedA(X * 1.7 + 13.1, Y * 1.7 - 4.2, 9, Math.max(pix * 1.1, 0.003)) - 0.35);
     }
     // regional roughness: rolling country, low hills, broken ground
     const rough = sat(0.35 + 0.9 * fbm(X * 0.004 + 71, Y * 0.004 - 12, 3));
-    h += (25 + 190 * rough) * (0.5 + 0.5 * fbmA(X, Y, 14, Math.max(pix * 1.1, 0.01), 0.75, 3)) * (1 - F[15]);
+    h += (25 + 190 * rough * nearSea) * (0.5 + 0.5 * fbmA(X, Y, 14, Math.max(pix * 1.1, 0.01), 0.75, 3)) * (1 - F[15]);
     h += (12 + 420 * mtn + 140 * hill + 30 * inland) * fbmA(X, Y, 3, Math.max(pix * 1.1, 0.002), 0.8, 2);
     // drainage: a procedural stream network carved into the land
     let str = 0;
