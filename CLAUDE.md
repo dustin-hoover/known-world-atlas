@@ -11,6 +11,10 @@ Arda's engine notes below still apply; what differs in this world:
   along it and real islands moved bodily (`tools/known/shores.py` → `coast_shores.json`, pins move Braavos, Valyria, the
   Fourteen Flames, Ib Nefer); shores.py also lays real detail on Westeros's long straight edges (its output wins over
   the donor's) and gives each river its Earth analogue's bends (`RIVERS_DRAWN_LIST` keeps our own courses). Both read Natural Earth from `tools/refs/earth/` (git-ignored); re-run them, then `npm run author`.
+- **Gazetteer (`tools/known/gazetteer.py`):** places the books name beyond author.py's first list, each with its kind,
+  first book, note, grade (`text` / `inferred`) and a position against our own map (`at`, `near` a place, `in` a place,
+  `between` two, along a `river`, on the `wall`); `coast=True` puts it on the waterline, `move=True` moves a place
+  author.py already has, `seat` names its house. `prepare()` resolves it after the map is settled, then settles it.
 - **Frame:** `gen.js` LAT0 = 58 (Winterfell). `rasters.js` extent X −954…5850, Y −5502…1500 at 6 mi/px (extents must
   divide by RES into whole pixels, or every height is NaN).
 - **Calendar (`wx.js`):** years AC (negative = BC, no year 0), 12 moons of 30 days + 5 closing days (our convention);

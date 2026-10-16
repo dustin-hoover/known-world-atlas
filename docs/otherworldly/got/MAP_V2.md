@@ -139,3 +139,15 @@ the owner's "merge".
   The plan treats them as cities, not houses, unless the books say otherwise.
 - Before anything is sold or sponsored, the lawyer review in the laws still applies to the heraldry and
   the house words.
+
+## 9. Progress
+
+- **Phase 1 (sources, comparison tool):** done.
+- **Coasts (phase 3, ahead of order):** Westeros from Britain and upside-down Ireland with real detail on every long
+  edge; Essos and Sothoryos from real shores laid along our outline; every named island drawn from a real one
+  (`tools/known/donor.py`, `tools/known/shores.py`, `docs/otherworldly/got/EARTH_ANALOGUES.md`).
+- **Rivers:** each takes the bends of its Earth analogue; towns on a river stay on it.
+- **Phase 2 (gazetteer, Westeros):** under way in `tools/known/gazetteer.py`: the nineteen castles of the Wall, the
+  seats of the North, the riverlands, the Vale, the Iron Islands, the westerlands, the crownlands, the stormlands, the
+  Reach and Dorne, the gates and towers of King's Landing, Harrenhal's towers, Sunspear's towers, and more (257 places
+  in all, from 121). Next: the remaining villages, inns and holdfasts, then each place's chapter.

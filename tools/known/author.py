@@ -657,23 +657,46 @@ def prepare():
         i['pts'] = [[round(x, 2), round(y, 2)] for x, y in list(g.exterior.coords)[:-1]]
     ISLANDS[:] = [i for i in ISLANDS if len(i['pts']) > 2]
     settle(PLACES, coast_s)
-    mouth_towns()
+    from shapely.geometry import Polygon as _P
+    from shapely.ops import unary_union as _U
+    mouth_towns(_U([_P(coast_s).buffer(0)] + [_P(i['pts']).buffer(0) for i in ISLANDS if i['name'] in ('Essos', 'Sothoryos')]))
+    # the gazetteer's places, set against the settled map, then settled themselves
+    import gazetteer
+    new, moved = gazetteer.resolve(PLACES, RIVERS, WALLS)
+    for p in new + [q for q in PLACES if q[0] in moved]:
+        if p[7].get('coast'): ON_SEA.add(p[0])
+    PLACES.extend(new)
+    settle(new + [q for q in PLACES if q[0] in moved], coast_s)
     return coast_s
 
 
-# towns the books put at a river's mouth: each stands on its river's last mile, its landmarks moving with it
-MOUTH_TOWNS = {'Planky Town': 'The Greenblood', 'White Harbor': 'The White Knife', 'Oldtown': 'The Honeywine',
-               "King's Landing": 'The Blackwater Rush', 'Volantis': 'The Rhoyne', 'Meereen': 'The Skahazadhan'}
+# towns the books put at a river's mouth: each stands on its river's last mile, its landmarks moving with it, and on
+# the bank the books give ('left' or 'right' of the stream looking downriver, 'near' for the nearer bank, 'mid' for a
+# town that spans the river or floats on it)
+MOUTH_TOWNS = {'Planky Town': ('The Greenblood', 'mid'), 'White Harbor': ('The White Knife', 'near'),
+               'Oldtown': ('The Honeywine', 'mid'), "King's Landing": ('The Blackwater Rush', 'left'),
+               'Volantis': ('The Rhoyne', 'mid'), 'Meereen': ('The Skahazadhan', 'near')}
 
 
-def mouth_towns():
+def mouth_towns(land=None):
     import math
+    from shapely.geometry import Point
     riv = {r['name']: r['pts'] for r in RIVERS}
-    for town, river in MOUTH_TOWNS.items():
+    for town, (river, bank) in MOUTH_TOWNS.items():
         t = next((p for p in PLACES if p[0] == town), None); pts = riv.get(river)
         if not t or not pts or len(pts) < 2: continue
         (ax, ay), (bx, by) = pts[-2], pts[-1]; L = math.hypot(bx - ax, by - ay) or 1
         X, Y = bx - (bx - ax) / L * 0.8, by - (by - ay) / L * 0.8          # just inside the mouth
+        if land is not None and bank != 'mid':                             # then up onto its bank
+            nx, ny = -(by - ay) / L, (bx - ax) / L                          # the left bank's side
+            def ashore(sgn):
+                for k in range(1, 120):
+                    q = Point(X + nx * sgn * k * 0.25, Y + ny * sgn * k * 0.25)
+                    if land.contains(q) and land.boundary.distance(q) >= 0.6: return k * 0.25, q
+                return 1e9, None
+            sides = {'left': [1], 'right': [-1], 'near': [1, -1]}[bank]
+            d, q = min((ashore(g) for g in sides), key=lambda r: r[0])
+            if q is not None: X, Y = q.x, q.y
         dx, dy = X - t[2], Y - t[3]
         if math.hypot(dx, dy) > 80: continue
         group = [p for p in PLACES if p is t or (p[1] in ('landmark', 'tower') and math.hypot(p[2] - t[2], p[3] - t[3]) < 8)]
@@ -749,6 +772,7 @@ def sources_js():
         name, realm = p[0], p[5]
         b = PLACE_BOOK.get(name) or BOOK_OF.get(realm) or 'AGOT'
         led[name] = ['inferred', b + ('; TWOIAF' if b != 'TWOIAF' else ''), '', 0]
+        if p[7].get('grade'): led[name] = [p[7]['grade'], p[7]['src'], '', 0]           # from the gazetteer
     bib = {
         'AGOT': {'t': 'A Game of Thrones', 'a': 'George R. R. Martin', 'y': 1996, 'kind': 'primary', 'cite': 'POV chapter (e.g. Bran I)'},
         'ACOK': {'t': 'A Clash of Kings', 'a': 'George R. R. Martin', 'y': 1998, 'kind': 'primary', 'cite': 'POV chapter'},
