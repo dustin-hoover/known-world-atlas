@@ -143,9 +143,19 @@ the owner's "merge".
 ## 9. Progress
 
 - **Phase 1 (sources, comparison tool):** done.
-- **Coasts (phase 3, ahead of order):** Westeros from Britain and upside-down Ireland with real detail on every long
-  edge; Essos and Sothoryos from real shores laid along our outline; every named island drawn from a real one
+- **Coasts (phase 3, ahead of order):** the North from Britain with real detail on every long edge; Essos and
+  Sothoryos from real shores laid along our outline; every named island drawn from a real one
   (`tools/known/donor.py`, `tools/known/shores.py`, `docs/otherworldly/got/EARTH_ANALOGUES.md`).
+- **Southern Westeros on the official layout:** the Neck, the westerlands, the Reach, Dorne, the stormlands, the
+  crownlands, the Vale and the Fingers now follow the official map's shapes. About 45 places and seven island groups
+  were matched with the official map; a smooth fit carried the official positions into our frame (keeping our scale:
+  the Wall's 300 miles and Westeros's 3,000), and everything south of the North moved with them once. The coast runs
+  through 110 fixed points (`tools/known/coast_fixed.py`): capes, bays' heads, river mouths, coastal castles and towns,
+  and each of the Fingers. The line between them is ours, with real coast laid along it. Places that disagreed most
+  with the official map moved furthest: Seagard (to Ironman's Bay's south shore), the Crag, Highgarden (south, by the
+  Mander's bend), Horn Hill and Nightsong, the Tor and Ghost Hill (to Dorne's northern coast).
+  The no-tracing check (`python3 tools/refs/notrace.py`, run where the official preview is on hand) measures each
+  stretch between fixed points: at most 35% of any stretch lies within 1.5 miles of the official line (the limit is 60%).
 - **Rivers:** each takes the bends of its Earth analogue; towns on a river stay on it.
 - **Phase 2 (gazetteer, Westeros):** under way in `tools/known/gazetteer.py`: the nineteen castles of the Wall, the
   seats of the North, the riverlands, the Vale, the Iron Islands, the westerlands, the crownlands, the stormlands, the

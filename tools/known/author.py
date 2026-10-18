@@ -31,21 +31,21 @@ WESTEROS = [  # clockwise from the north-west of the Land of Always Winter
     [-420, 1250], [-300, 1330], [-150, 1360], [0, 1340], [150, 1360], [300, 1320], [420, 1250], [470, 1100], [430, 950],
     [380, 820], [300, 700], [330, 640], [250, 560], [195, 500], [154, 470], [148, 452], [160, 438],  # Hardhome, the Bay of Seals at Eastwatch
     [220, 420], [300, 380], [380, 330], [420, 250], [440, 160], [470, 60], [520, -60], [545, -150],  # the east coast, Widow's Watch
-    [480, -200], [400, -230], [260, -250], [190, -272],                                            # the Bite's north shore, White Harbor
-    [140, -320], [112, -400], [104, -480], [150, -545],                                            # the Neck's east shore
-    [220, -560], [320, -545], [430, -520], [560, -500], [585, -560], [500, -605], [565, -655],     # the Fingers
-    [560, -720], [580, -800], [525, -858], [470, -900], [400, -885], [330, -925], [300, -960],     # Gulltown, the Bay of Crabs
-    [350, -1000], [430, -1040], [462, -1100], [400, -1135], [330, -1160], [272, -1232], [244, -1302],  # Crackclaw Point, Blackwater Bay
-    [300, -1332], [420, -1332], [470, -1380], [400, -1420], [352, -1480], [372, -1580],            # Massey's Hook, Shipbreaker Bay
-    [500, -1600], [562, -1680], [520, -1760], [400, -1850], [250, -1900], [100, -1930], [-20, -1965],  # Cape Wrath; the Sea of Dorne
-    [60, -2045], [200, -2075], [350, -2078], [480, -2068], [640, -2098], [702, -2140], [640, -2190],   # Dorne's north shore, the Broken Arm
-    [585, -2238], [560, -2320], [522, -2400], [420, -2480], [250, -2540], [60, -2560], [-120, -2530],  # Sunspear, Planky Town
-    [-232, -2420], [-300, -2300], [-380, -2200], [-428, -2128], [-470, -2080], [-522, -2000],      # Starfall, Oldtown
-    [-562, -1900], [-562, -1780], [-522, -1702], [-562, -1600], [-522, -1450],                     # the Shield Islands, the Mander
-    [-480, -1300], [-402, -1182], [-452, -1100], [-472, -1000], [-442, -900],                      # Lannisport, the Westerlands
-    [-360, -830], [-260, -780], [-160, -722], [-110, -690], [-80, -640],                           # Ironman's Bay, Seagard
-    [-150, -600], [-260, -560], [-330, -520], [-260, -470], [-90, -450],                           # Cape Kraken
-    [-38, -382], [-150, -380], [-260, -330], [-380, -300], [-450, -250], [-420, -150],             # Blazewater Bay, the Stony Shore
+    [479, -203], [393, -251], [242, -296], [180, -293],                                            # the Bite's north shore, White Harbor
+    [141, -325], [124, -398], [120, -480], [166, -556],                                            # the Neck's east shore
+    [230, -592], [315, -596], [417, -580], [553, -526], [578, -584], [492, -639], [561, -665],     # the Fingers
+    [558, -719], [580, -793], [526, -858], [475, -900], [400, -895], [327, -941], [297, -975],     # Gulltown, the Bay of Crabs
+    [359, -998], [467, -1001], [525, -1028], [469, -1058], [370, -1119], [275, -1216], [227, -1299],  # Crackclaw Point, Blackwater Bay
+    [309, -1310], [472, -1270], [509, -1335], [427, -1396], [371, -1478], [388, -1595],            # Massey's Hook, Shipbreaker Bay
+    [497, -1613], [554, -1691], [514, -1766], [393, -1842], [242, -1874], [100, -1902], [-15, -1928],  # Cape Wrath; the Sea of Dorne
+    [83, -1999], [210, -2062], [351, -2075], [479, -2068], [641, -2101], [704, -2143], [642, -2193],   # Dorne's north shore, the Broken Arm
+    [587, -2240], [560, -2318], [518, -2393], [411, -2469], [238, -2541], [53, -2578], [-113, -2555],  # Sunspear, Planky Town
+    [-218, -2432], [-293, -2325], [-375, -2247], [-426, -2153], [-472, -2079], [-503, -1977],      # Starfall, Oldtown
+    [-486, -1866], [-430, -1739], [-392, -1705], [-408, -1596], [-483, -1458],                     # the Shield Islands, the Mander
+    [-424, -1309], [-398, -1179], [-385, -1063], [-343, -945], [-323, -866],                      # Lannisport, the Westerlands
+    [-323, -834], [-305, -854], [-307, -854], [-278, -829], [-216, -750],                           # Ironman's Bay, Seagard
+    [-282, -716], [-336, -648], [-362, -579], [-291, -506], [-130, -480],                           # Cape Kraken
+    [-45, -378], [-183, -408], [-284, -358], [-382, -305], [-450, -250], [-420, -150],             # Blazewater Bay, the Stony Shore
     [-520, -40], [-600, 40], [-560, 110], [-440, 120], [-330, 180], [-260, 250], [-220, 320], [-180, 400],  # Sea Dragon Point, the Bay of Ice
     [-150, 425], [-136, 444], [-142, 462], [-220, 520], [-320, 600], [-400, 700], [-470, 850], [-480, 1000],                 # the Wall's west end, the Frozen Shore
 ]
@@ -107,10 +107,10 @@ def isle(name, cx, cy, rx, ry, k=9, jag=0.18, seed=1):
 ISLANDS = [
     {'name': 'Essos', 'pts': SHORES['Essos']['coast'] if SHORES else chaikin(ESSOS, 2)},
     {'name': 'Sothoryos', 'pts': SHORES['Sothoryos']['coast'] if SHORES else chaikin(SOTHORYOS, 2)},
-    isle('The Three Sisters', 330, -300, 34, 12, seed=4),
-    isle('Fair Isle', -480, -1062, 14, 10, seed=11), isle('Dragonstone', 402, -1190, 18, 15, seed=12), isle('Driftmark', 362, -1212, 18, 10, seed=13),
-    isle('Claw Isle', 432, -1090, 9, 7, seed=14), isle('Tarth', 565, -1520, 30, 14, seed=15), isle('The Arbor', -570, -2232, 32, 22, seed=16),
-    isle('The Shield Islands', -590, -1760, 20, 30, seed=17),
+    isle('The Three Sisters', 286, -434, 34, 12, seed=4),
+    isle('Fair Isle', -375, -1011, 14, 10, seed=11), isle('Dragonstone', 488, -1090, 18, 15, seed=12), isle('Driftmark', 434, -1134, 18, 10, seed=13),
+    isle('Claw Isle', 489, -1027, 9, 7, seed=14), isle('Tarth', 558, -1522, 30, 14, seed=15), isle('The Arbor', -526, -2496, 32, 22, seed=16),
+    isle('The Shield Islands', -434, -1705, 20, 30, seed=17),
     isle('Tyrosh', 780, -1722, 26, 18, seed=18), isle('Lys', 952, -2030, 28, 16, seed=19),
     isle('The Stepstones', 770, -2100, 34, 10, seed=20), isle('Bloodstone', 860, -2050, 18, 10, seed=21),
     isle('Lorath', 1242, -246, 40, 26, seed=22), isle('Ib', 2800, -40, 220, 120, k=11, seed=23),
@@ -136,20 +136,20 @@ COAST_ZONES = [
     zone('fjord', [[-900, 1150], [900, 1150], [900, 1600], [-900, 1600]]),                # the Lands of Always Winter
     zone('rocky', [[-900, 470], [900, 470], [900, 1150], [-900, 1150]]),                  # beyond the Wall: the Frozen Shore, Hardhome
     zone('rocky', [[-420, 160], [-120, 160], [-120, 470], [-420, 470]]),                  # the Bay of Ice and Bear Island
-    zone('rocky', [[-650, -470], [-380, -470], [-380, 160], [-650, 160]]),                # the Stony Shore, Sea Dragon Point
-    zone('rocky', [[300, -200], [600, -200], [600, 420], [300, 420]]),                    # the North's east coast, Widow's Watch
-    zone('rocky', [[-520, -820], [-230, -820], [-230, -600], [-520, -600]]),              # the Iron Islands
-    zone('rocky', [[-380, -620], [-200, -620], [-200, -420], [-380, -420]]),              # Cape Kraken
-    zone('rocky', [[-560, -1250], [-380, -1250], [-380, -820], [-560, -820]]),            # the Westerlands' cliffs, the Crag, Fair Isle
-    zone('rocky', [[400, -880], [640, -880], [640, -480], [400, -480]]),                  # the Fingers
-    zone('rocky', [[380, -1120], [480, -1120], [480, -1020], [380, -1020]]),              # Crackclaw Point
-    zone('rocky', [[340, -1640], [620, -1640], [620, -1360], [340, -1360]]),              # Shipbreaker Bay, Storm's End, Tarth, Cape Wrath
-    zone('rocky', [[380, -1220], [430, -1220], [430, -1170], [380, -1170]]),              # Dragonstone
-    zone('beach', [[-640, -2300], [-380, -2300], [-380, -1400], [-640, -1400]]),          # the Reach's coast, the Shield Islands, the Arbor
-    zone('beach', [[-300, -2620], [600, -2620], [600, -2250], [-300, -2250]]),            # Dorne's south coast
-    zone('beach', [[0, -2120], [720, -2120], [720, -1990], [0, -1990]]),                  # Dorne's north shore on the Sea of Dorne
-    zone('marsh', [[-120, -620], [160, -620], [160, -300], [-120, -300]]),                # the Neck, Blazewater Bay
-    zone('marsh', [[270, -980], [340, -980], [340, -900], [270, -900]]),                  # the Trident's mouth, Saltpans
+    zone('rocky', [[-650, -470], [-385, -498], [-380, 160], [-650, 160]]),                # the Stony Shore, Sea Dragon Point
+    zone('rocky', [[297, -208], [600, -201], [600, 420], [300, 420]]),                    # the North's east coast, Widow's Watch
+    zone('rocky', [[-372, -778], [-276, -887], [-332, -706], [-432, -596]]),              # the Iron Islands
+    zone('rocky', [[-337, -680], [-325, -740], [-247, -465], [-382, -428]]),              # Cape Kraken
+    zone('rocky', [[-458, -1219], [-381, -1273], [-337, -826], [-395, -768]]),            # the Westerlands' cliffs, the Crag, Fair Isle
+    zone('rocky', [[400, -891], [644, -872], [638, -486], [378, -573]]),                  # the Fingers
+    zone('rocky', [[436, -1060], [548, -1039], [515, -983], [401, -1003]]),              # Crackclaw Point
+    zone('rocky', [[350, -1650], [609, -1649], [644, -1323], [364, -1329]]),              # Shipbreaker Bay, Storm's End, Tarth, Cape Wrath
+    zone('rocky', [[459, -1131], [517, -1117], [515, -1070], [456, -1087]]),              # Dragonstone
+    zone('beach', [[-571, -2640], [-363, -2397], [-344, -1472], [-622, -1396]]),          # the Reach's coast, the Shield Islands, the Arbor
+    zone('beach', [[-276, -2723], [600, -2620], [602, -2252], [-299, -2262]]),            # Dorne's south coast
+    zone('beach', [[34, -2058], [721, -2122], [720, -1991], [14, -1943]]),                  # Dorne's north shore on the Sea of Dorne
+    zone('marsh', [[-262, -740], [174, -629], [156, -312], [-135, -311]]),                # the Neck, Blazewater Bay
+    zone('marsh', [[269, -993], [344, -985], [338, -916], [270, -917]]),                  # the Trident's mouth, Saltpans
     zone('marsh', [[1350, -2280], [1480, -2280], [1480, -2150], [1350, -2150]]),          # the mouths of the Rhoyne at Volantis
 ]
 
@@ -175,47 +175,57 @@ def terrain_zones():
 # ---------------------------------------------------------------- relief
 RANGES = [
     {'name': 'The Frostfangs', 'h': 3000, 'w': 50, 'label': True, 'pts': [[-300, 560], [-250, 700], [-210, 850], [-190, 1000]]},
-    {'name': 'Mountains of the Moon', 'h': 3400, 'w': 60, 'label': True, 'pts': [[230, -630], [300, -690], [362, -752], [410, -830], [400, -905]]},
-    {'name': 'The Red Mountains', 'h': 3000, 'w': 55, 'label': True, 'pts': [[-280, -2250], [-160, -2185], [-40, -2140], [40, -2100]]},
+    {'name': 'Mountains of the Moon', 'h': 3400, 'w': 60, 'label': True, 'pts': [[241, -653], [303, -705], [362, -773], [408, -843], [402, -913]]},
+    {'name': 'The Red Mountains', 'h': 3000, 'w': 55, 'label': True, 'pts': [[-281, -2250], [-159, -2132], [-7, -2069], [70, -2050]]},
     {'name': 'The Bones', 'alt': 'The Bone Mountains', 'h': 3600, 'w': 80, 'label': True, 'pts': [[3020, -900], [3060, -1300], [3110, -1700], [3160, -2100]]},
     {'name': 'Mountains of the Shadow', 'h': 4200, 'w': 70, 'label': True, 'pts': [[4880, -2250], [5000, -2400], [5120, -2520]]},
     {'name': 'The Velvet Hills', 'h': 1500, 'w': 50, 'label': False, 'pts': [[1000, -680], [1060, -880], [1080, -1020]]},
 ]
 HILLS = [
-    {'name': 'The Westerlands hills', 'h': 2700, 'w': 50, 'pts': [[-360, -900], [-300, -1000], [-270, -1100]]},
-    {'name': 'The Barrowlands', 'h': 260, 'w': 30, 'pts': [[-120, -200], [-60, -260]]},
-    {'name': 'The Dornish Marches', 'h': 2200, 'w': 30, 'pts': [[-200, -2050], [40, -2030]]},
+    {'name': 'The Westerlands hills', 'h': 2700, 'w': 50, 'pts': [[-293, -895], [-266, -995], [-271, -1100]]},
+    {'name': 'The Barrowlands', 'h': 260, 'w': 30, 'pts': [[-121, -201], [-64, -260]]},
+    {'name': 'The Dornish Marches', 'h': 2200, 'w': 30, 'pts': [[-208, -1994], [63, -1980]]},
 ]
 PEAKS = [
-    {'name': 'Dragonmont', 'alt': 'the smoking mountain of Dragonstone', 'x': 402, 'y': -1186, 'h': 1100, 'r': 9, 'kind': 'volcano'},
-    {'name': 'The Giant\'s Lance', 'alt': 'with the Eyrie on its shoulder', 'x': 368, 'y': -752, 'h': 4300, 'r': 14, 'kind': 'mountain'},
+    {'name': 'Dragonmont', 'alt': 'the smoking mountain of Dragonstone', 'x': 488, 'y': -1087, 'h': 1100, 'r': 9, 'kind': 'volcano'},
+    {'name': 'The Giant\'s Lance', 'alt': 'with the Eyrie on its shoulder', 'x': 368, 'y': -773, 'h': 4300, 'r': 14, 'kind': 'mountain'},
     {'name': 'The Mother of Mountains', 'alt': 'above Vaes Dothrak', 'x': 2700, 'y': -985, 'h': 1500, 'r': 12, 'kind': 'mountain'},
     {'name': 'The Fourteen Flames', 'alt': 'the fires of the Doom', 'x': 1790, 'y': -2560, 'h': 2600, 'r': 14, 'kind': 'volcano'},
 ]
 
 # ---------------------------------------------------------------- water
 RIVERS = [
-    {'name': 'The White Knife', 'w0': 20, 'w1': 160, 'rank': 3, 'pts': [[60, -80], [100, -150], [150, -230], [190, -272]]},
+    {'name': 'The White Knife', 'w0': 20, 'w1': 160, 'rank': 3, 'pts': [[60, -80], [100, -150], [148, -230], [180, -293]]},
     {'name': 'The Last River', 'w0': 20, 'w1': 140, 'rank': 3, 'pts': [[60, 280], [160, 330], [300, 380]]},
     {'name': 'The Milkwater', 'w0': 20, 'w1': 140, 'rank': 3, 'pts': [[-200, 950], [-160, 800], [-200, 640], [-250, 560]]},
-    {'name': 'The Green Fork', 'w0': 30, 'w1': 220, 'rank': 2, 'pts': [[60, -560], [40, -620], [70, -720], [110, -830], [160, -890]]},
-    {'name': 'The Blue Fork', 'w0': 30, 'w1': 200, 'rank': 3, 'pts': [[180, -660], [150, -760], [160, -890]]},
-    {'name': 'The Red Fork', 'w0': 30, 'w1': 220, 'rank': 2, 'pts': [[-220, -960], [-120, -920], [-30, -900], [70, -890], [160, -890]]},
-    {'name': 'The Trident', 'w0': 220, 'w1': 420, 'rank': 1, 'pts': [[160, -890], [230, -915], [300, -955]]},
-    {'name': 'The Blackwater Rush', 'w0': 40, 'w1': 380, 'rank': 1, 'pts': [[-220, -1130], [-60, -1200], [100, -1260], [244, -1302]]},
-    {'name': 'The Mander', 'w0': 40, 'w1': 420, 'rank': 1, 'pts': [[120, -1420], [-30, -1450], [-160, -1560], [-280, -1650], [-420, -1690], [-522, -1702]]},
-    {'name': 'The Honeywine', 'w0': 20, 'w1': 200, 'rank': 3, 'pts': [[-300, -1950], [-380, -2050], [-428, -2128]]},
-    {'name': 'The Torrentine', 'w0': 20, 'w1': 160, 'rank': 3, 'pts': [[-160, -2240], [-200, -2320], [-232, -2400]]},
-    {'name': 'The Greenblood', 'w0': 30, 'w1': 260, 'rank': 2, 'pts': [[100, -2250], [300, -2350], [522, -2400]]},
+    {'name': 'The Green Fork', 'w0': 30, 'w1': 220, 'rank': 2, 'pts': [[62, -565], [21, -635], [46, -740], [112, -835], [173, -892]]},
+    {'name': 'The Blue Fork', 'w0': 30, 'w1': 200, 'rank': 3, 'pts': [[192, -671], [154, -768], [173, -892]]},
+    {'name': 'The Red Fork', 'w0': 30, 'w1': 220, 'rank': 2, 'pts': [[-212, -974], [-140, -938], [-41, -901], [76, -886], [173, -892]]},
+    {'name': 'The Trident', 'w0': 220, 'w1': 420, 'rank': 1, 'pts': [[173, -892], [225, -930]]},
+    {'name': 'The Blackwater Rush', 'w0': 40, 'w1': 380, 'rank': 1, 'pts': [[-233, -1137], [-86, -1210], [72, -1266], [227, -1299]]},
+    {'name': 'The Mander', 'w0': 40, 'w1': 420, 'rank': 1, 'pts': [[130, -1411], [-24, -1479], [-140, -1694], [-236, -1841], [-342, -1787], [-392, -1705]]},
+    {'name': 'The Honeywine', 'w0': 20, 'w1': 200, 'rank': 3, 'pts': [[-348, -1967], [-403, -2024], [-426, -2153]]},
+    {'name': 'The Torrentine', 'w0': 20, 'w1': 160, 'rank': 3, 'pts': [[-168, -2205], [-201, -2300], [-219, -2404]]},
+    {'name': 'The Greenblood', 'w0': 30, 'w1': 260, 'rank': 2, 'pts': [[109, -2250], [294, -2346], [518, -2393]]},
     {'name': 'The Rhoyne', 'alt': 'the Mother Rhoyne', 'w0': 60, 'w1': 900, 'rank': 1, 'pts': [[1150, -650], [1180, -850], [1230, -1050], [1300, -1500], [1360, -1800], [1420, -2205]]},
     {'name': 'The Skahazadhan', 'w0': 40, 'w1': 300, 'rank': 2, 'pts': [[2900, -1650], [2800, -1820], [2700, -1960]]},
 ]
+# the rivers of the south reach the sea at the coast's fixed points (tools/known/coast_fixed.py)
+import sys as _sys
+_sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from coast_fixed import SOUTH as COAST_FIXED
+FIXED_AT = {n: list(xy) for n, xy, _ in COAST_FIXED}
+RIVER_MOUTHS = {'The White Knife': 'White Harbor', 'The Trident': 'The Trident, mouth', 'The Blackwater Rush': 'King\'s Landing',
+                'The Mander': 'The Mander, estuary', 'The Honeywine': 'Oldtown', 'The Torrentine': 'Starfall',
+                'The Greenblood': 'The Greenblood, mouth'}
+for r in RIVERS:
+    if r['name'] in RIVER_MOUTHS: r['pts'][-1] = FIXED_AT[RIVER_MOUTHS[r['name']]]
 # our own courses, before shores.py gives each river the bends of its Earth analogue (the Rhoyne the Danube's...)
 RIVERS_DRAWN_LIST = [{'name': r['name'], 'pts': [list(p) for p in r['pts']]} for r in RIVERS]
 for r in RIVERS:
     if r['name'] in SHORES.get('rivers', {}): r['pts'] = SHORES['rivers'][r['name']]
 LAKES = [
-    {'name': 'The Gods Eye', 'pts': chaikin([[70, -960], [140, -950], [175, -990], [150, -1035], [90, -1035], [60, -1000]], 2)},
+    {'name': 'The Gods Eye', 'pts': chaikin([[80, -950], [156, -947], [182, -994], [147, -1038], [84, -1033], [62, -992]], 2)},
     {'name': 'The Long Lake', 'pts': chaikin([[30, 180], [60, 185], [62, 215], [36, 220]], 2)},
 ]
 
@@ -226,22 +236,22 @@ def area(name, pts, **kw):
 FORESTS = [
     area('The Haunted Forest', [[-200, 480], [150, 480], [250, 700], [0, 900], [-180, 800]], dens=1, dark=0.6),
     area('The Wolfswood', [[-330, 20], [-120, 60], [-80, -120], [-280, -150]], dens=0.9),
-    area('The Kingswood', [[250, -1380], [420, -1420], [400, -1520], [240, -1500]], dens=0.9),
-    area('The Rainwood', [[400, -1680], [520, -1700], [480, -1800], [350, -1760]], dens=1, dark=0.3),
+    area('The Kingswood', [[248, -1373], [448, -1394], [417, -1526], [255, -1499]], dens=0.9),
+    area('The Rainwood', [[403, -1690], [514, -1711], [475, -1802], [346, -1754]], dens=1, dark=0.3),
     area('The Forest of Qohor', [[1300, -950], [1500, -900], [1550, -1150], [1350, -1200]], dens=1, dark=0.4),
     area('The jungles of Sothoryos', [[700, -3200], [3500, -3400], [3600, -4400], [800, -4400]], dens=1, dark=0.5),
 ]
-MARSHES = [area('The Neck', [[-40, -385], [108, -392], [98, -555], [-78, -556]])]
+MARSHES = [area('The Neck', [[-48, -382], [120, -388], [111, -557], [-163, -625]])]
 ARID = [
-    area('The Dornish sands', [[-50, -2250], [400, -2150], [500, -2350], [200, -2500], [-100, -2450]], v=0.9),
+    area('The Dornish sands', [[-45, -2214], [401, -2151], [498, -2345], [188, -2504], [-99, -2449]], v=0.9),
     area('The Red Waste', [[2800, -1600], [3150, -1600], [3300, -2300], [2950, -2400], [2800, -2100]], v=1),
     area('Lhazar', [[2200, -1600], [2750, -1600], [2700, -1900], [2250, -1900]], v=0.45),
 ]
 FARMS = [
-    area('The Riverlands', [[-150, -700], [250, -700], [300, -1100], [-150, -1100]], v=0.8),
-    area('The Reach', [[-500, -1450], [100, -1450], [100, -1800], [-450, -2000]], v=1),
-    area('The Crownlands', [[120, -1150], [300, -1150], [300, -1350], [120, -1350]], v=0.7),
-    area('The Westerlands', [[-430, -1050], [-250, -1050], [-250, -1250], [-430, -1250]], v=0.6),
+    area('The Riverlands', [[-310, -840], [258, -717], [313, -1089], [-163, -1104]], v=0.8),
+    area('The Reach', [[-456, -1465], [118, -1441], [90, -1798], [-461, -1966]], v=1),
+    area('The Crownlands', [[91, -1158], [317, -1132], [309, -1330], [110, -1347]], v=0.7),
+    area('The Westerlands', [[-349, -1010], [-241, -1050], [-271, -1284], [-410, -1261]], v=0.6),
     area('The Winterfell fields', [[-100, 80], [100, 80], [100, -100], [-100, -100]], v=0.4),
     area('The Rhoyne valley', [[1150, -1500], [1450, -1500], [1450, -2150], [1150, -2150]], v=0.8),
 ]
@@ -270,11 +280,11 @@ PLACES = [
     P('Deepwood Motte', 'fortress', -260, 60, 'north', 'The North', 'Seat of House Glover in the Wolfswood.', rank=3),
     P('Bear Island', 'fortress', -318, 400, 'north', 'The North', 'Island seat of House Mormont.', rank=4),
     P('Torrhen\'s Square', 'fortress', -130, -170, 'north', 'The North', 'Seat of House Tallhart.', rank=4),
-    P('Barrowton', 'town', -90, -240, 'north', 'The North', 'Town of the barrowlands beside the First King\'s barrow.', rank=4, culture='bree', r=0.25, pop=2500),
-    P('White Harbor', 'port', 185, -275, 'north', 'The North', 'The North\'s great port, seat of House Manderly, at the mouth of the White Knife.', rank=2, culture='gondor', r=0.5, pop=12000),
+    P('Barrowton', 'town', -99, -248, 'north', 'The North', 'Town of the barrowlands beside the First King\'s barrow.', rank=4, culture='bree', r=0.25, pop=2500),
+    P('White Harbor', 'port', 177, -286, 'north', 'The North', 'The North\'s great port, seat of House Manderly, at the mouth of the White Knife.', rank=2, culture='gondor', r=0.5, pop=12000),
     P('Widow\'s Watch', 'fortress', 500, -110, 'north', 'The North', 'Seat of House Flint on a peninsula of the east coast.', rank=5),
-    P('Moat Cailin', 'ruin', 40, -420, 'north', 'The North', 'A ruined fortress guarding the causeway through the Neck.', rank=3),
-    P('Greywater Watch', 'fortress', 30, -500, 'crannog', 'The North', 'The moving castle of House Reed in the swamps of the Neck.', rank=4),
+    P('Moat Cailin', 'ruin', 56, -394, 'north', 'The North', 'A ruined fortress guarding the causeway through the Neck.', rank=3),
+    P('Greywater Watch', 'fortress', 31, -507, 'crannog', 'The North', 'The moving castle of House Reed in the swamps of the Neck.', rank=4),
     # beyond the Wall
     P('The Fist of the First Men', 'landmark', -40, 600, 'free', 'Beyond the Wall', 'An ancient ring-fort on a hill in the Haunted Forest.', rank=3),
     P('Craster\'s Keep', 'village', 10, 690, 'free', 'Beyond the Wall', 'A wildling holdfast in the Haunted Forest.', rank=4),
@@ -282,69 +292,69 @@ PLACES = [
     P('Whitetree', 'village', -60, 520, 'free', 'Beyond the Wall', 'An abandoned wildling village around a great weirwood.', rank=5),
     P('The Skirling Pass', 'landmark', -240, 760, 'free', 'Beyond the Wall', 'A high pass through the Frostfangs.', rank=5),
     # the riverlands
-    P('The Twins', 'fortress', 40, -620, 'river', 'The Riverlands', 'Twin castles of House Frey on both banks of the Green Fork, joined by a bridge.', rank=2),
-    P('Seagard', 'fortress', -110, -690, 'river', 'The Riverlands', 'Seat of House Mallister on Ironman\'s Bay.', rank=4),
-    P('Riverrun', 'fortress', -30, -900, 'river', 'The Riverlands', 'Seat of House Tully where the Tumblestone meets the Red Fork.', rank=2),
-    P('Harrenhal', 'fortress', 130, -960, 'river', 'The Riverlands', 'The greatest castle ever raised in Westeros, its towers melted by dragonfire.', rank=2),
-    P('The Isle of Faces', 'landmark', 110, -995, 'river', 'The Riverlands', 'An island of weirwoods in the Gods Eye.', rank=4),
-    P('The Ruby Ford', 'ford', 160, -890, 'river', 'The Riverlands', 'Where the Kingsroad crosses the Trident.', rank=4),
-    P('The Inn at the Crossroads', 'village', 175, -935, 'river', 'The Riverlands', 'An inn where the Kingsroad, the River Road and the High Road meet.', rank=4),
-    P('Saltpans', 'town', 324, -927, 'river', 'The Riverlands', 'A small port on the Bay of Crabs.', rank=5),
-    P('Maidenpool', 'port', 302, -955, 'river', 'The Riverlands', 'A port town on the Bay of Crabs.', rank=4),
-    P('Stoney Sept', 'town', 60, -1080, 'river', 'The Riverlands', 'A walled town in the southern riverlands.', rank=4, culture='bree', r=0.25, pop=3000),
-    P('Raventree Hall', 'fortress', 20, -780, 'river', 'The Riverlands', 'Seat of House Blackwood.', rank=5),
+    P('The Twins', 'fortress', 32, -623, 'river', 'The Riverlands', 'Twin castles of House Frey on both banks of the Green Fork, joined by a bridge.', rank=2),
+    P('Seagard', 'fortress', -304, -849, 'river', 'The Riverlands', 'Seat of House Mallister on Ironman\'s Bay.', rank=4),
+    P('Riverrun', 'fortress', -34, -893, 'river', 'The Riverlands', 'Seat of House Tully where the Tumblestone meets the Red Fork.', rank=2),
+    P('Harrenhal', 'fortress', 152, -953, 'river', 'The Riverlands', 'The greatest castle ever raised in Westeros, its towers melted by dragonfire.', rank=2),
+    P('The Isle of Faces', 'landmark', 117, -990, 'river', 'The Riverlands', 'An island of weirwoods in the Gods Eye.', rank=4),
+    P('The Ruby Ford', 'ford', 173, -892, 'river', 'The Riverlands', 'Where the Kingsroad crosses the Trident.', rank=4),
+    P('The Inn at the Crossroads', 'village', 187, -938, 'river', 'The Riverlands', 'An inn where the Kingsroad, the River Road and the High Road meet.', rank=4),
+    P('Saltpans', 'town', 321, -943, 'river', 'The Riverlands', 'A small port on the Bay of Crabs.', rank=5),
+    P('Maidenpool', 'port', 294, -976, 'river', 'The Riverlands', 'A port town on the Bay of Crabs.', rank=4),
+    P('Stoney Sept', 'town', 35, -1082, 'river', 'The Riverlands', 'A walled town in the southern riverlands.', rank=4, culture='bree', r=0.25, pop=3000),
+    P('Raventree Hall', 'fortress', -26, -814, 'river', 'The Riverlands', 'Seat of House Blackwood.', rank=5),
     # the Vale
-    P('The Eyrie', 'fortress', 362, -756, 'vale', 'The Vale', 'Seat of House Arryn, high on the shoulder of the Giant\'s Lance.', rank=2),
-    P('The Bloody Gate', 'fortress', 300, -770, 'vale', 'The Vale', 'The fortified gate at the western entrance of the Vale.', rank=4),
-    P('Gulltown', 'port', 522, -860, 'vale', 'The Vale', 'The Vale\'s chief port.', rank=3, culture='gondor', r=0.35, pop=8000),
-    P('Runestone', 'fortress', 560, -762, 'vale', 'The Vale', 'Seat of House Royce.', rank=4),
+    P('The Eyrie', 'fortress', 362, -777, 'vale', 'The Vale', 'Seat of House Arryn, high on the shoulder of the Giant\'s Lance.', rank=2),
+    P('The Bloody Gate', 'fortress', 304, -789, 'vale', 'The Vale', 'The fortified gate at the western entrance of the Vale.', rank=4),
+    P('Gulltown', 'port', 522, -863, 'vale', 'The Vale', 'The Vale\'s chief port.', rank=3, culture='gondor', r=0.35, pop=8000),
+    P('Runestone', 'fortress', 560, -751, 'vale', 'The Vale', 'Seat of House Royce.', rank=4),
     # the Iron Islands
-    P('Pyke', 'fortress', -330, -762, 'iron', 'The Iron Islands', 'Seat of House Greyjoy, its towers on sea stacks joined by bridges.', rank=2),
-    P('Lordsport', 'port', -322, -748, 'iron', 'The Iron Islands', 'The chief harbour of Pyke.', rank=4),
-    P('Ten Towers', 'fortress', -296, -702, 'iron', 'The Iron Islands', 'Seat of House Harlaw.', rank=5),
-    P('Nagga\'s Hill', 'landmark', -425, -672, 'iron', 'The Iron Islands', 'The hill on Old Wyk where kings of the ironborn are chosen.', rank=5),
+    P('Pyke', 'fortress', -301, -784, 'iron', 'The Iron Islands', 'Seat of House Greyjoy, its towers on sea stacks joined by bridges.', rank=2),
+    P('Lordsport', 'port', -295, -773, 'iron', 'The Iron Islands', 'The chief harbour of Pyke.', rank=4),
+    P('Ten Towers', 'fortress', -276, -740, 'iron', 'The Iron Islands', 'Seat of House Harlaw.', rank=5),
+    P('Nagga\'s Hill', 'landmark', -370, -718, 'iron', 'The Iron Islands', 'The hill on Old Wyk where kings of the ironborn are chosen.', rank=5),
     # the westerlands
-    P('Casterly Rock', 'fortress', -395, -1165, 'west', 'The Westerlands', 'Seat of House Lannister, delved into a great rock above the sea.', rank=2),
-    P('Lannisport', 'port', -405, -1185, 'west', 'The Westerlands', 'The great port city below Casterly Rock.', rank=2, culture='gondor', r=0.6, pop=40000),
-    P('The Golden Tooth', 'fortress', -230, -980, 'west', 'The Westerlands', 'Castle guarding the pass between the westerlands and the riverlands.', rank=4),
-    P('Ashemark', 'fortress', -280, -1060, 'west', 'The Westerlands', 'Seat of House Marbrand.', rank=5),
-    P('The Crag', 'fortress', -470, -1000, 'west', 'The Westerlands', 'Seat of House Westerling on the sea.', rank=5),
+    P('Casterly Rock', 'fortress', -399, -1154, 'west', 'The Westerlands', 'Seat of House Lannister, delved into a great rock above the sea.', rank=2),
+    P('Lannisport', 'port', -402, -1188, 'west', 'The Westerlands', 'The great port city below Casterly Rock.', rank=2, culture='gondor', r=0.6, pop=40000),
+    P('The Golden Tooth', 'fortress', -214, -989, 'west', 'The Westerlands', 'Castle guarding the pass between the westerlands and the riverlands.', rank=4),
+    P('Ashemark', 'fortress', -267, -1056, 'west', 'The Westerlands', 'Seat of House Marbrand.', rank=5),
+    P('The Crag', 'fortress', -335, -942, 'west', 'The Westerlands', 'Seat of House Westerling on the sea.', rank=5),
     # the crownlands
-    P('King\'s Landing', 'city', 250, -1300, 'crown', 'The Crownlands', 'The capital of the Seven Kingdoms, on three hills above the Blackwater, crowned by the Red Keep.', rank=1, culture='gondor', r=1.4, pop=500000),
-    P('The Red Keep', 'landmark', 250.5, -1299.4, 'crown', 'The Crownlands', 'The royal castle on Aegon\'s High Hill.', rank=4),
-    P('The Great Sept of Baelor', 'landmark', 244, -1301, 'crown', 'The Crownlands', 'The great sept on Visenya\'s Hill.', rank=5),
-    P('Dragonstone', 'fortress', 400, -1192, 'crown', 'The Crownlands', 'Targaryen island fortress beneath the smoking Dragonmont.', rank=2),
-    P('High Tide', 'fortress', 362, -1212, 'crown', 'The Crownlands', 'Seat of House Velaryon on Driftmark.', rank=5),
-    P('Duskendale', 'port', 310, -1160, 'crown', 'The Crownlands', 'A port town on the coast north of King\'s Landing.', rank=4),
-    P('Rosby', 'fortress', 220, -1250, 'crown', 'The Crownlands', 'A castle on the Kingsroad north of the capital.', rank=5),
+    P('King\'s Landing', 'city', 224, -1302, 'crown', 'The Crownlands', 'The capital of the Seven Kingdoms, on three hills above the Blackwater, crowned by the Red Keep.', rank=1, culture='gondor', r=1.4, pop=500000),
+    P('The Red Keep', 'landmark', 235.5, -1294.3, 'crown', 'The Crownlands', 'The royal castle on Aegon\'s High Hill.', rank=4),
+    P('The Great Sept of Baelor', 'landmark', 227, -1298, 'crown', 'The Crownlands', 'The great sept on Visenya\'s Hill.', rank=5),
+    P('Dragonstone', 'fortress', 486, -1093, 'crown', 'The Crownlands', 'Targaryen island fortress beneath the smoking Dragonmont.', rank=2),
+    P('High Tide', 'fortress', 434, -1134, 'crown', 'The Crownlands', 'Seat of House Velaryon on Driftmark.', rank=5),
+    P('Duskendale', 'port', 320, -1149, 'crown', 'The Crownlands', 'A port town on the coast north of King\'s Landing.', rank=4),
+    P('Rosby', 'fortress', 199, -1252, 'crown', 'The Crownlands', 'A castle on the Kingsroad north of the capital.', rank=5),
     # the stormlands
-    P('Storm\'s End', 'fortress', 374, -1576, 'storm', 'The Stormlands', 'Seat of House Baratheon, a great drum tower above Shipbreaker Bay.', rank=2),
-    P('Bronzegate', 'fortress', 300, -1500, 'storm', 'The Stormlands', 'Seat of House Buckler.', rank=5),
-    P('Evenfall Hall', 'fortress', 562, -1520, 'storm', 'The Stormlands', 'Seat of House Tarth on the island of Tarth.', rank=4),
-    P('Griffin\'s Roost', 'fortress', 520, -1680, 'storm', 'The Stormlands', 'Seat of House Connington on Cape Wrath.', rank=5),
-    P('Summerhall', 'ruin', 230, -1820, 'storm', 'The Stormlands', 'A ruined Targaryen summer palace in the Dornish Marches.', rank=4),
-    P('Nightsong', 'fortress', -120, -2075, 'storm', 'The Stormlands', 'Seat of House Caron in the Dornish Marches.', rank=5),
+    P('Storm\'s End', 'fortress', 393, -1595, 'storm', 'The Stormlands', 'Seat of House Baratheon, a great drum tower above Shipbreaker Bay.', rank=2),
+    P('Bronzegate', 'fortress', 317, -1501, 'storm', 'The Stormlands', 'Seat of House Buckler.', rank=5),
+    P('Evenfall Hall', 'fortress', 551, -1518, 'storm', 'The Stormlands', 'Seat of House Tarth on the island of Tarth.', rank=4),
+    P('Griffin\'s Roost', 'fortress', 482, -1784, 'storm', 'The Stormlands', 'Seat of House Connington on Cape Wrath.', rank=5),
+    P('Summerhall', 'ruin', 216, -1792, 'storm', 'The Stormlands', 'A ruined Targaryen summer palace in the Dornish Marches.', rank=4),
+    P('Nightsong', 'fortress', -60, -1960, 'storm', 'The Stormlands', 'Seat of House Caron in the Dornish Marches.', rank=5),
     # the Reach
-    P('Highgarden', 'fortress', -280, -1650, 'reach', 'The Reach', 'Seat of House Tyrell on the Mander, amid fields and gardens.', rank=2, culture='gondor', r=0.3, pop=3000),
-    P('Oldtown', 'city', -430, -2120, 'reach', 'The Reach', 'The oldest city of Westeros, home of the Citadel and the Hightower.', rank=2, culture='gondor', r=0.9, pop=100000),
-    P('The Hightower', 'tower', -430.8, -2120.6, 'reach', 'The Reach', 'The tallest tower in Westeros, a lighthouse above Oldtown.', rank=3),
-    P('The Citadel', 'landmark', -432, -2116, 'reach', 'The Reach', 'The seat of the order of maesters.', rank=4),
-    P('Bitterbridge', 'town', -30, -1450, 'reach', 'The Reach', 'A town at the bridge where the Roseroad crosses the Mander.', rank=4),
-    P('Goldengrove', 'fortress', -200, -1500, 'reach', 'The Reach', 'Seat of House Rowan.', rank=5),
-    P('Horn Hill', 'fortress', -180, -1950, 'reach', 'The Reach', 'Seat of House Tarly.', rank=4),
-    P('Tumbleton', 'town', 80, -1440, 'reach', 'The Reach', 'A market town on the Mander.', rank=5),
-    P('Brightwater Keep', 'fortress', -420, -1850, 'reach', 'The Reach', 'Seat of House Florent.', rank=5),
-    P('Three Towers', 'fortress', -480, -2050, 'reach', 'The Reach', 'Seat of House Costayne.', rank=5),
-    P('Ryamsport', 'port', -560, -2215, 'reach', 'The Reach', 'Chief port of the Arbor.', rank=5),
+    P('Highgarden', 'fortress', -231, -1853, 'reach', 'The Reach', 'Seat of House Tyrell on the Mander, amid fields and gardens.', rank=2, culture='gondor', r=0.3, pop=3000),
+    P('Oldtown', 'city', -425, -2141, 'reach', 'The Reach', 'The oldest city of Westeros, home of the Citadel and the Hightower.', rank=2, culture='gondor', r=0.9, pop=100000),
+    P('The Hightower', 'tower', -430.2, -2140.9, 'reach', 'The Reach', 'The tallest tower in Westeros, a lighthouse above Oldtown.', rank=3),
+    P('The Citadel', 'landmark', -432, -2133, 'reach', 'The Reach', 'The seat of the order of maesters.', rank=4),
+    P('Bitterbridge', 'town', -26, -1477, 'reach', 'The Reach', 'A town at the bridge where the Roseroad crosses the Mander.', rank=4),
+    P('Goldengrove', 'fortress', -179, -1627, 'reach', 'The Reach', 'Seat of House Rowan.', rank=5),
+    P('Horn Hill', 'fortress', -249, -1975, 'reach', 'The Reach', 'Seat of House Tarly.', rank=4),
+    P('Tumbleton', 'town', 104, -1427, 'reach', 'The Reach', 'A market town on the Mander.', rank=5),
+    P('Brightwater Keep', 'fortress', -412, -1897, 'reach', 'The Reach', 'Seat of House Florent.', rank=5),
+    P('Three Towers', 'fortress', -490, -2010, 'reach', 'The Reach', 'Seat of House Costayne.', rank=5),
+    P('Ryamsport', 'port', -520, -2453, 'reach', 'The Reach', 'Chief port of the Arbor.', rank=5),
     # Dorne
-    P('Sunspear', 'fortress', 585, -2240, 'dorne', 'Dorne', 'Seat of House Martell on the eastern coast of Dorne.', rank=2, culture='harad', r=0.4, pop=10000),
-    P('The Water Gardens', 'landmark', 545, -2268, 'dorne', 'Dorne', 'A palace of pools and fountains by the sea.', rank=4),
-    P('Planky Town', 'port', 522, -2398, 'dorne', 'Dorne', 'A river port of boats lashed together at the mouth of the Greenblood.', rank=4),
-    P('Yronwood', 'fortress', 150, -2200, 'dorne', 'Dorne', 'Seat of House Yronwood.', rank=4),
-    P('Starfall', 'fortress', -238, -2380, 'dorne', 'Dorne', 'Seat of House Dayne where the Torrentine meets the sea.', rank=4),
-    P('Hellholt', 'fortress', 100, -2400, 'dorne', 'Dorne', 'Seat of House Uller in the sands.', rank=5),
-    P('Vaith', 'fortress', 300, -2400, 'dorne', 'Dorne', 'Seat of House Dalt.', rank=5),
-    P('Skyreach', 'fortress', -150, -2210, 'dorne', 'Dorne', 'Seat of House Fowler above the Prince\'s Pass.', rank=5),
+    P('Sunspear', 'fortress', 588, -2243, 'dorne', 'Dorne', 'Seat of House Martell on the eastern coast of Dorne.', rank=2, culture='harad', r=0.4, pop=10000),
+    P('The Water Gardens', 'landmark', 546, -2268, 'dorne', 'Dorne', 'A palace of pools and fountains by the sea.', rank=4),
+    P('Planky Town', 'port', 518, -2391, 'dorne', 'Dorne', 'A river port of boats lashed together at the mouth of the Greenblood.', rank=4),
+    P('Yronwood', 'fortress', 163, -2212, 'dorne', 'Dorne', 'Seat of House Yronwood.', rank=4),
+    P('Starfall', 'fortress', -224, -2372, 'dorne', 'Dorne', 'Seat of House Dayne where the Torrentine meets the sea.', rank=4),
+    P('Hellholt', 'fortress', 92, -2411, 'dorne', 'Dorne', 'Seat of House Uller in the sands.', rank=5),
+    P('Vaith', 'fortress', 291, -2389, 'dorne', 'Dorne', 'Seat of House Dalt.', rank=5),
+    P('Skyreach', 'fortress', -165, -2176, 'dorne', 'Dorne', 'Seat of House Fowler above the Prince\'s Pass.', rank=5),
     # Essos: the Free Cities and the east
     P('Braavos', 'city', 770, -480, 'braavos', 'Braavos', 'City of a hundred islands in a lagoon, guarded by the Titan.', rank=1, culture='lake', r=1.2, pop=400000),
     P('The Titan of Braavos', 'wonder', 766, -505, 'braavos', 'Braavos', 'A giant stone and bronze warrior astride the lagoon\'s entrance.', rank=3),
@@ -377,38 +387,38 @@ PLACES = [
 ]
 
 REGION_LABELS = [
-    ['WESTEROS', -120, -900, 'realm', 2, 3.6, 1.6], ['ESSOS', 2600, -1300, 'realm', 1.5, 3.6, 2], ['SOTHORYOS', 2100, -4200, 'realm', 1.5, 4, 2],
-    ['THE NORTH', -60, 180, 'realm', 3.4, 7.5, 1.1], ['BEYOND THE WALL', 0, 860, 'realm', 3.4, 7.5, 1.0], ['THE RIVERLANDS', 40, -820, 'realm', 3.6, 7.5, 0.9],
-    ['THE VALE', 450, -680, 'realm', 3.6, 7.5, 0.9], ['THE IRON ISLANDS', -360, -830, 'realm', 4, 7.5, 0.8], ['THE WESTERLANDS', -320, -1120, 'realm', 3.6, 7.5, 0.9],
-    ['THE CROWNLANDS', 200, -1180, 'realm', 3.8, 7.5, 0.8], ['THE REACH', -240, -1800, 'realm', 3.4, 7.5, 1.1], ['THE STORMLANDS', 300, -1650, 'realm', 3.6, 7.5, 0.9],
-    ['DORNE', 200, -2320, 'realm', 3.4, 7.5, 1.1], ['THE DOTHRAKI SEA', 2200, -1100, 'region', 3, 7, 1.1], ['THE RED WASTE', 3050, -2150, 'region', 3.6, 7, 0.9],
+    ['WESTEROS', -149, -926, 'realm', 2, 3.6, 1.6], ['ESSOS', 2600, -1300, 'realm', 1.5, 3.6, 2], ['SOTHORYOS', 2100, -4200, 'realm', 1.5, 4, 2],
+    ['THE NORTH', -60, 180, 'realm', 3.4, 7.5, 1.1], ['BEYOND THE WALL', 0, 860, 'realm', 3.4, 7.5, 1.0], ['THE RIVERLANDS', 18, -836, 'realm', 3.6, 7.5, 0.9],
+    ['THE VALE', 446, -704, 'realm', 3.6, 7.5, 0.9], ['THE IRON ISLANDS', -323, -834, 'realm', 4, 7.5, 0.8], ['THE WESTERLANDS', -319, -1116, 'realm', 3.6, 7.5, 0.9],
+    ['THE CROWNLANDS', 178, -1187, 'realm', 3.8, 7.5, 0.8], ['THE REACH', -265, -1926, 'realm', 3.4, 7.5, 1.1], ['THE STORMLANDS', 309, -1655, 'realm', 3.6, 7.5, 0.9],
+    ['DORNE', 198, -2328, 'realm', 3.4, 7.5, 1.1], ['THE DOTHRAKI SEA', 2200, -1100, 'region', 3, 7, 1.1], ['THE RED WASTE', 3050, -2150, 'region', 3.6, 7, 0.9],
     ['LHAZAR', 2450, -1750, 'region', 3.8, 7, 0.8], ['SLAVER\'S BAY', 2550, -2280, 'region', 3.8, 7, 0.8], ['YI TI', 4300, -1800, 'region', 3, 7, 1.1],
-    ['THE SHADOW', 5100, -2450, 'region', 3.6, 7, 0.9], ['THE LAND OF ALWAYS WINTER', 0, 1200, 'region', 3, 7, 0.9], ['THE NECK', 30, -470, 'region', 4.5, 8, 0.7],
+    ['THE SHADOW', 5100, -2450, 'region', 3.6, 7, 0.9], ['THE LAND OF ALWAYS WINTER', 0, 1200, 'region', 3, 7, 0.9], ['THE NECK', 34, -466, 'region', 4.5, 8, 0.7],
     ['THE DISPUTED LANDS', 1050, -1720, 'region', 4, 7.5, 0.7],
 ]
 SEA_LABELS = [
-    ['The Sunset Sea', -1200, -900, 1.6, 0, 6.5], ['The Narrow Sea', 640, -1050, 1.2, 2.5, 7], ['The Summer Sea', 1200, -2750, 1.6, 0, 6.5],
+    ['The Sunset Sea', -1200, -900, 1.6, 0, 6.5], ['The Narrow Sea', 663, -1022, 1.2, 2.5, 7], ['The Summer Sea', 1200, -2750, 1.6, 0, 6.5],
     ['The Shivering Sea', 2400, 250, 1.4, 0, 6.5], ['The Jade Sea', 4300, -3100, 1.4, 0, 6.5], ['Slaver\'s Bay', 2560, -2150, 0.9, 4, 8.5],
-    ['The Bite', 300, -330, 0.9, 4, 8.5], ['Blackwater Bay', 320, -1250, 0.8, 5, 9], ['Shipbreaker Bay', 430, -1490, 0.8, 5, 9],
-    ['The Sea of Dorne', 250, -2000, 0.9, 4, 8.5], ['Ironman\'s Bay', -250, -720, 0.9, 4, 8.5], ['The Bay of Ice', -238, 400, 0.8, 4, 8.5],
-    ['The Bay of Seals', 300, 470, 0.8, 4, 8.5], ['The Smoking Sea', 1850, -2610, 0.9, 4, 8.5], ['The Bay of Crabs', 400, -930, 0.8, 5, 9],
+    ['The Bite', 260, -459, 0.9, 4, 8.5], ['Blackwater Bay', 355, -1205, 0.8, 5, 9], ['Shipbreaker Bay', 447, -1487, 0.8, 5, 9],
+    ['The Sea of Dorne', 251, -1981, 0.9, 4, 8.5], ['Ironman\'s Bay', -330, -819, 0.9, 4, 8.5], ['The Bay of Ice', -238, 400, 0.8, 4, 8.5],
+    ['The Bay of Seals', 300, 470, 0.8, 4, 8.5], ['The Smoking Sea', 1850, -2610, 0.9, 4, 8.5], ['The Bay of Crabs', 405, -934, 0.8, 5, 9],
 ]
 
 # ---------------------------------------------------------------- realms (coarse; tools/borders/borders.py tightens them)
 def R(name, color, pts): return {'name': name, 'color': color, 'pts': pts}
 REALMS = {'AC298': [
-    R('The North', '#c9d1dc', [[-620, 460], [470, 460], [560, -160], [470, -420], [130, -560], [-80, -560], [-350, -520], [-620, -100]]),
+    R('The North', '#c9d1dc', [[-620, 460], [470, 460], [560, -160], [445, -507], [146, -566], [-169, -632], [-371, -574], [-620, -100]]),
     R('Beyond the Wall', '#dfe8ee', [[-520, 460], [480, 460], [480, 1360], [-520, 1360]]),
-    R('The Iron Islands', '#4a4a4a', [[-460, -620], [-270, -620], [-270, -800], [-460, -800]]),
-    R('The Riverlands', '#7aa0c8', [[-200, -560], [130, -560], [160, -700], [280, -920], [260, -1080], [80, -1150], [-200, -1050], [-260, -800]]),
-    R('The Vale', '#9ab8d8', [[130, -500], [600, -480], [620, -900], [420, -930], [250, -850], [160, -650]]),
-    R('The Westerlands', '#c84040', [[-500, -850], [-260, -800], [-200, -1050], [-180, -1250], [-480, -1350]]),
-    R('The Crownlands', '#b05050', [[260, -1080], [470, -1050], [480, -1350], [260, -1360], [150, -1250]]),
-    R('The Reach', '#6aa04a', [[-560, -1350], [-180, -1250], [150, -1360], [160, -1520], [0, -1980], [-300, -2250], [-600, -2050]]),
-    R('The Stormlands', '#d0b040', [[160, -1360], [480, -1350], [600, -1650], [450, -1900], [0, -1980], [160, -1520]]),
-    R('Dorne', '#e08a3a', [[-300, -2250], [0, -2100], [300, -2070], [720, -2120], [600, -2400], [250, -2580], [-150, -2560]]),
-    R('Braavos', '#5a8ab8', [[700, -380], [1000, -380], [1000, -700], [720, -700]]),
-    R('Pentos', '#8a7ab8', [[720, -700], [1050, -700], [1050, -1300], [720, -1300]]),
+    R('The Iron Islands', '#4a4a4a', [[-396, -680], [-257, -680], [-257, -812], [-396, -812]]),
+    R('The Riverlands', '#7aa0c8', [[-302, -658], [146, -566], [167, -709], [278, -937], [259, -1083], [50, -1157], [-200, -1053], [-296, -866]]),
+    R('The Vale', '#9ab8d8', [[146, -508], [596, -492], [626, -890], [427, -930], [254, -865], [172, -658]]),
+    R('The Westerlands', '#c84040', [[-356, -808], [-296, -866], [-200, -1053], [-200, -1277], [-414, -1372]]),
+    R('The Crownlands', '#b05050', [[259, -1083], [514, -1001], [528, -1292], [256, -1351], [120, -1257]]),
+    R('The Reach', '#6aa04a', [[-459, -1340], [-200, -1277], [141, -1357], [178, -1517], [11, -1937], [-299, -2262], [-547, -2105]]),
+    R('The Stormlands', '#d0b040', [[150, -1357], [528, -1292], [590, -1660], [445, -1896], [11, -1937], [178, -1517]]),
+    R('Dorne', '#e08a3a', [[-299, -2262], [35, -2035], [302, -2063], [721, -2122], [598, -2395], [238, -2584], [-139, -2602]]),
+    R('Braavos', '#5a8ab8', [[700, -380], [1000, -380], [1000, -700], [720, -698]]),
+    R('Pentos', '#8a7ab8', [[720, -698], [1050, -700], [1050, -1300], [728, -1288]]),
     R('Norvos', '#7a8a6a', [[1050, -700], [1300, -700], [1300, -1000], [1050, -1000]]),
     R('Qohor', '#6a7a5a', [[1300, -800], [1650, -800], [1650, -1250], [1300, -1250]]),
     R('Myr', '#b88a6a', [[850, -1300], [1150, -1300], [1150, -1650], [850, -1650]]),
@@ -423,11 +433,11 @@ ADMIN = []
 PEOPLES = [
     {'name': 'Northmen', 'lang': 'Common Tongue · Old Tongue in the far north', 'color': '#a8c0d8', 'pts': REALMS['AC298'][0]['pts']},
     {'name': 'The Free Folk', 'lang': 'Old Tongue · Common Tongue', 'color': '#e0f0ff', 'pts': [[-520, 460], [480, 460], [480, 1080], [-520, 1080]]},
-    {'name': 'The Crannogmen', 'lang': 'Common Tongue', 'color': '#5aa05a', 'pts': [[-40, -385], [108, -392], [98, -555], [-78, -556]]},
+    {'name': 'The Crannogmen', 'lang': 'Common Tongue', 'color': '#5aa05a', 'pts': [[-48, -382], [120, -388], [111, -557], [-163, -625]]},
     {'name': 'The Ironborn', 'lang': 'Common Tongue', 'color': '#808080', 'pts': REALMS['AC298'][2]['pts']},
-    {'name': 'The Andals of the south', 'lang': 'Common Tongue', 'color': '#e8b850', 'pts': [[-560, -560], [600, -480], [620, -1650], [0, -2050], [-600, -2050]]},
+    {'name': 'The Andals of the south', 'lang': 'Common Tongue', 'color': '#e8b850', 'pts': [[-490, -552], [596, -492], [610, -1659], [30, -1986], [-547, -2105]]},
     {'name': 'Dornishmen', 'lang': 'Common Tongue', 'color': '#ff8a2a', 'pts': REALMS['AC298'][9]['pts']},
-    {'name': 'The Free Cities\' folk', 'lang': 'Bastard Valyrian dialects', 'color': '#b07ae0', 'pts': [[700, -380], [1650, -700], [1650, -2250], [850, -2100], [720, -1300]]},
+    {'name': 'The Free Cities\' folk', 'lang': 'Bastard Valyrian dialects', 'color': '#b07ae0', 'pts': [[700, -380], [1650, -700], [1650, -2250], [850, -2100], [728, -1288]]},
     {'name': 'Dothraki', 'lang': 'Dothraki', 'color': '#e0c85a', 'pts': REALMS['AC298'][16]['pts']},
     {'name': 'Lhazareen', 'lang': 'Lhazarene', 'color': '#a0d07a', 'pts': [[2200, -1600], [2750, -1600], [2700, -1900], [2250, -1900]]},
     {'name': 'Ghiscari', 'lang': 'Ghiscari · Bastard Valyrian', 'color': '#d0503a', 'pts': REALMS['AC298'][17]['pts']},
@@ -438,13 +448,13 @@ PEOPLES = [
 ]
 
 ROADS = [
-    {'name': 'The Kingsroad', 'cls': 1, 'pts': [[20, 450], [10, 250], [0, 0], [30, -250], [40, -420], [45, -620], [110, -800], [160, -890], [175, -935], [200, -1100], [220, -1250], [250, -1300], [300, -1450], [374, -1576]]},
-    {'name': 'The River Road', 'cls': 2, 'pts': [[-405, -1185], [-300, -1060], [-230, -980], [-30, -900], [80, -910], [175, -935]]},
-    {'name': 'The High Road', 'cls': 2, 'pts': [[175, -935], [240, -820], [300, -770], [362, -756]]},
-    {'name': 'The Gold Road', 'cls': 2, 'pts': [[250, -1300], [60, -1230], [-150, -1200], [-405, -1185]]},
-    {'name': 'The Roseroad', 'cls': 2, 'pts': [[250, -1300], [120, -1400], [-30, -1450], [-280, -1650], [-430, -2120]]},
-    {'name': 'The Ocean Road', 'cls': 3, 'pts': [[-280, -1650], [-440, -1500], [-405, -1185]]},
-    {'name': 'The Boneway', 'cls': 3, 'pts': [[230, -1820], [150, -2050], [150, -2200]]},
+    {'name': 'The Kingsroad', 'cls': 1, 'pts': [[20, 450], [10, 250], [0, 0], [32, -241], [52, -403], [29, -633], [108, -808], [173, -892], [187, -938], [187, -1108], [199, -1252], [235, -1295], [314, -1444], [390, -1591]]},
+    {'name': 'The River Road', 'cls': 2, 'pts': [[-400, -1183], [-282, -1053], [-217, -989], [-41, -901], [91, -903], [187, -938]]},
+    {'name': 'The High Road', 'cls': 2, 'pts': [[187, -938], [246, -834], [304, -789], [362, -777]]},
+    {'name': 'The Gold Road', 'cls': 2, 'pts': [[235, -1295], [30, -1237], [-170, -1215], [-400, -1183]]},
+    {'name': 'The Roseroad', 'cls': 2, 'pts': [[235, -1295], [125, -1392], [-24, -1479], [-236, -1841], [-430, -2139]]},
+    {'name': 'The Ocean Road', 'cls': 3, 'pts': [[-236, -1841], [-358, -1575], [-400, -1183]]},
+    {'name': 'The Boneway', 'cls': 3, 'pts': [[218, -1795], [163, -2026], [162, -2206]]},
     {'name': 'The Demon Road', 'cls': 3, 'pts': [[1420, -2200], [1700, -2280], [2000, -2300], [2452, -2150]]},
 ]
 WALLS = [{'name': 'The Wall', 'ice': 1, 'pts': [[-145, 449], [-60, 451], [20, 452], [100, 454], [157, 456]]}]
@@ -622,6 +632,22 @@ def river_towns():
             print(f'  {t[0]} stays on {r["name"]} (moved {math.hypot(dx, dy):.1f} mi)')
 
 
+def on_fixed(places, every=None):
+    """A coastal place that is one of the coast's fixed points stands on it, the landmarks within 12 miles with it."""
+    import math
+    every = every or places
+    for t in places:
+        if t[0] not in FIXED_AT or t[1] in ('landmark', 'tower', 'region'): continue
+        dx, dy = FIXED_AT[t[0]][0] - t[2], FIXED_AT[t[0]][1] - t[3]
+        group = [p for p in every if p is t or (p[1] in ('landmark', 'tower') and math.hypot(p[2] - t[2], p[3] - t[3]) < 12)]
+        for p in group: p[2], p[3] = round(p[2] + dx, 1), round(p[3] + dy, 1)
+        if math.hypot(dx, dy) > 3: print(f'  {t[0]} stands on its fixed point of the coast (moved {math.hypot(dx, dy):.1f} mi)')
+
+
+# castles the books set over a town: (the town, miles east, miles north)
+BESIDE = {'Casterly Rock': ('Lannisport', 2.0, 5.0)}
+
+
 def prepare():
     """Everything that settles the geography before the cast is built; returns the coast. Used by main() and the checks."""
     river_towns()
@@ -646,6 +672,7 @@ def prepare():
         if p[0] in pins: p[2], p[3] = round(pins[p[0]][0], 1), round(pins[p[0]][1], 1)
     for k in PEAKS:
         if k['name'] in pins: k['x'], k['y'] = round(pins[k['name']][0], 1), round(pins[k['name']][1], 1)
+    on_fixed(PLACES)
     # hand-drawn islands give way to the new mainland, then every place settles onto the land
     from shapely.geometry import Polygon
     main_poly = Polygon(coast_s).buffer(0)
@@ -666,7 +693,14 @@ def prepare():
     for p in new + [q for q in PLACES if q[0] in moved]:
         if p[7].get('coast'): ON_SEA.add(p[0])
     PLACES.extend(new)
+    for p in new + [q for q in PLACES if q[0] in moved]:               # the gazetteer's island castles stand on their islands
+        if p[0] in pins: p[2], p[3] = round(pins[p[0]][0], 1), round(pins[p[0]][1], 1)
+    on_fixed(new + [q for q in PLACES if q[0] in moved], PLACES)
     settle(new + [q for q in PLACES if q[0] in moved], coast_s)
+    for name, (by, dx, dy) in BESIDE.items():                           # a castle the books set over a town
+        a = next(p for p in PLACES if p[0] == name); b = next(p for p in PLACES if p[0] == by)
+        a[2], a[3] = round(b[2] + dx, 1), round(b[3] + dy, 1)
+    settle([p for p in PLACES if p[0] in BESIDE], coast_s)
     return coast_s
 
 

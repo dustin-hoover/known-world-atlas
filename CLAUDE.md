@@ -6,11 +6,21 @@ Arda's engine notes below still apply; what differs in this world:
 
 - **Geography is generated:** edit `tools/known/author.py` (control points in miles, X east / Y north of
   Winterfell, Chaikin-smoothed), then `npm run author`. It writes `src/geo.js` and `src/sources.js`; don't hand-edit those.
-- **Coasts from Earth:** Westeros's coast is Britain and upside-down Ireland bent onto our landmarks (`tools/known/donor.py`
-  → `coast_donor.json`); Essos and Sothoryos keep our outline (author.py `ESSOS`, `SOTHORYOS`) with real shores laid
+- **Coasts from Earth:** the North's coast is Britain bent onto our landmarks (`tools/known/donor.py` → `coast_donor.json`,
+  which also moves Orkney in as the Iron Islands). South of the North (from the Rills round to the Bite) the coast runs
+  through fixed points, each named feature where the official map puts it (`tools/known/coast_fixed.py`, graded map,
+  with the shore character of each stretch); shores.py runs our own curve through them and lays a real coast of that
+  character along each stretch (Connemara, Brittany, the Wadden Sea, the Algarve, Tripolitania, Kerry for the Fingers).
+  Rivers of the south end at their fixed points (author.py `RIVER_MOUTHS`) and a coastal place named like a fixed point
+  stands on it (`on_fixed`). Essos and Sothoryos keep our outline (author.py `ESSOS`, `SOTHORYOS`) with real shores laid
   along it and real islands moved bodily (`tools/known/shores.py` → `coast_shores.json`, pins move Braavos, Valyria, the
-  Fourteen Flames, Ib Nefer); shores.py also lays real detail on Westeros's long straight edges (its output wins over
-  the donor's) and gives each river its Earth analogue's bends (`RIVERS_DRAWN_LIST` keeps our own courses). Both read Natural Earth from `tools/refs/earth/` (git-ignored); re-run them, then `npm run author`.
+  Fourteen Flames, Ib Nefer and the castles of Westeros's islands); shores.py also lays real detail on the North's long
+  straight edges and gives each river its Earth analogue's bends (`RIVERS_DRAWN_LIST` keeps our own courses). Both read
+  Natural Earth from `tools/refs/earth/` (git-ignored); re-run them, then `npm run author`.
+- **Southern Westeros is fitted to the official layout:** every place, river, road, forest, realm claim and journey
+  point south of the North was moved once (a thin-plate spline through ~45 matching places and island groups, the
+  official positions carried into our frame by a smooth fit that ignores places far from where their neighbours put
+  them). Author new data in the fitted frame; the official map stays the reference for positions (graded `map`).
 - **Gazetteer (`tools/known/gazetteer.py`):** places the books name beyond author.py's first list, each with its kind,
   first book, note, grade (`text` / `inferred`) and a position against our own map (`at`, `near` a place, `in` a place,
   `between` two, along a `river`, on the `wall`); `coast=True` puts it on the waterline, `move=True` moves a place

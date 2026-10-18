@@ -59,39 +59,101 @@ ISLE_KM = 45.0      # real islands this close to the real coast come along with 
 ISLE_MAX = 3000.0   # ...if smaller than this (km²)
 
 # ------------------------------------------------------------------ Westeros: real detail on the long straight edges
-# Britain and Ireland are stretched to several times their size in places, and our own additions (the Lands of
-# Always Winter, the Sea of Dorne, the head of Blackwater Bay, the Neck) are drawn as polygons: both leave straight
-# edges miles long. Two whole stretches are laid like the shores of Essos; every other edge longer than EDGE takes a
-# piece of a real coast of the same character, laid along it with its corners held, so the shapes of Britain and
-# Ireland stay.
+# The North is Britain, stretched to several times its size in places, and our own addition there (the Lands of Always
+# Winter) is drawn as a polygon: both leave straight edges miles long. The Lands of Always Winter are laid whole like
+# the shores of Essos; every other edge longer than EDGE takes a piece of a real coast of the same character, laid
+# along it with its corners held, so Britain's shapes stay. South of the North the coast is built anew from fixed
+# points (south_outline, below).
 WESTEROS_STRETCHES = [   # (from, to on our coast, real from, real to, what, sig)
     ((470, 1150), (-470, 1150), (-61.7, 56.5), (-64.4, 60.4), 'the fjords of northern Labrador', 45.0),   # the Lands of Always Winter
-    ((300, -2030), (300, -1930), (33.80, 27.20), (33.55, 28.25), 'the Gulf of Suez', 25.0),                # the Sea of Dorne
 ]
 POOLS = {                # real coasts that edges take their pieces from, in turn
     'fjord': ((-61.7, 56.5), (-64.4, 60.4), 'northern Labrador'),
     'rocky': ((-1.5, 48.65), (-2.2, 47.27), 'Brittany'),
+    'stony': ((-9.05, 53.25), (-9.85, 53.60), 'Connemara'),
     'marsh': ((4.75, 52.95), (8.4, 55.5), 'the Wadden Sea'),
     'beach': ((-6.3, 36.5), (-8.95, 37.0), 'the Gulf of Cadiz and the Algarve'),
     'dry': ((13.2, 32.9), (10.75, 34.7), 'Tripolitania and the Gulf of Gabes'),
+    'kerry': ((-9.95, 52.42), (-9.82, 51.45), 'the Kerry peninsulas'),
 }
-REGIONS = [              # (pool, X0, X1, Y0, Y1): the first that holds an edge's middle
+REGIONS = [              # (pool, X0, X1, Y0, Y1): the first that holds an edge's middle (the North and its islands)
     ('fjord', -2000, 2000, 450, 2000),
-    ('marsh', -120, 300, -700, -250),
-    ('dry', -2000, 2000, -3000, -1950),
-    ('beach', -2000, -200, -1950, -1300),
     ('rocky', -2000, 2000, -3000, 2000),
 ]
 EDGE = 7.0               # miles
 
+# ------------------------------------------------------------------ Westeros south of the North
+# From the Rills round to the North's east coast the coast runs through fixed points: each named feature where the
+# official map puts it (tools/known/coast_fixed.py, graded map). Between them the line is ours, a smooth curve, and
+# each stretch takes a piece of real coast of its character from POOLS, its corners held (the Fingers, each finger's
+# tip and each sound's head a fixed point, from the Kerry peninsulas).
+sys.path.insert(0, HERE)
+from coast_fixed import SOUTH
+KM_PER_MI = 1.0         # real coast taken per mile of ours (its bays and headlands at about real size)
+
+
+def spline(P, step=0.5):
+    """A centripetal Catmull-Rom curve through P, every `step` miles -> (points, the index of each of P in them)."""
+    P = np.asarray(P, float); E = np.r_[[2 * P[0] - P[1]], P, [2 * P[-1] - P[-2]]]
+    out, at, n0 = [], [], 0
+    for i in range(1, len(E) - 2):
+        p0, p1, p2, p3 = E[i - 1:i + 3]
+        d = [max(np.hypot(*(b - a)), 1e-6) ** 0.5 for a, b in ((p0, p1), (p1, p2), (p2, p3))]
+        t0, t1 = 0.0, d[0]; t2 = t1 + d[1]; t3 = t2 + d[2]
+        t = np.linspace(t1, t2, max(2, int(np.hypot(*(p2 - p1)) / step) + 1))[:, None]
+        A1 = ((t1 - t) * p0 + (t - t0) * p1) / (t1 - t0); A2 = ((t2 - t) * p1 + (t - t1) * p2) / (t2 - t1)
+        A3 = ((t3 - t) * p2 + (t - t2) * p3) / (t3 - t2)
+        B1 = ((t2 - t) * A1 + (t - t0) * A2) / (t2 - t0); B2 = ((t3 - t) * A2 + (t - t1) * A3) / (t3 - t1)
+        C = ((t2 - t) * B1 + (t - t1) * B2) / (t2 - t1)
+        at.append(n0); out.append(C[:-1]); n0 += len(C) - 1
+    at.append(n0); out.append(P[-1:])
+    return np.vstack(out), at
+
+
+def south_outline():
+    """-> (the coast from the Rills round to the North's east coast, [island rings])."""
+    from scipy.spatial import cKDTree
+    S, at = spline([xy for _, xy, _ in SOUTH])
+    sS = np.r_[0, np.cumsum(np.hypot(*np.diff(S, axis=0).T))]; tS = cKDTree(S)
+    def room(i0, i1):
+        # the nearest coast that is not this stretch (across a bay, a sound or a strait), from the stretch's middle
+        m = (i0 + i1) // 2; L = sS[i1] - sS[i0]
+        d, j = tS.query(S[m], k=600, distance_upper_bound=90); ok = np.isfinite(d); j = np.minimum(j, len(S) - 1)
+        far = ok & (abs(sS[j] - sS[m]) > L / 2 + 6)
+        return float(d[far].min()) if far.any() else 90.0
+    pieces = {k: piece_of(a, b) for k, (a, b, _) in POOLS.items()}; used = {k: 0 for k in POOLS}
+    out, isles = [], []
+    for i in range(len(SOUTH) - 1):
+        shore, j = SOUTH[i][2], i + 1
+        path = S[at[i]:at[j] + 1]; L = sS[at[j]] - sS[at[i]]
+        pts, poly, left, lat0, R = pieces[shore]
+        need = int(L * KM_PER_MI / 0.4) + 2                            # real coast at about its own size
+        o = used[shore] if used[shore] + need < len(R) else 0; used[shore] = o + need + 25
+        sub = R[o:o + need]
+        ll = np.c_[sub[:, 0] / (111.32 * math.cos(math.radians(lat0))), sub[:, 1] / 110.57]
+        rm = room(at[i], at[j])
+        sig = max(3.0, min(L / 3, 30.0, rm))
+        amp = min(1.0, rm / (3 * sig))                                    # a narrow bay or a finger keeps its width
+        c, il, _, _ = lay(path, None, None, sig=sig, taper=min(TAPER, L / 5), piece=(ll, poly, left, lat0, sub),
+                          isle_km=8.0 if amp > 0.6 else 0.0, amp=amp)
+        out.append(c[:-1]); isles += il
+    out.append(S[-1:])
+    return np.vstack(out), isles
+
 
 def westeros(ring, donor_isles=()):
-    """-> (coast ring, [{'name', 'pts'}] islands) with real detail laid on the long straight edges."""
+    """-> (coast ring, [{'name', 'pts'}] islands): the North's coast with real detail laid on its long straight edges,
+    and the south built anew from its fixed points."""
     ring = np.asarray(ring, float)
     if not Polygon(ring).exterior.is_ccw: ring = ring[::-1]
-    n = len(ring); isles = []
-    # the two stretches, smoothed (our corners there are only a drawing's) and laid whole
-    done = np.zeros(n, bool); spans = {}
+    sc, sisles = south_outline()                                       # from the Rills round to the North's east coast
+    n = len(ring)
+    iw = int(np.argmin(((ring - sc[0]) ** 2).sum(1))); ie = int(np.argmin(((ring - sc[-1]) ** 2).sum(1)))
+    north = ring[(ie + np.arange((iw - ie) % n + 1)) % n][1:-1]       # round the North from the east join to the west
+    ring = np.vstack([north, sc]); n = len(ring)
+    isles = [{'name': None, 'pts': q} for q in sisles]
+    done = np.zeros(n, bool); done[len(north):] = True; spans = {len(north): np.vstack([sc, sc[-1:]])}
+    # the Lands of Always Winter, smoothed (our corners there are only a drawing's) and laid whole
     for a, b, ra, rb, what, sig in WESTEROS_STRETCHES:
         ia = int(np.argmin(((ring - a) ** 2).sum(1))); ib = int(np.argmin(((ring - b) ** 2).sum(1)))
         idx = (ia + np.arange((ib - ia) % n + 1)) % n; done[idx[:-1]] = True
@@ -140,6 +202,7 @@ def westeros(ring, donor_isles=()):
     isles += [{'name': None, 'pts': q} for q in il]
     for d in donor_isles:                                              # Britain's islands, stretched with it
         r = np.asarray(d['pts'], float)
+        if not d.get('name') and r[:, 1].mean() < -150: continue        # Ireland's and the south's: the new coast brings its own
         if not Polygon(r).exterior.is_ccw: r = r[::-1]
         c, _ = detail(r) if len(r) > 3 else (r, [])
         isles.append({'name': d.get('name'), 'pts': c})
@@ -224,15 +287,15 @@ TRANSPLANTS = [
     ('Naath', (8.4, 8.98, 3.18, 3.8), (8.7, 3.5), (2050, -2950), 1.7, 90, 'island'),                     # Bioko
     ('The Summer Isles', (-172.85, -171.35, -14.1, -13.4), (-172.1, -13.75), (-150, -2970), 1.6, 0, 'island'),  # Samoa
     # Westeros's own islands, which Britain and Ireland don't give us
-    ('Dragonstone', (-18.05, -17.7, 28.43, 28.87), (-17.86, 28.66), (402, -1190), 0.8, 0, 'island'),    # La Palma
-    ('Driftmark', (-1.45, -1.15, 45.78, 46.06), (-1.30, 45.92), (355, -1195), 1.2, 0, 'island'),         # Oléron
-    ('Claw Isle', (-2.7, -2.5, 49.4, 49.52), (-2.58, 49.46), (445, -1070), 1.8, 0, 'island'),            # Guernsey
-    ('Tarth', (27.65, 28.3, 35.85, 36.48), (27.97, 36.17), (565, -1520), 0.75, -52, 'island'),          # Rhodes
-    ('Fair Isle', (-2.27, -1.98, 49.15, 49.27), (-2.12, 49.21), (-480, -1062), 1.8, 0, 'island'),        # Jersey
-    ('Estermont', (1.15, 1.65, 38.8, 39.15), (1.42, 38.98), (585, -1640), 0.9, 0, 'island'),             # Ibiza
-    ('The Arbor', (2.3, 3.5, 39.25, 39.98), (2.98, 39.6), (-570, -2232), 0.6, 0, 'island'),              # Mallorca
-    ('The Shield Islands', (6.15, 6.55, 42.97, 43.05), (6.33, 43.01), (-590, -1760), 2.5, 90, 'island'), # the Îles d'Hyères
-    ('The Three Sisters', (4.7, 5.6, 53.0, 53.47), (5.1, 53.25), (330, -300), 1.0, -30, 'island'),      # Texel, Vlieland, Terschelling
+    ('Dragonstone', (-18.05, -17.7, 28.43, 28.87), (-17.86, 28.66), (494, -1076), 0.8, 0, 'island'),    # La Palma
+    ('Driftmark', (-1.45, -1.15, 45.78, 46.06), (-1.30, 45.92), (443, -1113), 1.8, 0, 'island'),         # Oléron
+    ('Claw Isle', (-2.7, -2.5, 49.4, 49.52), (-2.58, 49.46), (552, -1042), 1.8, 0, 'island'),            # Guernsey
+    ('Tarth', (27.65, 28.3, 35.85, 36.48), (27.97, 36.17), (557, -1528), 1.2, 36, 'island'),            # Rhodes
+    ('Fair Isle', (-2.27, -1.98, 49.15, 49.27), (-2.12, 49.21), (-420, -1042), 2.5, 90, 'island'),       # Jersey
+    ('Estermont', (1.15, 1.65, 38.8, 39.15), (1.42, 38.98), (575, -1651), 0.9, 0, 'island'),             # Ibiza
+    ('The Arbor', (2.3, 3.5, 39.25, 39.98), (2.98, 39.6), (-526, -2513), 1.2, 0, 'island'),              # Mallorca
+    ('The Shield Islands', (6.15, 6.55, 42.97, 43.05), (6.33, 43.01), (-428, -1697), 2.5, 90, 'island'), # the Îles d'Hyères
+    ('The Three Sisters', (4.7, 5.6, 53.0, 53.47), (5.1, 53.25), (275, -467), 1.3, -30, 'island'),      # Texel, Vlieland, Terschelling
 ]
 
 
@@ -360,7 +423,14 @@ def lay(ours, a, b, pins=None, sig=SIG, taper=TAPER, piece=None, isle_km=ISLE_KM
 TRANSPLANT_PINS = {'Valyria': ('The Smoking Sea', (25.43, 36.42)), 'The Fourteen Flames': ('The Smoking Sea', (25.47, 37.07)),
                    'Ib Nefer': ('Ib', (-21.94, 64.15)), 'Lorath': ('Lorath', (22.48, 58.25)), 'New Ghis': ('New Ghis', (14.51, 35.9)),
                    'Tall Trees Town': ('The Summer Isles', (-171.76, -13.83)), 'Dragonstone': ('Dragonstone', (-17.77, 28.68)),
-                   'Dragonmont': ('Dragonstone', (-17.87, 28.72)), 'Evenfall Hall': ('Tarth', (28.22, 36.44))}
+                   'Dragonmont': ('Dragonstone', (-17.87, 28.72)), 'Evenfall Hall': ('Tarth', (28.22, 36.44)),
+                   # the castles and towns of Westeros's islands, each on its island's real town or harbour
+                   'High Tide': ('Driftmark', (-1.33, 45.95)), 'Spicetown': ('Driftmark', (-1.20, 45.89)),
+                   'Claw Isle': ('Claw Isle', (-2.535, 49.455)), 'Greenstone': ('Estermont', (1.435, 38.915)),
+                   'Faircastle': ('Fair Isle', (-2.11, 49.19)), 'Ryamsport': ('The Arbor', (2.65, 39.57)),
+                   'Vinetown': ('The Arbor', (3.12, 39.84)), 'Starpike': ('The Arbor', (2.95, 39.62)),
+                   'Greenshield': ('The Shield Islands', (6.45, 43.03)), 'Greyshield': ('The Shield Islands', (6.385, 43.005)),
+                   'Southshield': ('The Shield Islands', (6.20, 43.0)), 'Sisterton': ('The Three Sisters', (5.22, 53.36))}
 
 
 def transplants(pins=None):
@@ -457,8 +527,9 @@ def sheet(path, segs, main, isles, places, cols=4, size=420):
     im.save(path); print('sheet', path, im.size)
 
 
-WZOOMS = {'always-winter': (0, 1250, 500), 'sea-of-dorne': (200, -1990, 220), 'reach': (-420, -1700, 350), 'blackwater': (330, -1250, 120),
-          'dorne': (150, -2400, 300), 'north-east': (400, 200, 300)}
+WZOOMS = {'always-winter': (0, 1250, 500), 'sea-of-dorne': (300, -2080, 260), 'reach': (-420, -1900, 420), 'blackwater': (340, -1200, 200),
+          'dorne': (180, -2350, 460), 'north-east': (400, 200, 300), 'neck': (-100, -560, 380), 'westerlands': (-380, -1000, 300),
+          'vale': (450, -700, 300), 'south': (0, -1400, 1300)}
 ZOOMS = {'braavos': (790, -520, 120), 'valyria': (1700, -2450, 260), 'slavers-bay': (2620, -2150, 260), 'yi-ti': (5450, -1700, 300)}
 
 

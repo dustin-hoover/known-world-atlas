@@ -8,7 +8,7 @@ Grades in the ledger: `text` (stated in the books), `map` (read from an official
 | Folder | Source | Kind | May be used for | Never used for |
 |---|---|---|---|---|
 | (none) | The five novels, The World of Ice & Fire, Fire & Blood | canon | names, positions stated in words, distances, travel times, heraldry, who held what and when | quoting prose |
-| `official/` | Jonathan Roberts, The Lands of Ice and Fire (2012), previews from fantasticmaps.com | official, © George R. R. Martin | broad layout and the positions of large features, graded `map` | tracing any line; the previews (720 × 1080) are too small to read castle names |
+| `official/` | Jonathan Roberts, The Lands of Ice and Fire (2012), previews from fantasticmaps.com | official, © George R. R. Martin | broad layout and the positions of large features, graded `map`: the ~45 places and island groups southern Westeros was fitted to, and the coast's fixed points (`tools/known/coast_fixed.py`) | tracing any line; the previews (720 × 1080) are too small to read most castle names |
 | (owner's copy) | The Lands of Ice and Fire, the printed poster set | official | positions of named places, graded `map`, read from the owner's own photos of the sheets | tracing any line |
 | `whitehead/` | Adam Whitehead, Atlas of Ice and Fire: the Known World (2014, 10000 × 8300; also the 2016 world maps) | fan, built from the official maps | flags only: places we lack, coast or inland disagreements, missing islands, places far from where it puts them | positions, shapes or names (a name is added only when found in the books) |
 | `quartermaester/` | quartermaester.info place and seat data | fan, mixes book and TV data | flags only, and leads to chapters | positions, shapes, seat holders, or anything from its TV layer |
@@ -18,7 +18,7 @@ Grades in the ledger: `text` (stated in the books), `map` (read from an official
 
 | Folder | Source | Licence | Used for |
 |---|---|---|---|
-| `earth/` | Natural Earth 1:10m land and minor islands | public domain | Westeros's coast: Britain and Ireland bent onto our landmarks (`tools/known/donor.py`, output `tools/known/coast_donor.json`) |
+| `earth/` | Natural Earth 1:10m land and minor islands | public domain | the North's coast: Britain bent onto our landmarks, Orkney moved in as the Iron Islands (`tools/known/donor.py`, output `tools/known/coast_donor.json`); the detail of the south's coast between its fixed points, and Westeros's other islands (`tools/known/shores.py`) |
 | `earth/` | Natural Earth 1:10m land and minor islands | public domain | Essos's and Sothoryos's coasts: real shores laid along our own outline, and real islands moved bodily (`tools/known/shores.py`, output `tools/known/coast_shores.json`) |
 | `earth/` | Natural Earth 1:10m rivers and lake centrelines | public domain | the bends of our rivers, each from its Earth analogue (`tools/known/shores.py`) |
 | `earth/dem/` | Copernicus DEM GLO-90 | free for any use; credit "© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA" | measuring the Earth analogues of our mountains (`tools/refs/analogues.py`, `docs/otherworldly/got/EARTH_ANALOGUES.md`) |
@@ -33,3 +33,7 @@ official maps posted without the publisher's permission.
 `python3 tools/refs/compare.py` lines each reference up with our map by the places both name, and writes
 `tools/refs/reports/*.md` (git-ignored) listing what disagrees. It writes reports, never geometry. It needs
 Tesseract for reading map labels (`apt-get install tesseract-ocr`, `pip install pytesseract scikit-image scipy`).
+
+`python3 tools/refs/notrace.py` is the no-tracing check for the coast of southern Westeros (MAP_V2 §3): it lines the
+official preview up with our map by shared places and reports any stretch between two fixed points whose shore runs
+too close to the official line. It reads the preview and writes nothing.

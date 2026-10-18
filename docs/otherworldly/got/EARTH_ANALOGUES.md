@@ -78,9 +78,9 @@ of measurements.
 | Our coast | Analogue | Why |
 |---|---|---|
 | Beyond the Wall, the Frozen Shore | the Scottish sea lochs (our donor coast), Lofoten | fjords and skerries |
-| The Stony Shore | Wales and Connemara | stony headlands and coves |
+| The Stony Shore | Wales and Connemara (the Rills and Cape Kraken from Connemara) | stony headlands and coves |
 | The Iron Islands | Orkney (our donor islands) | bare, windswept, low cliffs |
-| The Fingers | the Kerry peninsulas (our donor coast) | long bony fingers into the sea |
+| The Fingers | the Kerry peninsulas | long bony fingers into the sea |
 | The Reach's coast | the Landes and Arcachon, France | long sand beaches, dunes and lagoons |
 | The Neck's shores | the Wadden Sea | mudflats and tidal channels |
 | Dorne's coast | the Libyan and Sinai coasts | hot sand shores and low cliffs |
@@ -120,20 +120,21 @@ offshore, at about their real size), and moves a few real islands and one penins
 | Sothoryos, north (Naath's shore) | the north coast of New Guinea | jungle mountains to the sea |
 | Sothoryos, north-west (the Basilisk shore) | the Caribbean coast of Colombia and Panama | the Darién's coast and the San Blas islands |
 
-Westeros keeps Britain and upside-down Ireland (`tools/known/donor.py`), but those are stretched to several times
-their size in places, and our own additions are drawn as polygons, so the coast had straight edges miles long.
-`shores.py` lays real detail on every edge longer than 7 miles, its corners held, from a real coast of the same
-character (and narrowed where a sea loch or strait leaves little room), and lays two stretches whole:
+The North keeps Britain (`tools/known/donor.py`), stretched to several times its size in places, and the Lands of
+Always Winter are drawn by us, so the coast there had straight edges miles long. `shores.py` lays real detail on every
+edge longer than 7 miles, its corners held, and lays the Lands of Always Winter whole. South of the North the coast
+runs through fixed points (`tools/known/coast_fixed.py`, each feature where the official map puts it), and each
+stretch between two points takes a piece of real coast of its character, its ends held:
 
 | Our coast | Real detail from | Why |
 |---|---|---|
-| the Lands of Always Winter | the fjords of northern Labrador | ice-worn fjords and skerries at the edge of the ice |
-| the Sea of Dorne | the Gulf of Suez | a long, narrow, hot sea between desert and hills |
-| beyond the Wall | northern Labrador | fjords and skerries |
-| the Neck and the Bite | the Wadden Sea | mudflats, creeks and barrier islands |
-| the Reach | the Gulf of Cádiz and the Algarve | sand, lagoons and low cliffs |
-| Dorne | Tripolitania and the Gulf of Gabès | hot shores, lagoons and sebkhas |
-| everywhere else | Brittany | granite headlands, rias and islets |
+| the Lands of Always Winter, beyond the Wall | northern Labrador | ice-worn fjords and skerries at the edge of the ice |
+| the Rills, the Stony Shore, Cape Kraken, the Flint Cliffs | Connemara | stony headlands, coves and islets |
+| Blazewater Bay's head, the Neck, the Bite, the Bay of Crabs | the Wadden Sea | mudflats, creeks and barrier islands |
+| the westerlands, the stormlands, the Vale, Massey's Hook | Brittany | granite headlands, rias and islets |
+| the Reach, Blackwater Bay | the Gulf of Cádiz and the Algarve | sand, lagoons and low cliffs |
+| Dorne, the Sea of Dorne's south shore | Tripolitania and the Gulf of Gabès | hot shores, lagoons and sebkhas |
+| the Fingers | the Kerry peninsulas | long bony fingers into the sea (each finger's tip a fixed point) |
 
 | Moved bodily | From | Why |
 |---|---|---|
@@ -142,6 +143,15 @@ character (and narrowed where a sea loch or strait leaves little room), and lays
 | Ib | Iceland | a large cold island across a northern sea (Ib Nefer where Reykjavík is) |
 | Tyrosh, Lys, Bloodstone | Brač, Hvar, Vis | the Dalmatian islands' size and shape |
 | the Stepstones | the Kornati | a scatter of small bare islands |
+| the Iron Islands | Orkney (by donor.py), centred where the official map sets the group | bare, windswept, low cliffs |
+| Dragonstone, Driftmark, Claw Isle | La Palma, Oléron, Guernsey | a volcanic isle by a long low one; a small rocky one off a cape |
+| Tarth, Estermont | Rhodes, Ibiza | large green islands off a stormy coast |
+| Fair Isle, the Shield Islands | Jersey, the Îles d'Hyères | a single isle in a sound; a short chain across a river's bay |
+| the Arbor, the Three Sisters | Mallorca, the Frisian islands | a wine island across a strait; a low chain in a shallow bight |
+
+Each island group sits where the official map puts it (`tools/known/shores.py` TRANSPLANTS), and its castles and towns
+stand on the real island's own towns and harbours (TRANSPLANT_PINS: High Tide on Oléron, Faircastle on St Helier,
+Ryamsport on Palma, the three Shields on Porquerolles, Port-Cros and Le Levant...).
 
 ## How the samples are used
 
