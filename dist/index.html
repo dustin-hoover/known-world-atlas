@@ -301,7 +301,7 @@ input[type=range] { accent-color: var(--gold); }
   <div class="grp glass">
     <button id="b3d" class="on" aria-label="Toggle 3D terrain">3D</button>
     <button id="bglobe" class="on" aria-label="Toggle globe"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></button>
-    <button id="bwx" class="on" aria-pressed="true" aria-label="Show or hide weather" title="Weather on/off"><svg viewBox="0 0 24 24"><path d="M7 17h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6 10a3.5 3.5 0 0 0 1 7Z"/></svg></button>
+    <button id="bwx" aria-pressed="false" aria-label="Show or hide weather" title="Weather on/off"><svg viewBox="0 0 24 24"><path d="M7 17h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6 10a3.5 3.5 0 0 0 1 7Z"/></svg></button>
     <button id="bhome" aria-label="Fly to Westeros"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9H4z"/><path d="M10 20v-5h4v5"/></svg></button>
   </div>
   </div>
@@ -4166,7 +4166,7 @@ await callWorker(WXW, { type: 'wxinit', ...WXB });
 const S = {
   story: 'agot', t: WX.parse(GEO.STORIES.agot.start),   // every story opens at its beginning
   playing: false, speed: 0.25,
-  wxMaster: true, era: 'AC298', base: 0, layers: {}, wx: { clouds: true, radar: false, temp: false, pressure: false, wind: false, night: false },
+  wxMaster: false, era: 'AC298', base: 0, layers: {}, wx: { clouds: true, radar: false, temp: false, pressure: false, wind: false, night: false },
   measure: null, pick: null,
 };
 S.t = Math.floor(S.t) + 14 / 24;
@@ -4694,7 +4694,7 @@ function setWx(k, on) {
   applyWx(k);
   gcT = -1; wxRequest();
 }
-function setWxMaster(on) {
+function setWxMaster(on, quiet) {
   S.wxMaster = on;
   if (on && !Object.values(S.wx).some(Boolean)) S.wx.clouds = true;
   for (const k in WX_IDS) applyWx(k);
@@ -4703,7 +4703,7 @@ function setWxMaster(on) {
   const m = $('#g-weather'); if (m) m.checked = on;
   const wm = $('#w-master'); if (wm) wm.checked = on;
   gcT = -1; wxRequest();
-  if (!on) toast('Weather hidden. Your layer choices are kept for when you turn it back on.');
+  if (!on && !quiet) toast('Weather hidden. Your layer choices are kept for when you turn it back on.');
 }
 function setEra(era) {
   S.era = era;
@@ -5232,7 +5232,7 @@ async function playTour(t) {
 buildTicks();
 setTime(S.t);
 statusAt(map.getCenter());
-setWx('clouds', true);
+setWxMaster(S.wxMaster, true);      // weather starts off; the cloud layer is ready for when it is turned on
 lstep('The maps are drawn…', 100);
 await sleep(250);
 $('#loader').classList.add('gone');

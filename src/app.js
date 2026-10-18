@@ -359,7 +359,7 @@ await callWorker(WXW, { type: 'wxinit', ...WXB });
 const S = {
   story: 'agot', t: WX.parse(GEO.STORIES.agot.start),   // every story opens at its beginning
   playing: false, speed: 0.25,
-  wxMaster: true, era: 'AC298', base: 0, layers: {}, wx: { clouds: true, radar: false, temp: false, pressure: false, wind: false, night: false },
+  wxMaster: false, era: 'AC298', base: 0, layers: {}, wx: { clouds: true, radar: false, temp: false, pressure: false, wind: false, night: false },
   measure: null, pick: null,
 };
 S.t = Math.floor(S.t) + 14 / 24;
@@ -887,7 +887,7 @@ function setWx(k, on) {
   applyWx(k);
   gcT = -1; wxRequest();
 }
-function setWxMaster(on) {
+function setWxMaster(on, quiet) {
   S.wxMaster = on;
   if (on && !Object.values(S.wx).some(Boolean)) S.wx.clouds = true;
   for (const k in WX_IDS) applyWx(k);
@@ -896,7 +896,7 @@ function setWxMaster(on) {
   const m = $('#g-weather'); if (m) m.checked = on;
   const wm = $('#w-master'); if (wm) wm.checked = on;
   gcT = -1; wxRequest();
-  if (!on) toast('Weather hidden. Your layer choices are kept for when you turn it back on.');
+  if (!on && !quiet) toast('Weather hidden. Your layer choices are kept for when you turn it back on.');
 }
 function setEra(era) {
   S.era = era;
@@ -1425,7 +1425,7 @@ async function playTour(t) {
 buildTicks();
 setTime(S.t);
 statusAt(map.getCenter());
-setWx('clouds', true);
+setWxMaster(S.wxMaster, true);      // weather starts off; the cloud layer is ready for when it is turned on
 lstep('The maps are drawn…', 100);
 await sleep(250);
 $('#loader').classList.add('gone');
