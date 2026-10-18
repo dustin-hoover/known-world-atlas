@@ -1,6 +1,12 @@
 # Source audit
 
-Places: 257. Grades: inferred 204, text 53. References checked against the text: 0 of 257.
+Places: 308. Grades: inferred 255, text 53. References checked against the text: 0 of 308.
+
+## Ledger problems
+
+- Coldmoat: unknown source D&E
+- Standfast: unknown source D&E
+- Whitewalls: unknown source D&E
 
 ## Statements measured on the map
 

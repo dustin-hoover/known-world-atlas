@@ -121,6 +121,7 @@ function icon(draw, size = 22) {
 const ICONS = {
   city: (g, s) => { g.fillStyle = '#f4ecd8'; g.strokeStyle = '#1c150c'; g.lineWidth = 2; g.beginPath(); g.arc(s / 2, s / 2, 6.5, 0, 7); g.fill(); g.stroke(); g.fillStyle = '#1c150c'; g.beginPath(); g.arc(s / 2, s / 2, 2.8, 0, 7); g.fill(); },
   town: (g, s) => { g.fillStyle = '#f4ecd8'; g.strokeStyle = '#1c150c'; g.lineWidth = 2; g.beginPath(); g.arc(s / 2, s / 2, 5, 0, 7); g.fill(); g.stroke(); },
+  dot: (g, s) => { g.fillStyle = '#efe4c8'; g.strokeStyle = '#1c150c'; g.lineWidth = 1.4; g.beginPath(); g.arc(s / 2, s / 2, 2.4, 0, 7); g.fill(); g.stroke(); },   // lesser holdfasts and the Wall's empty castles (rank 6)
   village: (g, s) => { g.fillStyle = '#e8dcc0'; g.strokeStyle = '#1c150c'; g.lineWidth = 1.6; g.beginPath(); g.arc(s / 2, s / 2, 3.4, 0, 7); g.fill(); g.stroke(); },
   fortress: (g, s) => { const m = s / 2; g.fillStyle = '#e9dfc6'; g.strokeStyle = '#1c150c'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(m - 7, m + 6); g.lineTo(m - 7, m - 4); g.lineTo(m - 4, m - 4); g.lineTo(m - 4, m - 7); g.lineTo(m - 1, m - 7); g.lineTo(m - 1, m - 4); g.lineTo(m + 1, m - 4); g.lineTo(m + 1, m - 7); g.lineTo(m + 4, m - 7); g.lineTo(m + 4, m - 4); g.lineTo(m + 7, m - 4); g.lineTo(m + 7, m + 6); g.closePath(); g.fill(); g.stroke(); },
   ruin: (g, s) => { g.strokeStyle = '#f0e6cc'; g.lineWidth = 3.4; g.setLineDash([2.6, 2.4]); g.beginPath(); g.arc(s / 2, s / 2, 5.5, 0, 7); g.stroke(); g.strokeStyle = '#1c150c'; g.lineWidth = 1.2; g.setLineDash([]); g.beginPath(); g.arc(s / 2, s / 2, 7.2, 0, 7); g.stroke(); },
@@ -140,7 +141,7 @@ const ICONS = {
 };
 
 /* ---------------- GeoJSON data ---------------- */
-const RANK_MINZ = [0, 3.4, 5.4, 6.8, 8.3, 9.8];
+const RANK_MINZ = [0, 3.2, 4.6, 5.8, 6.9, 7.8, 6.4];   // rank 6: a point marker from mid zoom, its name only close in
 const placeFeats = PL.map(p => pt(p.X, p.Y, { id: p.id, name: p.name, type: p.type, rank: p.rank, big: p.rank === 1 && ['city', 'elven', 'dwarven', 'fortress'].includes(p.type) ? 1 : 0 }));
 const peakFeats = GEO.PEAKS.filter(p => p.kind !== 'seamount' && !['The Hill', 'Edoras hill', 'Hill of Guard', 'Bree-hill', 'Carrock', 'Dol Guldur', 'Cerin Amroth'].includes(p.name))
   .map(p => pt(p.x, p.y, { name: p.name, icon: p.kind === 'volcano' ? 'i-volcano' : 'i-peak', minz: p.r > 6 ? 6 : 8 }));
@@ -299,6 +300,9 @@ const style = {
     layout: { 'icon-image': ['concat', 'i-', ['get', 'type']], 'icon-size': r === 1 ? 0.8 : r === 2 ? 0.72 : 0.62, 'icon-allow-overlap': r <= 2, 'text-field': ['get', 'name'], 'text-font': r === 1 ? TXT_UIB : r === 2 ? TXT_UIM : TXT_UI, 'text-size': r === 1 ? 16 : r === 2 ? 14.5 : 13, 'text-anchor': 'left', 'text-offset': [0.85, 0], 'text-optional': true, 'symbol-sort-key': r },
     paint: { 'text-color': '#fffaf0', 'text-halo-color': 'rgba(0,0,0,0.78)', 'text-halo-width': 1.4, 'text-halo-blur': 0.3 },
   }))).concat([
+    { id: 'places-6', type: 'symbol', source: 'places', minzoom: RANK_MINZ[6], filter: ['==', ['get', 'rank'], 6],
+      layout: { 'icon-image': 'i-dot', 'icon-size': ['interpolate', ['linear'], ['zoom'], 6.6, 0.75, 10, 1], 'icon-allow-overlap': true, 'text-field': ['step', ['zoom'], '', 9, ['get', 'name']], 'text-font': TXT_UI, 'text-size': 12, 'text-anchor': 'left', 'text-offset': [0.7, 0], 'text-optional': true, 'symbol-sort-key': 6 },
+      paint: { 'text-color': '#f4ecd8', 'text-halo-color': 'rgba(0,0,0,0.75)', 'text-halo-width': 1.3 } },
     { id: 'places-infra', type: 'symbol', source: 'places', minzoom: 7.5, filter: ['in', ['get', 'type'], ['literal', ['bridge', 'ford']]], layout: { 'icon-image': ['concat', 'i-', ['get', 'type']], 'icon-size': 0.62, 'text-field': ['get', 'name'], 'text-font': TXT_IT, 'text-size': 12.5, 'text-anchor': 'left', 'text-offset': [0.8, 0], 'text-optional': true }, paint: { 'text-color': '#f4ead2', 'text-halo-color': HALO, 'text-halo-width': 1.2 } },
     { id: 'places-beacons', type: 'symbol', source: 'places', filter: ['==', ['get', 'type'], 'beacon'], layout: { visibility: 'none', 'icon-image': 'i-beacon', 'icon-size': 0.7, 'icon-allow-overlap': true, 'text-field': ['get', 'name'], 'text-font': TXT_IT, 'text-size': 12, 'text-offset': [0, 1], 'text-anchor': 'top', 'text-optional': true }, paint: { 'text-color': '#ffd9a0', 'text-halo-color': HALO, 'text-halo-width': 1.2 } },
     { id: 'journeys-pos', type: 'circle', source: 'journey-pos', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 3, ['case', ['has', 'icon'], 2.5, 4], 10, ['case', ['has', 'icon'], 3.5, 7]], 'circle-color': ['get', 'color'], 'circle-stroke-color': '#10141a', 'circle-stroke-width': 2 } },
@@ -857,7 +861,7 @@ const LAYER_GROUPS = {
   mountains: ['ranges-label', 'peaks'],
   forests: ['forests-label', 'marsh-label'],
   seas: ['seas'],
-  places: ['places-1', 'places-2', 'places-3', 'places-4', 'places-5'],
+  places: ['places-1', 'places-2', 'places-3', 'places-4', 'places-5', 'places-6'],
   peoples: ['peoples-line', 'peoples-label'],
   realms: ['realms-fill', 'realms-line', 'realms-label'],
   admin: ['admin-line', 'admin-label'],
@@ -1271,7 +1275,7 @@ map.on('click', e => {
   if (tf.length) { showParty(tf[0].properties); return; }
   const bf = map.getLayer('battles-av') ? map.queryRenderedFeatures([[e.point.x - 10, e.point.y - 10], [e.point.x + 10, e.point.y + 10]], { layers: ['battles-av'] }) : [];
   if (bf.length) { showBattle(BATTLES[bf[0].properties.i]); return; }
-  const f = map.queryRenderedFeatures([[e.point.x - 6, e.point.y - 6], [e.point.x + 6, e.point.y + 6]], { layers: ['places-1', 'places-2', 'places-3', 'places-4', 'places-5', 'places-infra', 'places-beacons', 'peaks'].filter(id => map.getLayer(id)) });
+  const f = map.queryRenderedFeatures([[e.point.x - 6, e.point.y - 6], [e.point.x + 6, e.point.y + 6]], { layers: ['places-1', 'places-2', 'places-3', 'places-4', 'places-5', 'places-6', 'places-infra', 'places-beacons', 'peaks'].filter(id => map.getLayer(id)) });
   if (f.length) {
     const p = f[0].properties;
     if (p.id !== undefined) { showPlace(PL[p.id]); return; }
@@ -1280,7 +1284,7 @@ map.on('click', e => {
   showPoint(X, Y);
 });
 map.on('mousemove', e => {
-  const f = map.queryRenderedFeatures(e.point, { layers: ['places-1', 'places-2', 'places-3', 'places-4', 'places-5', 'peaks'].filter(id => map.getLayer(id)) });
+  const f = map.queryRenderedFeatures(e.point, { layers: ['places-1', 'places-2', 'places-3', 'places-4', 'places-5', 'places-6', 'peaks'].filter(id => map.getLayer(id)) });
   map.getCanvas().style.cursor = S.pick || S.measure ? 'crosshair' : f.length ? 'pointer' : '';
   statusAt(e.lngLat);
 });

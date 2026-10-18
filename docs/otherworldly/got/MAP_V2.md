@@ -160,4 +160,10 @@ the owner's "merge".
 - **Phase 2 (gazetteer, Westeros):** under way in `tools/known/gazetteer.py`: the nineteen castles of the Wall, the
   seats of the North, the riverlands, the Vale, the Iron Islands, the westerlands, the crownlands, the stormlands, the
   Reach and Dorne, the gates and towers of King's Landing, Harrenhal's towers, Sunspear's towers, and more (257 places
-  in all, from 121). Next: the remaining villages, inns and holdfasts, then each place's chapter.
+  in all, from 121). Wave three adds more seats and holdfasts of Westeros (Antlers, Sow's Horn, the Whispers, Dyre Den,
+  Crow's Nest, Haystack Hall, Grandview, Gallowsgrey, New Barrel, Coldmoat and Standfast, Whitewalls, Coldwater Burn,
+  the Goodbrother and Harlaw holdfasts, Lonely Light on its own far isle, Ghaston Grey, Shandystone) and Essos's towns
+  and ruins (Valysar, Volon Therys, Ghoyan Drohe, Ar Noy, Ny Sar, Tolos, Elyria, Old Ghis, Oros and Tyria, Sarnor's
+  seven ruined cities, Saath, Ib Sar, New Ibbish, the cities of Hyrkoon, Si Qo, Stygai, Gorosh, Gogossos, Lotus Port,
+  Last Lament). Places are drawn by importance: the great cities from the farthest out, lesser holdfasts and the Wall's
+  empty castles as point markers. Next: the remaining villages and inns, then each place's chapter.

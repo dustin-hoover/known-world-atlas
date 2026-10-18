@@ -25,6 +25,8 @@ Arda's engine notes below still apply; what differs in this world:
   first book, note, grade (`text` / `inferred`) and a position against our own map (`at`, `near` a place, `in` a place,
   `between` two, along a `river`, on the `wall`); `coast=True` puts it on the waterline, `move=True` moves a place
   author.py already has, `seat` names its house. `prepare()` resolves it after the map is settled, then settles it.
+  `RANKS` sets how important a place is drawn (1 the great cities … 5 lesser seats); rank 6 is a point marker (the Wall's
+  empty castles, lesser holdfasts): a dot from zoom 6.4, its name from 9 (app.js `places-6`; layout zoom steps work on whole tile zooms).
 - **Frame:** `gen.js` LAT0 = 58 (Winterfell). `rasters.js` extent X −954…5850, Y −5502…1500 at 6 mi/px (extents must
   divide by RES into whole pixels, or every height is NaN).
 - **Calendar (`wx.js`):** years AC (negative = BC, no year 0), 12 moons of 30 days + 5 closing days (our convention);

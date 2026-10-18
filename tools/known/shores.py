@@ -296,6 +296,8 @@ TRANSPLANTS = [
     ('The Arbor', (2.3, 3.5, 39.25, 39.98), (2.98, 39.6), (-526, -2513), 1.2, 0, 'island'),              # Mallorca
     ('The Shield Islands', (6.15, 6.55, 42.97, 43.05), (6.33, 43.01), (-428, -1697), 2.5, 90, 'island'), # the Îles d'Hyères
     ('The Three Sisters', (4.7, 5.6, 53.0, 53.47), (5.1, 53.25), (275, -467), 1.3, -30, 'island'),      # Texel, Vlieland, Terschelling
+    ('Lonely Light', (-8.65, -8.5, 57.79, 57.85), (-8.588, 57.817), (-640, -500), 3.0, 0, 'island'),    # St Kilda, far out west
+    ('Ghaston Grey', (10.04, 10.11, 42.56, 42.63), (10.077, 42.588), (-270, -2520), 1.5, 0, 'island'),   # Pianosa, a prison isle itself
 ]
 
 
@@ -430,7 +432,12 @@ TRANSPLANT_PINS = {'Valyria': ('The Smoking Sea', (25.43, 36.42)), 'The Fourteen
                    'Faircastle': ('Fair Isle', (-2.11, 49.19)), 'Ryamsport': ('The Arbor', (2.65, 39.57)),
                    'Vinetown': ('The Arbor', (3.12, 39.84)), 'Starpike': ('The Arbor', (2.95, 39.62)),
                    'Greenshield': ('The Shield Islands', (6.45, 43.03)), 'Greyshield': ('The Shield Islands', (6.385, 43.005)),
-                   'Southshield': ('The Shield Islands', (6.20, 43.0)), 'Sisterton': ('The Three Sisters', (5.22, 53.36))}
+                   'Southshield': ('The Shield Islands', (6.20, 43.0)), 'Sisterton': ('The Three Sisters', (5.22, 53.36)),
+                   'Lonely Light': ('Lonely Light', (-8.567, 57.81)), 'Ghaston Grey': ('Ghaston Grey', (10.09, 42.585)),
+                   # and in the east: Valyria's drowned cities on the Peloponnese, Ib's towns, the isles' ports
+                   'Oros': ('Valyria', (22.11, 37.04)), 'Tyria': ('Valyria', (22.80, 37.57)), 'Ib Sar': ('Ib', (-18.09, 65.68)),
+                   'Gogossos': ('The Basilisk Isles', (-64.93, 18.34)), 'Lotus Port': ('The Summer Isles', (-172.27, -13.70)),
+                   'Last Lament': ('The Summer Isles', (-171.6, -14.02))}
 
 
 def transplants(pins=None):

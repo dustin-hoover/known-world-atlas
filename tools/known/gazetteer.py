@@ -33,20 +33,20 @@ WATCH = ('watch', 'The Wall')
 
 PLACES = [
     # ------------------------------------------------------------ the Wall: its nineteen castles, west to east
-    G('Sentinel Stand', 'ruin', ('wall', -98), *WATCH, 'AFFC', 'An abandoned castle of the Night\'s Watch on the Wall.', grade='text'),
-    G('Greyguard', 'ruin', ('wall', -86), *WATCH, 'ASOS', 'A castle of the Watch on the Wall, given to the free folk to hold.', grade='text'),
-    G('Stonedoor', 'ruin', ('wall', -74), *WATCH, 'ASOS', 'A castle of the Watch at a gate through the Wall, given to the free folk.', grade='text'),
-    G('Hoarfrost Hill', 'ruin', ('wall', -63), *WATCH, 'ADWD', 'An abandoned castle of the Watch on the Wall.', grade='text'),
-    G('Icemark', 'ruin', ('wall', -52), *WATCH, 'ADWD', 'An abandoned castle of the Watch on the Wall.', grade='text'),
-    G('Deep Lake', 'ruin', ('wall', -20), *WATCH, 'ADWD', 'A castle of the Watch on the Wall, reopened in the novels.', grade='text'),
-    G('Queensgate', 'ruin', ('wall', 0), *WATCH, 'ADWD', 'A castle of the Watch on the Wall, named for a queen who visited it.', grade='text'),
-    G('Oakenshield', 'ruin', ('wall', 38), *WATCH, 'ADWD', 'A castle of the Watch on the Wall, given to the free folk.', grade='text'),
-    G('Woodswatch-by-the-Pool', 'ruin', ('wall', 55), *WATCH, 'ADWD', 'An abandoned castle of the Watch by a pool below the Wall.', grade='text'),
-    G('Sable Hall', 'ruin', ('wall', 73), *WATCH, 'ADWD', 'A castle of the Watch on the Wall, given to the free folk.', grade='text'),
-    G('Rimegate', 'ruin', ('wall', 91), *WATCH, 'ADWD', 'An abandoned castle of the Watch on the Wall.', grade='text'),
-    G('The Long Barrow', 'ruin', ('wall', 108), *WATCH, 'ADWD', 'A castle of the Watch built against a great barrow, reopened in the novels.', grade='text'),
-    G('The Torches', 'ruin', ('wall', 126), *WATCH, 'ADWD', 'An abandoned castle of the Watch on the Wall.', grade='text'),
-    G('Greenguard', 'ruin', ('wall', 143), *WATCH, 'ADWD', 'A castle of the Watch near the Wall\'s eastern end.', grade='text'),
+    G('Sentinel Stand', 'ruin', ('wall', -98), *WATCH, 'AFFC', 'An abandoned castle of the Night\'s Watch on the Wall.', rank=6, grade='text'),
+    G('Greyguard', 'ruin', ('wall', -86), *WATCH, 'ASOS', 'A castle of the Watch on the Wall, given to the free folk to hold.', rank=6, grade='text'),
+    G('Stonedoor', 'ruin', ('wall', -74), *WATCH, 'ASOS', 'A castle of the Watch at a gate through the Wall, given to the free folk.', rank=6, grade='text'),
+    G('Hoarfrost Hill', 'ruin', ('wall', -63), *WATCH, 'ADWD', 'An abandoned castle of the Watch on the Wall.', rank=6, grade='text'),
+    G('Icemark', 'ruin', ('wall', -52), *WATCH, 'ADWD', 'An abandoned castle of the Watch on the Wall.', rank=6, grade='text'),
+    G('Deep Lake', 'ruin', ('wall', -20), *WATCH, 'ADWD', 'A castle of the Watch on the Wall, reopened in the novels.', rank=6, grade='text'),
+    G('Queensgate', 'ruin', ('wall', 0), *WATCH, 'ADWD', 'A castle of the Watch on the Wall, named for a queen who visited it.', rank=6, grade='text'),
+    G('Oakenshield', 'ruin', ('wall', 38), *WATCH, 'ADWD', 'A castle of the Watch on the Wall, given to the free folk.', rank=6, grade='text'),
+    G('Woodswatch-by-the-Pool', 'ruin', ('wall', 55), *WATCH, 'ADWD', 'An abandoned castle of the Watch by a pool below the Wall.', rank=6, grade='text'),
+    G('Sable Hall', 'ruin', ('wall', 73), *WATCH, 'ADWD', 'A castle of the Watch on the Wall, given to the free folk.', rank=6, grade='text'),
+    G('Rimegate', 'ruin', ('wall', 91), *WATCH, 'ADWD', 'An abandoned castle of the Watch on the Wall.', rank=6, grade='text'),
+    G('The Long Barrow', 'ruin', ('wall', 108), *WATCH, 'ADWD', 'A castle of the Watch built against a great barrow, reopened in the novels.', rank=6, grade='text'),
+    G('The Torches', 'ruin', ('wall', 126), *WATCH, 'ADWD', 'An abandoned castle of the Watch on the Wall.', rank=6, grade='text'),
+    G('Greenguard', 'ruin', ('wall', 143), *WATCH, 'ADWD', 'A castle of the Watch near the Wall\'s eastern end.', rank=6, grade='text'),
 
     G('The Bridge of Skulls', 'landmark', ('in', 'Westwatch-by-the-Bridge', -2.0, 3.0), *WATCH, 'ACOK', 'The bridge across the Gorge west of the Shadow Tower.', grade='text'),
 
@@ -194,7 +194,69 @@ PLACES = [
     G('The Tower of the Sun', 'tower', ('in', 'Sunspear', 0.3, 0.4), *D, 'AFFC', 'The great domed tower of Sunspear.', grade='text'),
     G('The Spear Tower', 'tower', ('in', 'Sunspear', -0.4, 0.2), *D, 'AFFC', 'The slender tower of Sunspear, tipped with a gilded spear.', grade='text'),
     G('The Shadow City', 'landmark', ('in', 'Sunspear', -1.5, -0.8), *D, 'AFFC', 'The town of mud-brick and sandstone in the shadow of Sunspear\'s walls.', grade='text'),
+    G('Shandystone', 'ruin', ('near', 'Sandstone', 'E', 70), *D, 'AFFC', 'A dead village in the deep sands, its well long dry.'),
+    G('Ghaston Grey', 'castle', ('at', -270, -2520), *D, 'AFFC', 'A crumbling castle on a rock in the sea off Dorne, used as a prison.'),
+
+    # ------------------------------------------------------------ wave three: more of Westeros's seats and holdfasts
+    G('Antlers', 'castle', ('near', 'King\'s Landing', 'NW', 60), *C, 'ACOK', 'Seat of House Buckwell in the crownlands.', seat='Buckwell'),
+    G('Sow\'s Horn', 'castle', ('near', 'Duskendale', 'W', 40), *C, 'AFFC', 'Seat of House Hogg in the crownlands.', seat='Hogg'),
+    G('The Whispers', 'ruin', ('near', 'Sharp Point', 'W', 35), *C, 'AFFC', 'A ruined castle over a cove on Crackclaw Point.', coast=True),
+    G('Dyre Den', 'castle', ('near', 'Rook\'s Rest', 'E', 45), *C, 'AFFC', 'Seat of House Brune on Crackclaw Point.', seat='Brune'),
+    G('Crow\'s Nest', 'castle', ('near', 'Felwood', 'E', 55), *S, 'TWOIAF', 'Seat of House Morrigen in the stormlands.', seat='Morrigen'),
+    G('Haystack Hall', 'castle', ('near', 'Bronzegate', 'S', 55), *S, 'TWOIAF', 'Seat of House Errol in the stormlands.', seat='Errol'),
+    G('Grandview', 'castle', ('near', 'Storm\'s End', 'W', 95), *S, 'TWOIAF', 'Seat of House Grandison in the stormlands.', seat='Grandison'),
+    G('Gallowsgrey', 'castle', ('near', 'Summerhall', 'E', 70), *S, 'TWOIAF', 'Seat of House Trant in the stormlands.', seat='Trant'),
+    G('New Barrel', 'castle', ('near', 'Cider Hall', 'N', 35), *H, 'ASOS', 'Seat of the Fossoways of New Barrel, who broke from the house of Cider Hall.', seat='Fossoway'),
+    G('Coldmoat', 'castle', ('near', 'Highgarden', 'NE', 130), *H, 'D&E', 'A castle with a wide moat, seat of the Webbers in the days of Dunk and Egg.', seat='Webber'),
+    G('Standfast', 'holdfast', ('near', 'Coldmoat', 'W', 25), *H, 'D&E', 'The small towerhouse of the Osgreys, a day\'s ride from Coldmoat.', rank=6, seat='Osgrey'),
+    G('Whitewalls', 'castle', ('near', 'The Isle of Faces', 'S', 70), *R, 'D&E', 'The pale castle of the Butterwells, where a wedding tourney hid a plot.', seat='Butterwell'),
+    G('Coldwater Burn', 'castle', ('near', 'Gulltown', 'NW', 70), *V, 'AFFC', 'Seat of House Coldwater in the Vale.', seat='Coldwater'),
+    G('Harridan Hill', 'castle', ('near', 'Harlaw Hall', 'E', 8), *I, 'AFFC', 'A holdfast of a branch of House Harlaw on Harlaw.', rank=6, seat='Harlaw'),
+    G('The Tower of Glimmering', 'tower', ('near', 'Ten Towers', 'N', 8), *I, 'AFFC', 'A tower of a branch of House Harlaw on Harlaw.', rank=6, seat='Harlaw'),
+    G('Crow Spike Keep', 'castle', ('near', 'Hammerhorn', 'N', 12), *I, 'AFFC', 'A holdfast of House Goodbrother on Great Wyk.', rank=6, seat='Goodbrother'),
+    G('Downdelving', 'castle', ('near', 'Hammerhorn', 'SW', 14), *I, 'AFFC', 'A holdfast of House Goodbrother on Great Wyk.', rank=6, seat='Goodbrother'),
+    G('Shatterstone', 'castle', ('near', 'Corpse Lake', 'S', 12), *I, 'AFFC', 'A holdfast of House Goodbrother on Great Wyk.', rank=6, seat='Goodbrother'),
+    G('Sealskin Point', 'castle', ('near', 'Hammerhorn', 'W', 22), *I, 'AFFC', 'A holdfast of House Farwynd on a western point of Great Wyk.', coast=True, rank=6, seat='Farwynd'),
+    G('Lonely Light', 'castle', ('at', -640, -500), *I, 'AFFC', 'Seat of House Farwynd on the westernmost of the Iron Islands, far out in the Sunset Sea.', seat='Farwynd'),
 ]
+
+# ---------------------------------------------------------------- Essos, Sothoryos and the islands of the summer seas
+VOL, GHIS, VAL, DOTH, IBB = ('freecity', 'Volantis'), ('ghiscari', 'Slaver\'s Bay'), ('valyria', 'Valyria'), ('dothraki', 'The Dothraki Sea'), ('ib', 'Ib')
+PLACES += [
+    G('Valysar', 'town', ('river', 'The Rhoyne', 0.82), *VOL, 'ADWD', 'A Volantene town on the Rhoyne below Selhorys.'),
+    G('Volon Therys', 'town', ('river', 'The Rhoyne', 0.9), *VOL, 'ADWD', 'A Volantene town on the Rhoyne, the last before Volantis.'),
+    G('Ghoyan Drohe', 'ruin', ('near', 'Chroyane', 'W', 70), *VOL, 'ADWD', 'A Rhoynar city burned by the dragonlords, on the Little Rhoyne.'),
+    G('Ar Noy', 'ruin', ('near', 'Qohor', 'S', 90), *('freecity', 'Qohor'), 'ADWD', 'A ruined Rhoynar city on the Qhoyne.'),
+    G('Ny Sar', 'ruin', ('near', 'Norvos', 'S', 130), *('freecity', 'Norvos'), 'ADWD', 'A ruined Rhoynar city on the Noyne.'),
+    G('Tolos', 'city', ('near', 'New Ghis', 'NW', 95), *GHIS, 'ADWD', 'A city on the Gulf of Grief, famed for its slingers.', rank=4, coast=True),
+    G('Elyria', 'city', ('near', 'New Ghis', 'W', 160), *GHIS, 'ADWD', 'A city of the Gulf of Grief, an ally of Yunkai.', rank=5, coast=True),
+    G('Old Ghis', 'ruin', ('near', 'New Ghis', 'N', 140), *GHIS, 'ASOS', 'The ruins of the first city of the Ghiscari, sown with salt by Valyria.', rank=4),
+    G('Oros', 'ruin', ('near', 'Valyria', 'W', 60), *VAL, 'TWOIAF', 'A city of the Freehold drowned in the Doom.'),
+    G('Tyria', 'ruin', ('near', 'Valyria', 'NW', 60), *VAL, 'TWOIAF', 'A city of the Freehold drowned in the Doom.'),
+    G('Sathar', 'ruin', ('at', 2300, -800), *DOTH, 'TWOIAF', 'The ruined capital of the Tall Men of Sarnor.', rank=4),
+    G('Kasath', 'ruin', ('at', 2050, -760), *DOTH, 'TWOIAF', 'A ruined city of Sarnor.'),
+    G('Mardosh', 'ruin', ('at', 2560, -790), *DOTH, 'TWOIAF', 'A ruined city of Sarnor.'),
+    G('Sallosh', 'ruin', ('at', 2180, -920), *DOTH, 'TWOIAF', 'A ruined city of Sarnor.'),
+    G('Hornoth', 'ruin', ('at', 2440, -930), *DOTH, 'TWOIAF', 'A ruined city of Sarnor.'),
+    G('Kyth', 'ruin', ('at', 1920, -880), *DOTH, 'TWOIAF', 'A ruined city of Sarnor.'),
+    G('Gornath', 'ruin', ('at', 2680, -870), *DOTH, 'TWOIAF', 'A ruined city of Sarnor.'),
+    G('Saath', 'ruin', ('at', 1600, -300), *('lorath', 'Lorath'), 'TWOIAF', 'A ruined city on the shore of the Shivering Sea east of Lorath.', coast=True),
+    G('Ib Sar', 'town', ('at', 2780, 70), *IBB, 'TWOIAF', 'A town of the hairy men of Ib.'),
+    G('New Ibbish', 'town', ('at', 3330, -190), *IBB, 'TWOIAF', 'The colony of Ib on the Axe, on the mainland of Essos.', coast=True),
+    G('Bayasabhad', 'city', ('at', 3400, -1350), *('east', 'Hyrkoon'), 'TWOIAF', 'One of the three cities of the Patrimony of Hyrkoon.', rank=4),
+    G('Samyriana', 'city', ('at', 3600, -1500), *('east', 'Hyrkoon'), 'TWOIAF', 'One of the three cities of the Patrimony of Hyrkoon.', rank=4),
+    G('Kayakayanaya', 'city', ('at', 3500, -1720), *('east', 'Hyrkoon'), 'TWOIAF', 'One of the three cities of the Patrimony of Hyrkoon.', rank=4),
+    G('Si Qo', 'city', ('near', 'Yin', 'NE', 320), *('yiti', 'Yi Ti'), 'TWOIAF', 'A great city of Yi Ti.', rank=4),
+    G('Stygai', 'ruin', ('near', 'Asshai', 'N', 200), *('shadow', 'Asshai'), 'TWOIAF', 'A dead city deep in the Shadow.'),
+    G('Gorosh', 'ruin', ('near', 'Yeen', 'E', 220), *('sothoryos', 'Sothoryos'), 'TWOIAF', 'A ruined city in the jungles of Sothoryos.'),
+    G('Gogossos', 'city', ('at', 1700, -2880), *('sothoryos', 'The Basilisk Isles'), 'TWOIAF', 'A city of the Basilisk Isles, a haunt of corsairs and slavers.', rank=5),
+    G('Lotus Port', 'port', ('near', 'Tall Trees Town', 'W', 40), *('summer', 'The Summer Isles'), 'TWOIAF', 'A port of the Summer Isles.', coast=True),
+    G('Last Lament', 'town', ('near', 'Tall Trees Town', 'S', 15), *('summer', 'The Summer Isles'), 'TWOIAF', 'A town of the Summer Isles.'),
+]
+
+# importance: how large each place is drawn and from how far out it shows (1 the great cities ... 5 lesser seats, 6 points)
+RANKS = {'Oldtown': 1, 'Volantis': 1, 'Qarth': 1, 'Gulltown': 2, 'Myr': 2, 'Lys': 2, 'Tyrosh': 2, 'Norvos': 2, 'Qohor': 2,
+         'Lorath': 2, 'Asshai': 2, 'Yunkai': 2}
 
 
 def resolve(places, rivers, walls, log=print):
@@ -228,4 +290,6 @@ def resolve(places, rivers, walls, log=print):
         if e['name'] in at: log(f"  gazetteer: {e['name']} is already on the map; left as it is"); continue
         row = [e['name'], KIND.get(e['kind'], e['kind']), round(x, 1), round(y, 1), e['people'], e['realm'], e['note'], o]
         new.append(row); at[e['name']] = row
+    for name, r in RANKS.items():
+        if name in at: at[name][7]['rank'] = r
     return new, moved
