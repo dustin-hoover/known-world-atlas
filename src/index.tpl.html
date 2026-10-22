@@ -1,8 +1,6 @@
 <title>The Known World</title>
 <meta name="description" content="An unofficial, procedurally generated, Earth-like globe of the Known World (Westeros, Essos, Sothoryos) with GIS layers, weather, journeys and a ground-level explorer.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap">
+<style>/*FONTS_CSS*/</style>
 <style>/*MAPLIBRE_CSS*/</style>
 <style>/*APP_CSS*/</style>
 
@@ -88,7 +86,22 @@
   <div id="gload" class="glass">Walking out…</div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<!-- The map engine and three.js travel inside the page as text and become modules here, so the page loads nothing
+     from any other site. MAPLIBRE resolves to the map engine's module once it and its worker are ready. -->
+<script type="text/plain" id="lib-maplibre-shared">/*MAPLIBRE_SHARED*/</script>
+<script type="text/plain" id="lib-maplibre">/*MAPLIBRE_MAIN*/</script>
+<script type="text/plain" id="lib-maplibre-worker">/*MAPLIBRE_WORKER*/</script>
+<script type="text/plain" id="lib-three">/*THREE_JS*/</script>
+<script>
+window.LIBURL = id => URL.createObjectURL(new Blob([document.getElementById(id).textContent], { type: 'text/javascript' }));
+window.MAPLIBRE = (async () => {
+  const shared = LIBURL('lib-maplibre-shared');
+  const linked = id => URL.createObjectURL(new Blob([document.getElementById(id).textContent.replace('from"./maplibre-gl-shared.mjs"', 'from"' + shared + '"')], { type: 'text/javascript' }));
+  const ml = await import(linked('lib-maplibre'));
+  ml.setWorkerUrl(linked('lib-maplibre-worker'));
+  return ml;
+})();
+</script>
 <script id="src-gen">/*GEN_JS*/</script>
 <script id="src-wx">/*WX_JS*/</script>
 <script id="src-worker" type="text/plain">/*WORKER_JS*/</script>
@@ -100,13 +113,3 @@
 <script>/*AUDIO_JS*/</script>
 <script>/*APP_JS*/</script>
 <script type="module">/*GROUND_JS*/</script>
-
-<!-- Visit counter (GoatCounter: no cookies, no personal data). Off until COUNTER is set to the account's code. It
-     counts only the published site, never local previews; open the site once with #toggle-goatcounter on each of
-     your own browsers and devices and your visits are left out. -->
-<script>(() => {
-  const COUNTER = 'otherworldly';                                // the account at https://otherworldly.goatcounter.com
-  if (!COUNTER || !/\.github\.io$|otherworldly/.test(location.hostname)) return;
-  const s = document.createElement('script'); s.async = true; s.src = 'https://gc.zgo.at/count.js';
-  s.dataset.goatcounter = 'https://' + COUNTER + '.goatcounter.com/count'; document.head.appendChild(s);
-})();</script>

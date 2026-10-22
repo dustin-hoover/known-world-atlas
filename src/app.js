@@ -9,8 +9,9 @@ const lstep = (t, p) => { $('#lstep').textContent = t; if (p != null) $('#lbar')
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const R5 = v => Math.round(v * 1e5) / 1e5;
 
-if (typeof maplibregl === 'undefined') {
-  lstep('The map engine could not be loaded. Check your connection and reload the page.', 0);
+const maplibregl = await (window.MAPLIBRE || Promise.reject(new Error('no map engine'))).catch(e => { console.error(e); return null; });
+if (!maplibregl) {
+  lstep('The map engine could not start in this browser. Try an up-to-date browser with WebGL 2.', 0);
   $('#lstep').classList.add('err');
   return;
 }

@@ -9,10 +9,8 @@ async def main(steps, w=1440, h=900):
         msgs=[]
         pg.on('console', lambda m: msgs.append(f'{m.type}: {m.text[:300]}'))
         pg.on('pageerror', lambda e: msgs.append('PAGEERROR '+str(e)[:600]))
-        await pg.route('https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js', lambda r: r.fulfill(path=ROOT+'node_modules/maplibre-gl/dist/maplibre-gl.js', content_type='text/javascript'))
-        await pg.route('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js', lambda r: r.fulfill(path=ROOT+'node_modules/three/build/three.module.js', content_type='text/javascript', headers={'Access-Control-Allow-Origin':'*'}))
-        await pg.route('https://fonts.googleapis.com/**', lambda r: r.fulfill(body='', content_type='text/css'))
-        await pg.route('https://fonts.gstatic.com/**', lambda r: r.abort())
+        outside=[]                                    # the page must load nothing from another site (tools/offline.js)
+        pg.on('request', lambda r: outside.append(r.url) if r.url.startswith(('http:', 'https:', 'ws:', 'wss:')) and not r.url.startswith(('http://localhost:', 'http://127.0.0.1:')) else None)
         t0=time.time()
         await pg.goto('http://localhost:8765/dist/preview.html')
         try:
@@ -40,7 +38,9 @@ async def main(steps, w=1440, h=900):
         except Exception as e:
             print('STEP FAILED', str(e)[:200])
         for m in msgs[-40:]: print(m)
+        for u in outside: print('OUTSIDE REQUEST', u[:200])
         await b.close()
+        if outside: sys.exit(3)
 steps=json.loads(sys.argv[1])
 w=int(sys.argv[2]) if len(sys.argv)>2 else 1440
 h=int(sys.argv[3]) if len(sys.argv)>3 else 900

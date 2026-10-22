@@ -1,14 +1,13 @@
 /* ============================================================================
    GROUND — a walkable, ground-level view of Arda built with three.js
    ========================================================================== */
-const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 let THREE = null;
 const MI = 1609.344;
 const $ = s => document.querySelector(s);
 const G = { active: false };
 
 async function ensure() {
-  if (!THREE) THREE = await import(THREE_URL);
+  if (!THREE) THREE = await import(window.LIBURL('lib-three'));      // three.js travels inside the page (index.tpl.html)
   if (G.renderer) return;
   const root = $('#ground');
   const r = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
