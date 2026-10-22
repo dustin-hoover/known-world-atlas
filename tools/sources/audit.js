@@ -10,6 +10,8 @@ for (const f of ['gen.js', 'geo.js', 'routes.js', 'sources.js']) eval(fs.readFil
 const parse = s => { const [y, m, d = 1] = s.split(' ').map(Number), di = Math.floor(d), fr = d - di; return (y > 0 ? y - 1 : y) * 365 + (m - 1) * 30 + (di - 1) + (fr || 0.5); };
 const P = {}; for (const p of GEO.PLACES) P[p[0]] = { X: p[2], Y: p[3] };
 const realm = n => { const r = GEO.REALMS.AC298.find(r => r.name === n); return [r.pts, ...(r.parts || [])].flat(); };
+const ringArea = q => { let a = 0; for (let i = 0, j = q.length - 1; i < q.length; j = i++) a += (q[j][0] + q[i][0]) * (q[j][1] - q[i][1]); return Math.abs(a / 2); };
+const realmArea = n => { const r = GEO.REALMS.AC298.find(r => r.name === n); return [r.pts, ...(r.parts || [])].reduce((a, q) => a + ringArea(q), 0); };
 const route = (story, name) => ROUTES[story] && ROUTES[story][name];
 const posAt = (pts, t) => {
   if (t <= pts[0][2]) return pts[0];
@@ -23,6 +25,7 @@ function measure(t) {
   if (k === 'dist') { const a = need(t[1]), b = need(t[2]); return { got: Math.hypot(a.X - b.X, a.Y - b.Y), want: t[3], tol: t[4] }; }
   if (k === 'south') return { got: need(t[1]).Y - need(t[2]).Y, want: t[3], tol: t[4] };
   if (k === 'east') return { got: need(t[2]).X - need(t[1]).X, want: t[3], tol: t[4] };
+  if (k === 'areaRatio') { const a = realmArea(t[1]), b = t[2].reduce((s, n) => s + realmArea(n), 0); return { got: a / b, want: t[3], tol: t[4], ratio: true, a, b }; }
   if (k === 'spanX' || k === 'spanY') { const q = realm(t[1]), v = q.map(p => p[k === 'spanX' ? 0 : 1]); return { got: Math.max(...v) - Math.min(...v), want: t[2], tol: t[3] }; }
   if (k === 'spanXto') { const q = realm(t[1]); return { got: need(t[2]).X - Math.min(...q.map(p => p[0])), want: t[3], tol: t[4] }; }
   if (k === 'route') {
@@ -38,7 +41,7 @@ function measure(t) {
 
 const out = [], say = s => { out.push(s); console.log(s); };
 // 1. coverage and grades
-const GRADES = new Set(['text', 'map', 'inferred', 'todo']);
+const GRADES = new Set(['text', 'map', 'design', 'inferred', 'estimate', 'todo']);
 const L = SOURCES.PLACES, grades = {}, problems = [];
 for (const p of GEO.PLACES) {
   const e = L[p[0]];
@@ -57,18 +60,21 @@ if (problems.length) { say('## Ledger problems\n'); problems.forEach(p => say('-
 
 // 2. statements
 say('## Statements measured on the map\n');
-say('| | Statement | Source | Map | Expected |');
-say('|---|---|---|---|---|');
+say('| | Statement | Source | Grade | Map | Expected |');
+say('|---|---|---|---|---|---|');
 let fails = 0;
 for (const s of SOURCES.STATEMENTS) {
-  let r; try { r = measure(s.test); } catch (e) { say(`| ERR | ${s.claim} | ${s.src} | ${e.message} | |`); fails++; continue; }
+  let r; try { r = measure(s.test); } catch (e) { say(`| ERR | ${s.claim} | ${s.src} | ${s.grade || ''} | ${e.message} | |`); fails++; continue; }
+  if (r.ratio) { const ok = Math.abs(r.got - r.want) <= r.tol; if (!ok && !s.soft) fails++; say(`| ${ok ? 'ok' : s.soft ? 'note' : 'OFF'} | ${s.claim} | ${s.src} | ${s.grade || ''} | ${r.got.toFixed(2)} (${Math.round(r.a / 1000)}k / ${Math.round(r.b / 1000)}k sq mi) | ${r.want} ± ${r.tol} |`); continue; }
   const lim = r.abs ? r.tol : (r.tol < 1 ? Math.max(5, Math.abs(r.want) * r.tol) : r.tol);
   const off = r.got - r.want, ok = Math.abs(off) <= lim;
   const mark = ok ? 'ok' : s.soft ? 'note' : 'OFF';
   if (!ok && !s.soft) fails++;
   const pct = r.want ? ` (${off > 0 ? '+' : ''}${Math.round(off / r.want * 100)}%)` : '';
-  say(`| ${mark} | ${s.claim} | ${s.src}${s.conf === 'high' ? '' : ' · ' + s.conf} | ${r.got.toFixed(0)} mi${r.abs ? ' away' : pct} | ${r.abs ? '≤ ' + r.tol : r.want + ' ± ' + Math.round(lim)} mi |`);
+  say(`| ${mark} | ${s.claim} | ${s.src}${s.conf === 'high' ? '' : ' · ' + s.conf} | ${s.grade || ''} | ${r.got.toFixed(0)} mi${r.abs ? ' away' : pct} | ${r.abs ? '≤ ' + r.tol : r.want + ' ± ' + Math.round(lim)} mi |`);
 }
-say(`\n${fails ? fails + ' statement(s) off.' : 'All firm statements hold.'} "note" marks statements graded below the novels (the author's interviews); they guide, the novels decide.`);
+say(`\n${fails ? fails + ' statement(s) off.' : 'All firm statements hold.'} "note" marks statements graded below the novels (the author's interviews) or design choices; they guide, the novels decide.`);
+say('\n## Canon tiers\n');
+for (const [k, b] of Object.entries(SOURCES.BIB)) say(`- **${k}** (${b.tier}): ${b.t}${b.note ? ' — ' + b.note : ''}`);
 const md = process.argv.indexOf('--md'); if (md > 0) fs.writeFileSync(process.argv[md + 1], out.join('\n') + '\n');
 process.exitCode = problems.length ? 1 : 0;

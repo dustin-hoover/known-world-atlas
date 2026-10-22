@@ -18,21 +18,15 @@ sys.path.insert(0, os.path.join(ROOT, 'tools', 'known'))
 IMG = os.path.join(ROOT, 'tools', 'refs', 'official', 'Westeros.jpg')
 TOL, LIMIT, MIN_MI = 1.5, 0.6, 30.0
 
-# places read from the official preview (pixel x, y), the same reading southern Westeros was fitted to
-OFF = {
-    'Winterfell': (340, 255), 'The Dreadfort': (455, 240), "Torrhen's Square": (275, 300), 'Barrowton': (262, 352),
-    'Moat Cailin': (354, 390), 'Greywater Watch': (329, 457), 'The Twins': (325, 509), 'Riverrun': (307, 602),
-    'Harrenhal': (400, 620), 'The Golden Tooth': (254, 634), 'Stoney Sept': (330, 662), 'Tumbleton': (380, 740),
-    'Bitterbridge': (332, 765), 'Summerhall': (415, 814), 'Blackhaven': (365, 856), 'Skyreach': (270, 895),
-    'Brightwater Keep': (190, 860), 'Yronwood': (385, 922), 'Vaith': (417, 970), 'Hellholt': (347, 967),
-    'Sunspear': (547, 970), 'Highgarden': (252, 842), 'Horn Hill': (245, 865), 'Nightsong': (310, 855),
-    'Evenfall Hall': (551, 787), 'Runestone': (560, 525), 'The Crag': (204, 608), 'Seagard': (209, 580),
-}
+# pixel positions of shared places on the official preview: read on the owner's computer and kept beside the
+# image (git-ignored), never in the repository
+OFFICIAL = os.path.join(ROOT, 'tools', 'refs', 'official', 'positions.json')
 
 
 def main():
-    if not os.path.exists(IMG):
-        print('no-tracing check skipped: the official preview is not on this computer'); return 0
+    if not os.path.exists(IMG) or not os.path.exists(OFFICIAL):
+        print('no-tracing check skipped: the official preview and its positions are not on this computer'); return 0
+    OFF = json.load(open(OFFICIAL))
     from PIL import Image
     from scipy import ndimage as ndi
     from scipy.spatial import cKDTree

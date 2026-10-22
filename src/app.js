@@ -144,7 +144,8 @@ const ICONS = {
 
 /* ---------------- GeoJSON data ---------------- */
 const RANK_MINZ = [0, 3.2, 4.6, 5.8, 6.9, 7.8, 6.4];   // rank 6: a point marker from mid zoom, its name only close in
-const placeFeats = PL.map(p => pt(p.X, p.Y, { id: p.id, name: p.name, type: p.type, rank: p.rank, big: p.rank === 1 && ['city', 'fortress'].includes(p.type) ? 1 : 0 }));
+const gradeOf = n => (window.SOURCES && SOURCES.PLACES[n] || [])[0];
+const placeFeats = PL.map(p => pt(p.X, p.Y, { id: p.id, name: gradeOf(p.name) === 'estimate' ? p.name + ' (estimate)' : p.name, type: p.type, rank: p.rank, big: p.rank === 1 && ['city', 'fortress'].includes(p.type) ? 1 : 0 }));
 const peakFeats = GEO.PEAKS.filter(p => p.kind !== 'seamount')
   .map(p => pt(p.x, p.y, { name: p.name, icon: p.kind === 'volcano' ? 'i-volcano' : 'i-peak', minz: p.r > 6 ? 6 : 8 }));
 const rangeFeats = GEO.RANGES.filter(r => r.label).map(r => ({ type: 'Feature', geometry: { type: 'LineString', coordinates: lineLL(r.pts) }, properties: { name: r.name.toUpperCase().split('').join(' ') } }));
@@ -1199,7 +1200,7 @@ function distLine(X, Y) {
   const d = Math.hypot(X, Y);
   return `${d.toFixed(0)} mi (${(d / 3).toFixed(0)} leagues) from Winterfell`;
 }
-const GRADE = { text: 'Placed from the text', map: 'Read from a published map (position only)', inferred: 'Inferred from the novels', todo: 'To be measured' };
+const GRADE = { text: 'Text: placed from the novels', map: 'Position from map: read from a published map (the position only, never its lines)', design: 'Ours: a design choice', inferred: 'Inferred from the novels\' relations (ours)', estimate: 'Estimate: beyond the known coasts, our guess', todo: 'To be measured' };
 function sourceRow(name) {
   const e = window.SOURCES && SOURCES.PLACES[name]; if (!e) return '';
   const refs = e[1].split(';').map(r => r.trim()).map(r => { const b = SOURCES.BIB[r.split(' ')[0]]; return `<span title="${esc(b ? b.t + (b.a ? ' — ' + b.a : '') + (b.y ? ', ' + b.y : '') : r)}">${esc(r)}</span>`; }).join(' · ');

@@ -6,8 +6,9 @@ dropping outliers). The tool then reports, per reference:
   - places one map puts on the coast and the other well inland,
   - settlements the reference names that we lack (each must be found in the books before it is added),
   - islands the reference shows where we have open sea.
-It writes Markdown reports to tools/refs/reports/ (git-ignored). It never writes geometry: nothing here may
-be used to draw a coast, a border or a place position (LAWS I.2, I.6).
+It writes Markdown reports to tools/refs/reports/ (git-ignored). It reports differences and never steers: no
+coordinates, directions or shapes come out of it, and nothing here may be used to draw a coast, a border or a place
+position (LAWS I.2, I.6). The fan atlases and Quartermaester (which mixes in the TV series) are leads only.
 
   python3 tools/refs/compare.py            # every reference found in tools/refs/
   python3 tools/refs/compare.py whitehead  # one reference
@@ -250,11 +251,9 @@ def report(ref, places, land):
                   f'relative to its north–south length.', '']
         far = sorted([(ri, n) for (n, _, _), ri in zip(pairs, r) if ri > FAR], reverse=True)
         if far:
-            lines += ['### Places far from where the reference puts them', '', '| Place | Miles | Direction the reference puts it |', '|---|---|---|']
-            for ri, n in far:
-                u, v = pts[m[n]]; X, Y = to_ours(T, u, v); p = places[n]
-                ang = math.degrees(math.atan2(Y - p['Y'], X - p['X']))
-                lines.append(f'| {n} | {ri:.0f} | {compass(ang)} |')
+            lines += ['### Places far from where the reference puts them', '', 'A question for the books only: the report says how far, never where to.', '',
+                      '| Place | Miles apart |', '|---|---|']
+            for ri, n in far: lines.append(f'| {n} | {ri:.0f} |')
             lines.append('')
         coast = []
         for n, (u, v), (X, Y) in pairs:
@@ -272,8 +271,9 @@ def report(ref, places, land):
             near = min(ref.labels, key=lambda l: math.hypot((l['box'][0] + l['box'][2]) / 2 - u, (l['box'][1] + l['box'][3]) / 2 - v)) if hasattr(ref, 'labels') else None
             isl.append((a * px_mi * px_mi, X, Y, near['text'] if near else ''))
         if isl:
-            lines += ['### Islands the reference shows where we have open sea', '', '| Nearest label on the reference | Size (sq mi) | Where on ours |', '|---|---|---|']
-            for a, X, Y, t in sorted(isl, reverse=True)[:40]: lines.append(f'| {t} | {a:.0f} | {X:.0f}, {Y:.0f} |')
+            lines += ['### Islands the reference shows where we have open sea', '', 'Only an island the books name may be added, placed from the books.', '',
+                      '| Nearest label on the reference | Size (sq mi) |', '|---|---|']
+            for a, X, Y, t in sorted(isl, reverse=True)[:40]: lines.append(f'| {t} | {a:.0f} |')
             lines.append('')
         miss = []
         for name, (u, v) in pts.items():
@@ -289,9 +289,6 @@ def report(ref, places, land):
     path = os.path.join(OUT, ref.key + '.md'); open(path, 'w').write('\n'.join(lines))
     return path
 
-
-def compass(a):
-    return ['east', 'north-east', 'north', 'north-west', 'west', 'south-west', 'south', 'south-east'][int(((a % 360) + 22.5) // 45) % 8]
 
 
 def clean(s): return re.sub(r'[^A-Za-z\' -]', '', s).strip()

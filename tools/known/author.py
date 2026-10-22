@@ -794,10 +794,26 @@ BOOK_OF = {'Slaver\'s Bay': 'ASOS', 'Qarth': 'ACOK', 'The Red Waste': 'ACOK', 'V
 PLACE_BOOK = {'Hardhome': 'ADWD', 'Oldtown': 'AFFC', 'The Hightower': 'AFFC', 'The Citadel': 'AFFC', 'Pentos': 'AGOT', 'Vaes Dothrak': 'AGOT',
               'Harrenhal': 'ACOK', 'Riverrun': 'AGOT', 'The Twins': 'AGOT', 'The Eyrie': 'AGOT', 'Winterfell': 'AGOT', 'Castle Black': 'AGOT',
               'King\'s Landing': 'AGOT', 'Dragonstone': 'ACOK', 'Storm\'s End': 'ACOK', 'Meereen': 'ASOS', 'Astapor': 'ASOS', 'Yunkai': 'ASOS'}
+# grade: text (the novels state it), author (the author's word outside the novels), design (our own choice, kept
+# apart so a design call is never mistaken for a fact)
 STATEMENTS = [
-    {'id': 'wall-long', 'src': 'AGOT', 'conf': 'high', 'claim': 'The Wall runs about 300 miles, from the Bay of Ice to the Bay of Seals.', 'test': ['dist', 'Eastwatch-by-the-Sea', 'Westwatch-by-the-Bridge', 300, 0.1]},
-    {'id': 'westeros-long', 'src': 'AUTHOR', 'conf': 'medium', 'claim': 'Westeros is about 3,000 miles long from the Wall to Dorne.', 'test': ['south', 'Castle Black', 'Sunspear', 3000, 0.15]},
+    {'id': 'wall-long', 'src': 'AGOT', 'grade': 'text', 'conf': 'high', 'claim': 'The Wall runs a hundred leagues, about 300 miles, from the Bay of Ice to the Bay of Seals.', 'test': ['dist', 'Eastwatch-by-the-Sea', 'Westwatch-by-the-Bridge', 300, 0.1]},
+    {'id': 'westeros-long', 'src': 'AUTHOR', 'grade': 'author', 'conf': 'medium', 'claim': 'Westeros is about 3,000 miles long from the Wall to Dorne.', 'test': ['south', 'Castle Black', 'Sunspear', 3000, 0.15]},
+    {'id': 'north-size', 'src': 'AUTHOR', 'grade': 'design', 'conf': 'low', 'soft': 1,
+     'claim': 'The North is said to be about as large as the other kingdoms together. Ours is smaller: a design choice that keeps the published layout south of the Neck.',
+     'test': ['areaRatio', 'The North', ['The Riverlands', 'The Vale', 'The Westerlands', 'The Crownlands', 'The Reach', 'The Stormlands', 'Dorne', 'The Iron Islands'], 1.0, 0.2]},
 ]
+# where a place's position comes from (src/sources.js grades): positions south of the North were carried onto the
+# published layout once (MAP_V2 §9), so the first list's places there are graded `map`, as is every place standing
+# on a named anchor of the coast; places beyond the known coasts are our estimates
+FAR_PEOPLES = ('sothoryos', 'yiti', 'shadow', 'naath', 'east', 'ib')
+def position_grade(p):
+    X, Y, people, realm, o = p[2], p[3], p[4], p[5], p[7]
+    if people in FAR_PEOPLES: return 'estimate'
+    if p[0] in FIXED_AT: return 'map'
+    if o.get('grade'): return o['grade']
+    if X < 700 and Y < -160 and realm not in ('The North', 'Beyond the Wall'): return 'map'
+    return 'inferred'
 
 
 def sources_js():
@@ -805,29 +821,41 @@ def sources_js():
     for p in PLACES:
         name, realm = p[0], p[5]
         b = PLACE_BOOK.get(name) or BOOK_OF.get(realm) or 'AGOT'
-        led[name] = ['inferred', b + ('; TWOIAF' if b != 'TWOIAF' else ''), '', 0]
-        if p[7].get('grade'): led[name] = [p[7]['grade'], p[7]['src'], '', 0]           # from the gazetteer
+        refs = p[7]['src'] if p[7].get('grade') else b + ('; TWOIAF' if b != 'TWOIAF' else '')     # the gazetteer cites its own
+        g = position_grade(p)
+        if g == 'map' and 'MAP' not in refs: refs += '; MAP'
+        led[name] = [g, refs, '', 0]
+    # canon tiers (LAWS II.4): 1 the novels, which always win; 2 Tales of Dunk and Egg; 3 the histories (in-world
+    # bias, the novels win); provisional: the released Winds of Winter samples; the published maps give positions only
     bib = {
-        'AGOT': {'t': 'A Game of Thrones', 'a': 'George R. R. Martin', 'y': 1996, 'kind': 'primary', 'cite': 'POV chapter (e.g. Bran I)'},
-        'ACOK': {'t': 'A Clash of Kings', 'a': 'George R. R. Martin', 'y': 1998, 'kind': 'primary', 'cite': 'POV chapter'},
-        'ASOS': {'t': 'A Storm of Swords', 'a': 'George R. R. Martin', 'y': 2000, 'kind': 'primary', 'cite': 'POV chapter'},
-        'AFFC': {'t': 'A Feast for Crows', 'a': 'George R. R. Martin', 'y': 2005, 'kind': 'primary', 'cite': 'POV chapter'},
-        'ADWD': {'t': 'A Dance with Dragons', 'a': 'George R. R. Martin', 'y': 2011, 'kind': 'primary', 'cite': 'POV chapter'},
-        'TWOIAF': {'t': 'The World of Ice & Fire', 'a': 'George R. R. Martin, Elio M. Garcia Jr., Linda Antonsson', 'y': 2014, 'kind': 'primary history', 'cite': 'section'},
-        'FB': {'t': 'Fire & Blood', 'a': 'George R. R. Martin', 'y': 2018, 'kind': 'primary history', 'cite': 'section'},
-        'AUTHOR': {'t': 'The author, outside the novels', 'a': 'George R. R. Martin', 'y': 0, 'kind': 'author statement', 'note': 'Interviews and letters: usable, graded below the novels.'},
+        'AGOT': {'t': 'A Game of Thrones', 'a': 'George R. R. Martin', 'y': 1996, 'kind': 'novel', 'tier': 1, 'cite': 'POV chapter (e.g. Bran I)'},
+        'ACOK': {'t': 'A Clash of Kings', 'a': 'George R. R. Martin', 'y': 1998, 'kind': 'novel', 'tier': 1, 'cite': 'POV chapter'},
+        'ASOS': {'t': 'A Storm of Swords', 'a': 'George R. R. Martin', 'y': 2000, 'kind': 'novel', 'tier': 1, 'cite': 'POV chapter'},
+        'AFFC': {'t': 'A Feast for Crows', 'a': 'George R. R. Martin', 'y': 2005, 'kind': 'novel', 'tier': 1, 'cite': 'POV chapter'},
+        'ADWD': {'t': 'A Dance with Dragons', 'a': 'George R. R. Martin', 'y': 2011, 'kind': 'novel', 'tier': 1, 'cite': 'POV chapter'},
+        'D&E': {'t': 'Tales of Dunk and Egg (The Hedge Knight, The Sworn Sword, The Mystery Knight)', 'a': 'George R. R. Martin', 'y': 2015, 'kind': 'novellas', 'tier': 2, 'cite': 'novella'},
+        'TWOIAF': {'t': 'The World of Ice & Fire', 'a': 'George R. R. Martin, Elio M. Garcia Jr., Linda Antonsson', 'y': 2014, 'kind': 'in-world history', 'tier': 3, 'cite': 'section', 'note': 'Canon told with in-world bias: the novels win.'},
+        'FB': {'t': 'Fire & Blood (with The Princess and the Queen, The Rogue Prince, Sons of the Dragon)', 'a': 'George R. R. Martin', 'y': 2018, 'kind': 'in-world history', 'tier': 3, 'cite': 'section', 'note': 'Canon told with in-world bias: the novels win.'},
+        'WINDS': {'t': 'The Winds of Winter, released sample chapters', 'a': 'George R. R. Martin', 'y': 0, 'kind': 'sample chapters', 'tier': 'provisional', 'note': 'Provisional, labelled where used; the published books win.'},
+        'AUTHOR': {'t': 'The author, outside the novels', 'a': 'George R. R. Martin', 'y': 0, 'kind': 'author statement', 'tier': 'below the novels', 'note': 'Interviews and letters: usable, graded below the novels.'},
+        'MAP': {'t': 'The published maps (The Lands of Ice and Fire, 2012; the maps in the novels)', 'a': 'Jonathan Roberts', 'y': 2012, 'kind': 'map', 'tier': 'positions only', 'note': 'Positions of named places only, read on the owner\'s computer; never the line-work.'},
     }
     todo = ['Every place: find the chapter that places it and set chk to 1; pin positions from stated distances and travel times.',
             'Seasons: the dates the Citadel announces autumn and winter (white ravens).',
             'Journeys (Phase 3): an estimated day for every waypoint, synchronised across POV chapters.']
     head = """/* The source ledger for the Known World (generated by tools/known/author.py; edit there).
    Facts only, in our own words (docs/geodyssey/LAWS.md). Grades: text (placed from the novels' words),
-   map (position read from a published map; never its line-work), inferred (our placement from the novels'
-   descriptions), todo. `chk` is 0 until the cited chapter has been checked. */
+   map (position read from a published map; never its line-work), design (our own choice), inferred (our
+   placement from the novels' relations), estimate (beyond the known coasts: ours), todo. `chk` is 0 until the
+   cited chapter has been checked. SHORES lists the Earth coasts lent to each stretch: illustrative only. */
 const SOURCES = (() => {
 """
-    body = f'const BIB = {js(bib)};\nconst PLACES = {js(led)};\nconst STATEMENTS = {js(STATEMENTS)};\nconst TODO = {js(todo)};\n'
-    tail = 'return { BIB, PLACES, STATEMENTS, TODO };\n})();\nif (typeof self !== "undefined") self.SOURCES = SOURCES;\n'
+    shores = {'Westeros, the North': 'Great Britain, bent onto our landmarks (Natural Earth, public domain)',
+              'The Iron Islands': 'Orkney (Natural Earth, public domain)'}
+    for land in SHORES.values():
+        for st in land.get('stretches', []): shores[st['name']] = st['analogue'] + ' (Natural Earth, public domain)'
+    body = f'const BIB = {js(bib)};\nconst PLACES = {js(led)};\nconst STATEMENTS = {js(STATEMENTS)};\nconst SHORES = {js(shores)};\nconst TODO = {js(todo)};\n'
+    tail = 'return { BIB, PLACES, STATEMENTS, SHORES, TODO };\n})();\nif (typeof self !== "undefined") self.SOURCES = SOURCES;\n'
     open(os.path.join(HERE, '..', '..', 'src', 'sources.js'), 'w').write(head + body + tail)
 
 
