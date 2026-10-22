@@ -1,4 +1,4 @@
-"""Sample the Earth analogues of our mountains and hills (docs/otherworldly/got/EARTH_ANALOGUES.md).
+"""Sample the Earth analogues of our mountains and hills (docs/geodyssey/got/EARTH_ANALOGUES.md).
 
 Downloads Copernicus DEM GLO-90 tiles (© DLR and © Airbus, provided under COPERNICUS by the EU and ESA; free for
 any use with this credit) into tools/refs/earth/dem/ (git-ignored), then for each analogue writes a hillshade to

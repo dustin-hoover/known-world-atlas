@@ -1,5 +1,5 @@
-<title>The Known World</title>
-<meta name="description" content="An unofficial, procedurally generated, Earth-like globe of the Known World (Westeros, Essos, Sothoryos) with GIS layers, weather, journeys and a ground-level explorer.">
+<title>Geodyssey: an unofficial fan map of A Song of Ice and Fire</title>
+<meta name="description" content="Geodyssey: an unofficial, free, non-commercial fan map of A Song of Ice and Fire. An Earth-like globe of Westeros, Essos and Sothoryos with weather, journeys and a ground-level explorer.">
 <style>/* im-fell-english-latin-400-normal */
 @font-face {
   font-family: 'IM Fell English';
@@ -144,7 +144,8 @@ button { cursor: pointer; }
 #loader { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 40%, #121a24 0%, #07090c 75%); transition: opacity 0.9s ease; }
 #loader.gone { opacity: 0; pointer-events: none; }
 #loader .inner { width: min(440px, calc(100vw - 48px)); text-align: center; }
-#loader h1 { font: 400 clamp(40px, 9vw, 64px)/1 var(--font-sc); letter-spacing: 0.32em; margin: 0 0 6px; padding-left: 0.32em; color: var(--fg); }
+#loader h1 { font: 700 clamp(36px, 8vw, 56px)/1 var(--font-ui); letter-spacing: 0.14em; margin: 0 0 6px; padding-left: 0.14em; color: var(--fg); }
+#loader .legal { max-width: 34em; margin: 26px auto 0; font: 11.5px/1.45 var(--font-ui); color: var(--faint); }
 #loader .sub { font: italic 17px/1.3 var(--font-display); color: var(--muted); margin-bottom: 28px; }
 #loader .bar { height: 2px; background: var(--rule); overflow: hidden; border-radius: 2px; }
 #loader .bar i { display: block; height: 100%; width: 0; background: var(--gold); transition: width 0.4s ease; }
@@ -155,7 +156,7 @@ button { cursor: pointer; }
 .glass { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r); box-shadow: var(--shadow); backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2); }
 #top { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 12px; z-index: 10; display: flex; flex-direction: column; gap: 8px; width: 340px; max-width: calc(100vw - 24px); }
 #brand { display: flex; align-items: baseline; gap: 10px; padding: 10px 14px 8px; }
-#brand b { font: 400 22px/1 var(--font-sc); letter-spacing: 0.28em; }
+#brand b { font: 700 19px/1 var(--font-ui); letter-spacing: 0.14em; }
 #brand span { font: italic 14px/1 var(--font-display); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #search { position: relative; }
 #search input { width: 100%; box-sizing: border-box; padding: 11px 14px 11px 38px; background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r); box-shadow: var(--shadow); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
@@ -342,6 +343,11 @@ input[type=range] { accent-color: var(--gold); }
 #gclock { display: flex; align-items: center; gap: 6px; margin-top: 6px; pointer-events: auto; font: 11px var(--font-data); color: var(--muted, #cbd); }
 #gclock button { min-width: 30px; height: 24px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.08); color: #fff; font: 14px/1 var(--font-data); cursor: pointer; }
 #gclock span { min-width: 64px; text-align: center; }
+
+/* the disclaimer line along the foot of the page */
+#foot { position: fixed; left: 50%; bottom: 2px; transform: translateX(-50%); z-index: 4; max-width: calc(100vw - 32px); padding: 1px 8px; border-radius: 6px; background: rgba(8, 10, 14, 0.5); font: 10.5px/1.3 var(--font-ui); color: rgba(244, 236, 216, 0.72); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: auto; }
+#foot a { color: inherit; text-decoration: underline; }
+@media (max-width: 720px) { #foot { font-size: 9.5px; } }
 </style>
 
 <div id="map" aria-label="Globe of the Known World"></div>
@@ -349,15 +355,16 @@ input[type=range] { accent-color: var(--gold); }
 
 <div id="loader" role="status">
   <div class="inner">
-    <h1>THE KNOWN WORLD</h1>
-    <div class="sub">An unofficial atlas of A Song of Ice and Fire</div>
+    <h1>GEODYSSEY</h1>
+    <div class="sub">An unofficial fan map of A Song of Ice and Fire</div>
     <div class="bar"><i id="lbar"></i></div>
     <div class="step" id="lstep">Unrolling the maps…</div>
+    <p class="legal" id="disclaimer">Geodyssey is an unofficial, free, non-commercial fan project. Not affiliated with, endorsed or sponsored by George R. R. Martin, his publishers (Bantam/Penguin Random House, HarperCollins Voyager), HBO or Warner Bros. Discovery. A Song of Ice and Fire and related names are trademarks of their owners. Map shapes are our own (coast detail from real Earth coastlines, Natural Earth, public domain); artwork and music are original.</p>
   </div>
 </div>
 
 <div id="top">
-  <div id="brand" class="glass"><b>THE KNOWN WORLD</b><span>Westeros · Essos · Sothoryos</span></div>
+  <div id="brand" class="glass"><b>GEODYSSEY</b><span>The Known World · an unofficial fan map</span></div>
   <div id="search">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
     <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Search places, rivers, realms…" aria-label="Search the atlas">
@@ -412,6 +419,7 @@ input[type=range] { accent-color: var(--gold); }
 
 <div id="caption" class="glass" aria-live="polite"></div>
 <div id="toast" class="glass" role="status"></div>
+<div id="foot">Unofficial, free fan project · not affiliated with George R. R. Martin, his publishers, HBO or Warner Bros. Discovery · <a href="#" data-open="about">About &amp; sources</a></div>
 
 <div id="ground" aria-label="Ground view">
   <div id="glabels"></div>
@@ -1706,7 +1714,7 @@ function evaluate(X, Y, pix) {
     if (mtn > 0.002) {
       const r = ridgedA(X, Y, 26, Math.max(pix * 1.1, 0.003));
       const mm = sstep(0, 0.35, mtn) * mtn;
-      // measured against the Earth analogues (docs/otherworldly/got/EARTH_ANALOGUES.md): crests near the authored
+      // measured against the Earth analogues (docs/geodyssey/got/EARTH_ANALOGUES.md): crests near the authored
       // height, valley floors low in dry ranges, sharper and more broken in wet high ranges (glaciated, like the Alps)
       const floor = 0.12 * (1 - 0.75 * dry), sharp = 1.35 + 0.8 * dry;
       h += mm * 4500 * (1 - 0.18 * alpine) * (floor + (1 - floor) * Math.pow(r, sharp));
@@ -3041,7 +3049,7 @@ if (typeof self !== "undefined") self.GEO = GEO;
 const ROUTES = {};
 </script>
 <script>/* The source ledger for the Known World (generated by tools/known/author.py; edit there).
-   Facts only, in our own words (docs/otherworldly/LAWS.md). Grades: text (placed from the novels' words),
+   Facts only, in our own words (docs/geodyssey/LAWS.md). Grades: text (placed from the novels' words),
    map (position read from a published map; never its line-work), inferred (our placement from the novels'
    descriptions), todo. `chk` is 0 until the cited chapter has been checked. */
 const SOURCES = (() => {
@@ -4771,6 +4779,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const lstep = (t, p) => { $('#lstep').textContent = t; if (p != null) $('#lbar').style.width = p + '%'; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const R5 = v => Math.round(v * 1e5) / 1e5;
+const DISCLAIMER = $('#disclaimer').textContent;      // shown on the loader, the footer and in About
 
 const maplibregl = await (window.MAPLIBRE || Promise.reject(new Error('no map engine'))).catch(e => { console.error(e); return null; });
 if (!maplibregl) {
@@ -5780,12 +5789,20 @@ const PANELS = {
     <div class="btns"><a class="btn" href="https://open.spotify.com/search/epic%20fantasy%20soundtrack" target="_blank" rel="noopener">Open Spotify ↗</a></div>`;
   },
   about: () => `<div class="ph"><h2>About this atlas</h2><button class="x" aria-label="Close">×</button></div>
-    <p class="note">The Known World renders Westeros, Essos and Sothoryos as if they were a real planet seen from orbit. Coastlines, ranges, rivers and places are our own generalised drawing, placed from the novels' statements (the Wall is some 300 miles long) and graded in the source ledger. Everything else (terrain, forests, farmland, weather and the ground view) is generated.</p>
+    <p class="note">Geodyssey's map of the Known World renders Westeros, Essos and Sothoryos as if they were a real planet seen from orbit. Terrain, forests, farmland, weather and the ground view are generated in your browser.</p>
+    <div class="eyebrow">Where each thing comes from</div>
+    <p class="note"><b>Text:</b> what the novels state, in our own words: a distance (the Wall is a hundred leagues long), a direction, a journey, a river a town stands on.<br>
+    <b>Position from map:</b> where a named place stands on the published maps, when the text doesn't pin it. Most places south of the Neck are graded so. We take positions only, never the maps' drawn lines.<br>
+    <b>Ours:</b> everything between: coastlines, river courses, the shapes of ranges and forests, roads the books don't trace. Coast detail is borrowed from real Earth coastlines (Natural Earth, public domain) and is illustrative only: the North's shores are bent from Britain's, the Iron Islands from Orkney, Braavos's lagoon from Venice, Valyria from the Peloponnese and the Cyclades.<br>
+    <b>Estimate:</b> Sothoryos and the far east beyond the known coasts are our guesses, labelled so on the map and on their cards.<br>
+    Every place's card shows its grade; the full ledger lives with the source code.</p>
+    <div class="eyebrow">Canon</div>
+    <p class="note">1. The five novels, which always win. 2. Tales of Dunk and Egg (The Hedge Knight, The Sworn Sword, The Mystery Knight). 3. The World of Ice &amp; Fire and Fire &amp; Blood (with The Princess and the Queen, The Rogue Prince and Sons of the Dragon): canon told with in-world bias, so the novels win. Provisional: the released sample chapters of The Winds of Winter, labelled where used. Not used: the HBO series (its Dunk and Egg series too), the games and the wikis (leads to a chapter, never sources).</p>
+    <div class="eyebrow">Time</div>
+    <p class="note">The novels rarely give a day, so the timeline's dates are estimates and say so. Seasons follow the story alone: the long summer ends as the books open, autumn runs through them, and winter is declared at the end of A Dance with Dragons.</p>
     <div class="eyebrow">How it works</div>
-    <p class="note">Authored vectors are rasterised into field layers; Web Workers turn them into terrain and imagery tiles with fractal noise. MapLibre GL draws the globe and 3D terrain; the ground view is three.js. Seasons here last years: the long summer ends as the story opens and winter comes in the later books.</p>
-    <div class="eyebrow">Accuracy</div>
-    <p class="note">The novels rarely give a day, so the timeline's dates are estimates and say so. Positions are inferred from the text and will be pinned chapter by chapter. Books only: no material from screen adaptations.</p>
-    <p class="note">An unofficial fan project, not endorsed by the author or publishers. Places, people and events are from George R. R. Martin's A Song of Ice and Fire.</p>`,
+    <p class="note">Authored vectors are rasterised into field layers; Web Workers turn them into terrain and imagery tiles with fractal noise. MapLibre GL draws the globe and 3D terrain; the ground view is three.js. The page loads nothing from any other site and keeps no record of visits. <a href="licenses/index.html" target="_blank" rel="noopener">Licences of the bundled software and fonts</a>.</p>
+    <p class="note">${esc(DISCLAIMER)} Contact and feedback: <a href="https://github.com/dustin-hoover/known-world-atlas/issues" target="_blank" rel="noopener">the project's issue tracker</a>.</p>`,
 };
 const PANEL_INIT = {
   characters: () => {
@@ -6196,6 +6213,7 @@ statusAt(map.getCenter());
 setWxMaster(S.wxMaster, true);      // weather starts off; the cloud layer is ready for when it is turned on
 lstep('The maps are drawn…', 100);
 await sleep(250);
+$('#foot a').onclick = e => { e.preventDefault(); openPanel('about'); };
 $('#loader').classList.add('gone');
 setTimeout(() => $('#loader').remove(), 1200);
 await sleep(1600);

@@ -8,6 +8,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const lstep = (t, p) => { $('#lstep').textContent = t; if (p != null) $('#lbar').style.width = p + '%'; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const R5 = v => Math.round(v * 1e5) / 1e5;
+const DISCLAIMER = $('#disclaimer').textContent;      // shown on the loader, the footer and in About
 
 const maplibregl = await (window.MAPLIBRE || Promise.reject(new Error('no map engine'))).catch(e => { console.error(e); return null; });
 if (!maplibregl) {
@@ -1017,12 +1018,20 @@ const PANELS = {
     <div class="btns"><a class="btn" href="https://open.spotify.com/search/epic%20fantasy%20soundtrack" target="_blank" rel="noopener">Open Spotify ↗</a></div>`;
   },
   about: () => `<div class="ph"><h2>About this atlas</h2><button class="x" aria-label="Close">×</button></div>
-    <p class="note">The Known World renders Westeros, Essos and Sothoryos as if they were a real planet seen from orbit. Coastlines, ranges, rivers and places are our own generalised drawing, placed from the novels' statements (the Wall is some 300 miles long) and graded in the source ledger. Everything else (terrain, forests, farmland, weather and the ground view) is generated.</p>
+    <p class="note">Geodyssey's map of the Known World renders Westeros, Essos and Sothoryos as if they were a real planet seen from orbit. Terrain, forests, farmland, weather and the ground view are generated in your browser.</p>
+    <div class="eyebrow">Where each thing comes from</div>
+    <p class="note"><b>Text:</b> what the novels state, in our own words: a distance (the Wall is a hundred leagues long), a direction, a journey, a river a town stands on.<br>
+    <b>Position from map:</b> where a named place stands on the published maps, when the text doesn't pin it. Most places south of the Neck are graded so. We take positions only, never the maps' drawn lines.<br>
+    <b>Ours:</b> everything between: coastlines, river courses, the shapes of ranges and forests, roads the books don't trace. Coast detail is borrowed from real Earth coastlines (Natural Earth, public domain) and is illustrative only: the North's shores are bent from Britain's, the Iron Islands from Orkney, Braavos's lagoon from Venice, Valyria from the Peloponnese and the Cyclades.<br>
+    <b>Estimate:</b> Sothoryos and the far east beyond the known coasts are our guesses, labelled so on the map and on their cards.<br>
+    Every place's card shows its grade; the full ledger lives with the source code.</p>
+    <div class="eyebrow">Canon</div>
+    <p class="note">1. The five novels, which always win. 2. Tales of Dunk and Egg (The Hedge Knight, The Sworn Sword, The Mystery Knight). 3. The World of Ice &amp; Fire and Fire &amp; Blood (with The Princess and the Queen, The Rogue Prince and Sons of the Dragon): canon told with in-world bias, so the novels win. Provisional: the released sample chapters of The Winds of Winter, labelled where used. Not used: the HBO series (its Dunk and Egg series too), the games and the wikis (leads to a chapter, never sources).</p>
+    <div class="eyebrow">Time</div>
+    <p class="note">The novels rarely give a day, so the timeline's dates are estimates and say so. Seasons follow the story alone: the long summer ends as the books open, autumn runs through them, and winter is declared at the end of A Dance with Dragons.</p>
     <div class="eyebrow">How it works</div>
-    <p class="note">Authored vectors are rasterised into field layers; Web Workers turn them into terrain and imagery tiles with fractal noise. MapLibre GL draws the globe and 3D terrain; the ground view is three.js. Seasons here last years: the long summer ends as the story opens and winter comes in the later books.</p>
-    <div class="eyebrow">Accuracy</div>
-    <p class="note">The novels rarely give a day, so the timeline's dates are estimates and say so. Positions are inferred from the text and will be pinned chapter by chapter. Books only: no material from screen adaptations.</p>
-    <p class="note">An unofficial fan project, not endorsed by the author or publishers. Places, people and events are from George R. R. Martin's A Song of Ice and Fire.</p>`,
+    <p class="note">Authored vectors are rasterised into field layers; Web Workers turn them into terrain and imagery tiles with fractal noise. MapLibre GL draws the globe and 3D terrain; the ground view is three.js. The page loads nothing from any other site and keeps no record of visits. <a href="licenses/index.html" target="_blank" rel="noopener">Licences of the bundled software and fonts</a>.</p>
+    <p class="note">${esc(DISCLAIMER)} Contact and feedback: <a href="https://github.com/dustin-hoover/known-world-atlas/issues" target="_blank" rel="noopener">the project's issue tracker</a>.</p>`,
 };
 const PANEL_INIT = {
   characters: () => {
@@ -1433,6 +1442,7 @@ statusAt(map.getCenter());
 setWxMaster(S.wxMaster, true);      // weather starts off; the cloud layer is ready for when it is turned on
 lstep('The maps are drawn…', 100);
 await sleep(250);
+$('#foot a').onclick = e => { e.preventDefault(); openPanel('about'); };
 $('#loader').classList.add('gone');
 setTimeout(() => $('#loader').remove(), 1200);
 await sleep(1600);

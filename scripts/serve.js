@@ -10,4 +10,4 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': types[path.extname(p)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
     res.end(data);
   });
-}).listen(port, () => console.log(`Arda Atlas → http://localhost:${port}/dist/preview.html  (tile lab: /tools/tiles.html)`));
+}).listen(port, () => console.log(`Geodyssey → http://localhost:${port}/dist/preview.html  (tile lab: /tools/tiles.html)`));

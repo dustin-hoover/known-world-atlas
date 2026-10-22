@@ -1,8 +1,9 @@
 # The Laws
 
 Every world obeys these. When a law and a wish conflict, the law wins and the user is told why.
-These are working rules for a fan project, not legal advice: before anything is sold, sponsored or
-monetised, the project gets a review by an intellectual-property lawyer.
+These are working rules for a fan project, not legal advice. Every world is a free, non-commercial reference:
+nothing is for sale, and there are no ads or sponsors. Before anything could ever be sold, sponsored, advertised or
+promoted, the project gets a review by an intellectual-property lawyer.
 
 ## I. Creative works belong to their authors
 1. **Facts, not expression.** Record what the books state (place names, relative positions, distances,
@@ -34,12 +35,21 @@ monetised, the project gets a review by an intellectual-property lawyer.
    keeps one reading and says which.
 3. When the text gives only a year (or nothing), we pick a plausible day and the event says
    "(the day is not recorded)". Estimated dates carry a confidence in the ledger.
-4. Where adaptations or later books contradict, the world declares its canon (for ASOIAF: the five
-   published novels, with The World of Ice & Fire and Fire & Blood for history) and sticks to it.
+4. Where adaptations or later books contradict, the world declares its canon and sticks to it. For ASOIAF, in
+   order: (1) the five novels, which always win; (2) Tales of Dunk and Egg (The Hedge Knight, The Sworn Sword,
+   The Mystery Knight); (3) The World of Ice & Fire and Fire & Blood (with The Princess and the Queen, The Rogue
+   Prince and Sons of the Dragon), canon told with in-world bias, so the novels win. Provisional: the released
+   sample chapters of The Winds of Winter, labelled where used. Excluded: HBO (including its Dunk and Egg
+   series), the games, and the wikis (leads only).
+5. Grades say where a fact comes from, and the ledger keeps them apart: `text` (the novels state it), `map` (a
+   position read from a published map; positions only, never line-work), `design` (our choice where the text
+   is silent or our map departs from it, e.g. the North's area), `inferred` (worked out from the text's
+   relations), and `estimate` (beyond the known coasts: Sothoryos and the far east). Every card shows its
+   grade.
 
 ## III. How we work
-1. Develop on the session's feature branch. Commit with clear messages ending in the attribution trailers.
-   Never put a model identifier in commits, code or docs.
+1. Develop on a work branch. Commit with clear messages under the project's own identity (Geodyssey). Never
+   put an AI vendor's name, a model identifier or a session link in commits, code or docs.
 2. Merge to main (fast-forward) only when the user says so, then confirm the live site serves the new build.
 3. Verify before reporting: build, `npm run check`, `npm run audit`, and screenshots of every visible change
    (map and ground view). Report failures plainly.

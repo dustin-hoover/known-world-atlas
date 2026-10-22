@@ -1,5 +1,5 @@
-<title>The Known World</title>
-<meta name="description" content="An unofficial, procedurally generated, Earth-like globe of the Known World (Westeros, Essos, Sothoryos) with GIS layers, weather, journeys and a ground-level explorer.">
+<title>Geodyssey: an unofficial fan map of A Song of Ice and Fire</title>
+<meta name="description" content="Geodyssey: an unofficial, free, non-commercial fan map of A Song of Ice and Fire. An Earth-like globe of Westeros, Essos and Sothoryos with weather, journeys and a ground-level explorer.">
 <style>/*FONTS_CSS*/</style>
 <style>/*MAPLIBRE_CSS*/</style>
 <style>/*APP_CSS*/</style>
@@ -9,15 +9,16 @@
 
 <div id="loader" role="status">
   <div class="inner">
-    <h1>THE KNOWN WORLD</h1>
-    <div class="sub">An unofficial atlas of A Song of Ice and Fire</div>
+    <h1>GEODYSSEY</h1>
+    <div class="sub">An unofficial fan map of A Song of Ice and Fire</div>
     <div class="bar"><i id="lbar"></i></div>
     <div class="step" id="lstep">Unrolling the maps…</div>
+    <p class="legal" id="disclaimer">Geodyssey is an unofficial, free, non-commercial fan project. Not affiliated with, endorsed or sponsored by George R. R. Martin, his publishers (Bantam/Penguin Random House, HarperCollins Voyager), HBO or Warner Bros. Discovery. A Song of Ice and Fire and related names are trademarks of their owners. Map shapes are our own (coast detail from real Earth coastlines, Natural Earth, public domain); artwork and music are original.</p>
   </div>
 </div>
 
 <div id="top">
-  <div id="brand" class="glass"><b>THE KNOWN WORLD</b><span>Westeros · Essos · Sothoryos</span></div>
+  <div id="brand" class="glass"><b>GEODYSSEY</b><span>The Known World · an unofficial fan map</span></div>
   <div id="search">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
     <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Search places, rivers, realms…" aria-label="Search the atlas">
@@ -72,6 +73,7 @@
 
 <div id="caption" class="glass" aria-live="polite"></div>
 <div id="toast" class="glass" role="status"></div>
+<div id="foot">Unofficial, free fan project · not affiliated with George R. R. Martin, his publishers, HBO or Warner Bros. Discovery · <a href="#" data-open="about">About &amp; sources</a></div>
 
 <div id="ground" aria-label="Ground view">
   <div id="glabels"></div>

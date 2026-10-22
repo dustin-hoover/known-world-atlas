@@ -1,12 +1,12 @@
-# The Known World
+# Geodyssey: the Known World
 
 An unofficial, Google Earth–style globe of the lands of A Song of Ice and Fire (Westeros, Essos and
 Sothoryos) that looks like a real planet from orbit. Terrain, imagery, fields, forests, rooftops and
 weather are generated procedurally in the browser from hand-authored geography.
 
-The second world of the Other Worldly Project, built on the engine of
+The second world of Geodyssey, built on the engine of
 [Arda Atlas](https://github.com/dustin-hoover/arda-atlas) and following its laws
-([docs/otherworldly/LAWS.md](docs/otherworldly/LAWS.md)): facts from the novels in our own words, no copied
+([docs/geodyssey/LAWS.md](docs/geodyssey/LAWS.md)): facts from the novels in our own words, no copied
 maps or artwork, no material from screen adaptations.
 
 - **Globe:** MapLibre GL JS with 3D terrain, labels, three basemaps
@@ -45,9 +45,15 @@ npm run audit        # check the map against the source ledger (writes docs/SOUR
 ```
 
 ## Status
-Phases 1–3 of [docs/otherworldly/got/PLAN.md](docs/otherworldly/got/PLAN.md): frame, calendar, geography,
+Phases 1–3 of [docs/geodyssey/got/PLAN.md](docs/geodyssey/got/PLAN.md): frame, calendar, geography,
 places, realms, seasons, the cast and their journeys, castles. Next: battles (Phase 4). The cast, its journeys and
 travel modes are authored in `tools/known/cast.py`; every date there is an estimate and the app says so.
 
-An unofficial fan project, not endorsed by the author or publishers. Places, people and events are from
-George R. R. Martin's A Song of Ice and Fire.
+Geodyssey is an unofficial, free, non-commercial fan project. Not affiliated with, endorsed or sponsored by
+George R. R. Martin, his publishers (Bantam/Penguin Random House, HarperCollins Voyager), HBO or Warner Bros.
+Discovery. A Song of Ice and Fire and related names are trademarks of their owners. Map shapes are our own (coast
+detail from real Earth coastlines, Natural Earth, public domain); artwork and music are original. Contact and
+feedback: the repository's issue tracker.
+
+The page bundles MapLibre GL JS (BSD-3-Clause), three.js (MIT) and the fonts IM Fell English, IM Fell English SC,
+Alegreya Sans and IBM Plex Mono (SIL Open Font Licence); the built site carries their licences in `licenses/`.

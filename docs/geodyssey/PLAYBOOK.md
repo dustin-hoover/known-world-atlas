@@ -76,4 +76,4 @@ merge and a live check.
   by hand in tests, and the camera snaps when the ground under it jumps.
 - Object literals with a repeated key keep the last one: check cast maps for duplicates after editing.
 - Symbols behind 3D terrain are hidden: check scenes inside mountains from straight above as well.
-- Keep the build's single page small enough for the artifact host; no closing script tags in sources.
+- Keep the build's single page small enough to load quickly; no closing script tags in sources.

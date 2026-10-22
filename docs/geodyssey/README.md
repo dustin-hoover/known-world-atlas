@@ -1,4 +1,4 @@
-# The Other Worldly Project
+# Geodyssey
 
 Arda Atlas is the first world of a family of explorable fictional worlds. Each world is a procedural,
 Earth-like globe with canon geography, a timeline of its stories, the important characters moving across

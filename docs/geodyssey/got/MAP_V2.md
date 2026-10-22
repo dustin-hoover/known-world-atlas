@@ -145,7 +145,7 @@ the owner's "merge".
 - **Phase 1 (sources, comparison tool):** done.
 - **Coasts (phase 3, ahead of order):** the North from Britain with real detail on every long edge; Essos and
   Sothoryos from real shores laid along our outline; every named island drawn from a real one
-  (`tools/known/donor.py`, `tools/known/shores.py`, `docs/otherworldly/got/EARTH_ANALOGUES.md`).
+  (`tools/known/donor.py`, `tools/known/shores.py`, `docs/geodyssey/got/EARTH_ANALOGUES.md`).
 - **Southern Westeros on the official layout:** the Neck, the westerlands, the Reach, Dorne, the stormlands, the
   crownlands, the Vale and the Fingers now follow the official map's shapes. About 45 places and seven island groups
   were matched with the official map; a smooth fit carried the official positions into our frame (keeping our scale:

@@ -1,23 +1,23 @@
 # The Known World: handoff
 
-Where the work stands, for a new chat picking it up. Read this, then `CLAUDE.md` (engine notes and conventions) and
-`docs/otherworldly/LAWS.md` (the rules every world follows).
+Where the work stands, for a new chat picking it up. Read this, then `AGENTS.md` (engine notes and conventions) and
+`docs/geodyssey/LAWS.md` (the rules every world follows).
 
 ## The project
 
 - **The Known World** (this repo, `dustin-hoover/known-world-atlas`): an unofficial globe of A Song of Ice and Fire,
   books only, built on the Arda Atlas engine. Live at https://dustin-hoover.github.io/known-world-atlas/
-- It is the second world of the **Otherworldly** project. The first, **Arda Atlas** (`dustin-hoover/arda-atlas`,
+- It is the second world of the **Geodyssey** project. The first, **Arda Atlas** (`dustin-hoover/arda-atlas`,
   https://dustin-hoover.github.io/arda-atlas/), is worked on in a separate chat. Keep the two repos separate; the
   owner wants the Arda link kept "pure".
-- Future, not now: a merged Otherworldly site under its own name (not the owner's), funded by ads, with a message
-  board and feedback. The visit counter below is its first piece.
+- Future, not now: a merged Geodyssey site under its own name (not the owner's), with a message board and feedback.
+  It is a free, non-commercial reference: nothing for sale, no ads, no sponsors (LAWS.md).
 
 ## How the owner works
 
 - Changes go to the work branch first; the owner reviews screenshots, then says "merge" before anything goes to
   `main` (which publishes the site through GitHub Pages).
-- Show screenshots of every visible change (`tools/app_test.py`, see `CLAUDE.md`).
+- Show screenshots of every visible change (`tools/app_test.py`, see `AGENTS.md`).
 - Dates the books don't give are estimates and the app says "(date est.)". Staged or inferred things (routes the
   books don't describe, the Wall drawn taller at a distance) are labelled as ours.
 - The laws: facts from the novels in our own words; no traced map line-work (published fan maps such as the Atlas
@@ -38,8 +38,6 @@ Where the work stands, for a new chat picking it up. Read this, then `CLAUDE.md`
 - Castles in the ground view: Winterfell, Castle Black, the Eyrie, Harrenhal, the Twins, the Red Keep, Storm's End,
   Dragonstone, Pyke, the Hightower, Riverrun, Casterly Rock, Sunspear.
 - Playback speeds 1 h, 6 h, 12 h, 1 day, 4 days per second.
-- Visit counter: GoatCounter account `otherworldly` (https://otherworldly.goatcounter.com), on both atlases. The
-  owner leaves their own visits out with `#toggle-goatcounter` on each device; they had not yet tested it.
 
 ## Ideas raised but not started
 
@@ -50,6 +48,6 @@ Where the work stands, for a new chat picking it up. Read this, then `CLAUDE.md`
 
 ## Working setup
 
-- Branch for work: `ccr-30078a2c-wtppal` (or whatever branch the new session is given); merge to `main` on approval.
+- Work on a work branch; merge to `main` on approval.
 - `npm run author` regenerates `src/geo.js` from `tools/known/author.py` and `tools/known/cast.py`, then builds.
 - `npm run audit` checks the map against the source ledger; `npm run check` is the syntax check CI runs.

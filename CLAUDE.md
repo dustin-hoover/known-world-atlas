@@ -1,6 +1,6 @@
 # The Known World — notes for Claude Code
 
-A fork of Arda Atlas's engine for A Song of Ice and Fire. **Read docs/otherworldly/LAWS.md first** (books only,
+A fork of Arda Atlas's engine for A Song of Ice and Fire. **Read docs/geodyssey/LAWS.md first** (books only,
 facts in our own words, never trace a published map, no adaptation material), then PLAYBOOK.md and got/PLAN.md.
 Arda's engine notes below still apply; what differs in this world:
 
@@ -69,8 +69,8 @@ Arda's engine notes below still apply; what differs in this world:
 Procedural, Earth-like globe of Middle-earth. Plain JavaScript, no framework, no bundler: `build.js`
 concatenates `src/` into a single HTML page. Read README.md for the file map.
 
-**Arda is the first world of the Other Worldly Project.** Before starting a new world (next: A Song of Ice and Fire),
-read `docs/otherworldly/` in this order: LAWS.md (binding), PLAYBOOK.md, WORLD_SPEC.md (data contract and the repack
+**Arda is the first world of Geodyssey.** Before starting a new world (next: A Song of Ice and Fire),
+read `docs/geodyssey/` in this order: LAWS.md (binding), PLAYBOOK.md, WORLD_SPEC.md (data contract and the repack
 plan), got/PLAN.md. Starter code lives in `worlds/` (`npm run worlds` validates packages and runs their tests).
 
 ## Commands

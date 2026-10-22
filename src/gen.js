@@ -424,7 +424,7 @@ function evaluate(X, Y, pix) {
     if (mtn > 0.002) {
       const r = ridgedA(X, Y, 26, Math.max(pix * 1.1, 0.003));
       const mm = sstep(0, 0.35, mtn) * mtn;
-      // measured against the Earth analogues (docs/otherworldly/got/EARTH_ANALOGUES.md): crests near the authored
+      // measured against the Earth analogues (docs/geodyssey/got/EARTH_ANALOGUES.md): crests near the authored
       // height, valley floors low in dry ranges, sharper and more broken in wet high ranges (glaciated, like the Alps)
       const floor = 0.12 * (1 - 0.75 * dry), sharp = 1.35 + 0.8 * dry;
       h += mm * 4500 * (1 - 0.18 * alpine) * (floor + (1 - floor) * Math.pow(r, sharp));

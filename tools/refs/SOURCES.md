@@ -21,7 +21,7 @@ Grades in the ledger: `text` (stated in the books), `map` (read from an official
 | `earth/` | Natural Earth 1:10m land and minor islands | public domain | the North's coast: Britain bent onto our landmarks, Orkney moved in as the Iron Islands (`tools/known/donor.py`, output `tools/known/coast_donor.json`); the detail of the south's coast between its fixed points, and Westeros's other islands (`tools/known/shores.py`) |
 | `earth/` | Natural Earth 1:10m land and minor islands | public domain | Essos's and Sothoryos's coasts: real shores laid along our own outline, and real islands moved bodily (`tools/known/shores.py`, output `tools/known/coast_shores.json`) |
 | `earth/` | Natural Earth 1:10m rivers and lake centrelines | public domain | the bends of our rivers, each from its Earth analogue (`tools/known/shores.py`) |
-| `earth/dem/` | Copernicus DEM GLO-90 | free for any use; credit "© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA" | measuring the Earth analogues of our mountains (`tools/refs/analogues.py`, `docs/otherworldly/got/EARTH_ANALOGUES.md`) |
+| `earth/dem/` | Copernicus DEM GLO-90 | free for any use; credit "© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA" | measuring the Earth analogues of our mountains (`tools/refs/analogues.py`, `docs/geodyssey/got/EARTH_ANALOGUES.md`) |
 
 Google Maps and Google Earth imagery and terrain are not used: their terms forbid copying or sampling them.
 
