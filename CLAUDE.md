@@ -58,6 +58,9 @@ Arda's engine notes below still apply; what differs in this world:
   castle's own ground, kept clear of houses) and an optional offset `cx, cy` inside a city.
 - No battles, landmark art (`LANDMARK_ART`), beacons or palantíri yet; `src/routes.js` is empty (straight legs).
 - Headless runs: `tools/app_test.py` now prints console errors even when a step fails.
+- **Checks before every commit:** `python3 tools/known/checks.py` (places against the shore, travellers against the
+  water; exit 1 on a new failure) besides `npm run check` and `npm run audit`. Instructions for other AI agents
+  (roles, task board, data formats): `docs/agents/AGENT_INSTRUCTIONS.md`.
 
 ---
 
