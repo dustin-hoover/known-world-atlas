@@ -92,7 +92,7 @@ of measurements.
 ## The shores of Essos and Sothoryos
 
 `tools/known/shores.py` lays a real coast along each stretch of our own outline (the outline stays ours, from the
-books and the official maps' positions; the real coast gives the bays, spits, deltas, lagoons and the islands just
+books and named places' positions; the real coast gives the bays, spits, deltas, lagoons and the islands just
 offshore, at about their real size), and moves a few real islands and one peninsula bodily.
 
 | Our coast | Real shore laid along it | Why |
@@ -123,8 +123,12 @@ offshore, at about their real size), and moves a few real islands and one penins
 The North keeps Britain (`tools/known/donor.py`), stretched to several times its size in places, and the Lands of
 Always Winter are drawn by us, so the coast there had straight edges miles long. `shores.py` lays real detail on every
 edge longer than 7 miles, its corners held, and lays the Lands of Always Winter whole. South of the North the coast
-runs through fixed points (`tools/known/coast_fixed.py`, each feature where the official map puts it), and each
-stretch between two points takes a piece of real coast of its character, its ends held:
+runs between named anchors (`tools/known/coast_fixed.py`, positions only), and each stretch between two anchors is
+a whole real coastline of its character, turned and scaled to run from one to the other (`tools/known/south.py`; the
+pools below, with Galicia and Maine for rocky shores, Donegal and Mayo for stony ones, the Louisiana marshes beside
+the Wadden Sea, western Portugal and the Spanish Levant for beaches, and Cyrenaica, Algeria, the Gulf of California
+and Morocco's Atlantic coast for Dorne). Each stretch's choice is written to the ledger (`src/sources.js` SHORES) and
+is illustrative only:
 
 | Our coast | Real detail from | Why |
 |---|---|---|
@@ -134,7 +138,7 @@ stretch between two points takes a piece of real coast of its character, its end
 | the westerlands, the stormlands, the Vale, Massey's Hook | Brittany | granite headlands, rias and islets |
 | the Reach, Blackwater Bay | the Gulf of Cádiz and the Algarve | sand, lagoons and low cliffs |
 | Dorne, the Sea of Dorne's south shore | Tripolitania and the Gulf of Gabès | hot shores, lagoons and sebkhas |
-| the Fingers | the Kerry peninsulas | long bony fingers into the sea (each finger's tip a fixed point) |
+| the Fingers | the Kerry peninsulas | long bony fingers into the sea |
 
 | Moved bodily | From | Why |
 |---|---|---|
@@ -143,13 +147,13 @@ stretch between two points takes a piece of real coast of its character, its end
 | Ib | Iceland | a large cold island across a northern sea (Ib Nefer where Reykjavík is) |
 | Tyrosh, Lys, Bloodstone | Brač, Hvar, Vis | the Dalmatian islands' size and shape |
 | the Stepstones | the Kornati | a scatter of small bare islands |
-| the Iron Islands | Orkney (by donor.py), centred where the official map sets the group | bare, windswept, low cliffs |
+| the Iron Islands | Orkney (by donor.py), centred on the group's position (graded `map`) | bare, windswept, low cliffs |
 | Dragonstone, Driftmark, Claw Isle | La Palma, Oléron, Guernsey | a volcanic isle by a long low one; a small rocky one off a cape |
 | Tarth, Estermont | Rhodes, Ibiza | large green islands off a stormy coast |
 | Fair Isle, the Shield Islands | Jersey, the Îles d'Hyères | a single isle in a sound; a short chain across a river's bay |
 | the Arbor, the Three Sisters | Mallorca, the Frisian islands | a wine island across a strait; a low chain in a shallow bight |
 
-Each island group sits where the official map puts it (`tools/known/shores.py` TRANSPLANTS), and its castles and towns
+Each island group sits on its position (graded `map`; `tools/known/shores.py` TRANSPLANTS), and its castles and towns
 stand on the real island's own towns and harbours (TRANSPLANT_PINS: High Tide on Oléron, Faircastle on St Helier,
 Ryamsport on Palma, the three Shields on Porquerolles, Port-Cros and Le Levant...).
 

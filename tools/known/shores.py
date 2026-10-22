@@ -1,7 +1,7 @@
 """Essos and Sothoryos from real shores: each stretch of our own outline takes the detail of a real coast of like
 character, and a few real islands and peninsulas are moved bodily (Valyria from the Peloponnese, Ib from Iceland).
 
-Our outline (author.py ESSOS, SOTHORYOS) says where the coast runs, from the books and the official maps' positions.
+Our outline (author.py ESSOS, SOTHORYOS) says where the coast runs, from the books and named places' positions.
 A real coast (Natural Earth 1:10m, public domain) is laid along it like a ribbon: the real coast is smoothed into a
 baseline, each real point is measured as a distance off that baseline, and set the same distance (scaled) off our
 outline. Bays, spits, deltas, lagoons and the islands just offshore keep their real shapes; the outline stays ours.
@@ -62,8 +62,8 @@ ISLE_MAX = 3000.0   # ...if smaller than this (km²)
 # The North is Britain, stretched to several times its size in places, and our own addition there (the Lands of Always
 # Winter) is drawn as a polygon: both leave straight edges miles long. The Lands of Always Winter are laid whole like
 # the shores of Essos; every other edge longer than EDGE takes a piece of a real coast of the same character, laid
-# along it with its corners held, so Britain's shapes stay. South of the North the coast is built anew from fixed
-# points (south_outline, below).
+# along it with its corners held, so Britain's shapes stay. South of the North the coast is built anew between its
+# named anchors (tools/known/south.py).
 WESTEROS_STRETCHES = [   # (from, to on our coast, real from, real to, what, sig)
     ((470, 1150), (-470, 1150), (-61.7, 56.5), (-64.4, 60.4), 'the fjords of northern Labrador', 45.0),   # the Lands of Always Winter
 ]
@@ -83,13 +83,10 @@ REGIONS = [              # (pool, X0, X1, Y0, Y1): the first that holds an edge'
 EDGE = 7.0               # miles
 
 # ------------------------------------------------------------------ Westeros south of the North
-# From the Rills round to the North's east coast the coast runs through fixed points: each named feature where the
-# official map puts it (tools/known/coast_fixed.py, graded map). Between them the line is ours, a smooth curve, and
-# each stretch takes a piece of real coast of its character from POOLS, its corners held (the Fingers, each finger's
-# tip and each sound's head a fixed point, from the Kerry peninsulas).
+# From the Rills round to the North's east coast the coast runs between named anchors (tools/known/coast_fixed.py),
+# each stretch a real coastline turned and scaled to fit between them (tools/known/south.py).
 sys.path.insert(0, HERE)
 from coast_fixed import SOUTH
-KM_PER_MI = 1.0         # real coast taken per mile of ours (its bays and headlands at about real size)
 
 
 def spline(P, step=0.5):
@@ -110,48 +107,20 @@ def spline(P, step=0.5):
     return np.vstack(out), at
 
 
-def south_outline():
-    """-> (the coast from the Rills round to the North's east coast, [island rings])."""
-    from scipy.spatial import cKDTree
-    S, at = spline([xy for _, xy, _ in SOUTH])
-    sS = np.r_[0, np.cumsum(np.hypot(*np.diff(S, axis=0).T))]; tS = cKDTree(S)
-    def room(i0, i1):
-        # the nearest coast that is not this stretch (across a bay, a sound or a strait), from the stretch's middle
-        m = (i0 + i1) // 2; L = sS[i1] - sS[i0]
-        d, j = tS.query(S[m], k=600, distance_upper_bound=90); ok = np.isfinite(d); j = np.minimum(j, len(S) - 1)
-        far = ok & (abs(sS[j] - sS[m]) > L / 2 + 6)
-        return float(d[far].min()) if far.any() else 90.0
-    pieces = {k: piece_of(a, b) for k, (a, b, _) in POOLS.items()}; used = {k: 0 for k in POOLS}
-    out, isles = [], []
-    for i in range(len(SOUTH) - 1):
-        shore, j = SOUTH[i][2], i + 1
-        path = S[at[i]:at[j] + 1]; L = sS[at[j]] - sS[at[i]]
-        pts, poly, left, lat0, R = pieces[shore]
-        need = int(L * KM_PER_MI / 0.4) + 2                            # real coast at about its own size
-        o = used[shore] if used[shore] + need < len(R) else 0; used[shore] = o + need + 25
-        sub = R[o:o + need]
-        ll = np.c_[sub[:, 0] / (111.32 * math.cos(math.radians(lat0))), sub[:, 1] / 110.57]
-        rm = room(at[i], at[j])
-        sig = max(3.0, min(L / 3, 30.0, rm))
-        amp = min(1.0, rm / (3 * sig))                                    # a narrow bay or a finger keeps its width
-        c, il, _, _ = lay(path, None, None, sig=sig, taper=min(TAPER, L / 5), piece=(ll, poly, left, lat0, sub),
-                          isle_km=8.0 if amp > 0.6 else 0.0, amp=amp)
-        out.append(c[:-1]); isles += il
-    out.append(S[-1:])
-    return np.vstack(out), isles
-
-
-def westeros(ring, donor_isles=()):
-    """-> (coast ring, [{'name', 'pts'}] islands): the North's coast with real detail laid on its long straight edges,
-    and the south built anew from its fixed points."""
+def westeros(ring, donor_isles=(), avoid=(), places=(), rivers=()):
+    """-> (coast ring, [{'name', 'pts'}] islands, [the south's pieces]): the North's coast with real detail laid on its
+    long straight edges, and the south built anew between its named anchors (tools/known/south.py)."""
+    import south
     ring = np.asarray(ring, float)
     if not Polygon(ring).exterior.is_ccw: ring = ring[::-1]
-    sc, sisles = south_outline()                                       # from the Rills round to the North's east coast
     n = len(ring)
-    iw = int(np.argmin(((ring - sc[0]) ** 2).sum(1))); ie = int(np.argmin(((ring - sc[-1]) ** 2).sum(1)))
-    north = ring[(ie + np.arange((iw - ie) % n + 1)) % n][1:-1]       # round the North from the east join to the west
+    iw = int(np.argmin(((ring - SOUTH[0][1]) ** 2).sum(1))); ie = int(np.argmin(((ring - SOUTH[-1][1]) ** 2).sum(1)))
+    north = ring[(ie + np.arange((iw - ie) % n + 1)) % n]             # round the North from the east join to the west
+    named_isles = [np.asarray(d['pts'], float) for d in donor_isles if d.get('name') and len(d['pts']) > 3]   # the Iron Islands, Skagos...
+    sc, spieces = south.build(places, rivers, list(avoid) + named_isles, north, [(nm, xy, ch) for nm, xy, ch, _ in SOUTH])
+    north = north[1:-1]
     ring = np.vstack([north, sc]); n = len(ring)
-    isles = [{'name': None, 'pts': q} for q in sisles]
+    isles = []
     done = np.zeros(n, bool); done[len(north):] = True; spans = {len(north): np.vstack([sc, sc[-1:]])}
     # the Lands of Always Winter, smoothed (our corners there are only a drawing's) and laid whole
     for a, b, ra, rb, what, sig in WESTEROS_STRETCHES:
@@ -207,7 +176,7 @@ def westeros(ring, donor_isles=()):
         c, _ = detail(r) if len(r) > 3 else (r, [])
         isles.append({'name': d.get('name'), 'pts': c})
     print(f'  Westeros: real detail laid on {count[0]} straight edges')
-    return coast, isles
+    return coast, isles, spieces
 
 
 # ------------------------------------------------------------------ rivers: the bends of a real river laid along ours
@@ -540,13 +509,85 @@ WZOOMS = {'always-winter': (0, 1250, 500), 'sea-of-dorne': (300, -2080, 260), 'r
 ZOOMS = {'braavos': (790, -520, 120), 'valyria': (1700, -2450, 260), 'slavers-bay': (2620, -2150, 260), 'yi-ti': (5450, -1700, 300)}
 
 
+ONE_POLYGON = ('Skagos', 'Bear Island', 'Tarth', 'Dragonstone', 'Driftmark', 'Estermont', 'The Arbor', 'Fair Isle', 'Bloodstone')
+
+
+ISLET_MAX = 10.0                  # sq mi: smaller unnamed islands stay as islets, larger ones go (gate rule G5)
+ISLE_OF_CEDARS = (2292, -2364)    # the island at the mouth of Slaver's Bay, on the Gulf of Grief (ADWD)
+
+
+def prune_isles(isles):
+    """Unnamed islands of ISLET_MAX sq mi or more go, but the one at the mouth of Slaver's Bay, which becomes the Isle
+    of Cedars."""
+    big = [i for i in isles if not i.get('name') and Polygon(i['pts']).area >= ISLET_MAX]
+    cedars = min(big, key=lambda i: Polygon(i['pts']).centroid.distance(Point(*ISLE_OF_CEDARS)), default=None)
+    if cedars is not None and Polygon(cedars['pts']).centroid.distance(Point(*ISLE_OF_CEDARS)) < 60: cedars['name'] = 'The Isle of Cedars'
+    return [i for i in isles if i.get('name') or Polygon(i['pts']).area < ISLET_MAX]
+
+
+def merge_named(isles):
+    """The islands the books treat as one (Skagos, Bear Island, Tarth...) become one polygon each, their small pieces
+    bridged in."""
+    out = [i for i in isles if i.get('name') not in ONE_POLYGON]
+    for name in ONE_POLYGON:
+        parts = [i for i in isles if i.get('name') == name]
+        if not parts: continue
+        g = unary_union([Polygon(i['pts']).buffer(0) for i in parts])
+        if len(parts) > 1: g = g.buffer(4, join_style=1).buffer(-4, join_style=1)
+        gs = sorted(getattr(g, 'geoms', [g]), key=lambda q: -q.area)
+        out.append({'name': name, 'pts': [[round(x, 2), round(y, 2)] for x, y in list(gs[0].exterior.coords)[:-1]]})
+        out += [{'name': None, 'pts': [[round(x, 2), round(y, 2)] for x, y in list(q.exterior.coords)[:-1]]} for q in gs[1:]]
+    return out
+
+
+def fill_islands(isles, res=0.5):
+    """The larger islands lose their false gulfs too (rule 9b); a strait beside another island is left open."""
+    import waters
+    polys = [Polygon(i['pts']).buffer(0) for i in isles]
+    n = 0
+    for k, i in enumerate(isles):
+        if polys[k].area < 150: continue
+        x0, y0, x1, y1 = polys[k].bounds
+        nj = [j for j in range(len(isles)) if j != k and polys[j].distance(polys[k]) < 40]
+        r, filled, gone = waters.fill(i['pts'], [isles[j]['pts'] for j in nj], (x0, x1, y0, y1), res=res if polys[k].area < 20000 else 1.0,
+                                      absorb=[isles[j].get('name') in (None, 'isle', i.get('name')) and polys[j].area < polys[k].area for j in nj])
+        if filled: i['pts'] = r; n += len(filled)
+        for j in gone: isles[nj[j]]['pts'] = []
+    isles[:] = [i for i in isles if len(i['pts']) > 2]
+    return n
+
+
+def hold_anchors(ring, anchors, ramp=20.0):
+    """The ring with each anchor exactly on it: the nearest stretch of shore is drawn to the anchor, the pull fading to
+    nothing over `ramp` miles either way along the coast, and the result made a valid ring."""
+    R = np.asarray(ring, float)
+    for ax, ay in anchors:
+        line = LineString(np.vstack([R, R[:1]]))
+        s0 = line.project(Point(ax, ay)); q = line.interpolate(s0)
+        d = np.array([ax - q.x, ay - q.y])
+        if np.hypot(*d) < 1e-3: continue
+        seg = np.r_[0, np.cumsum(np.hypot(*np.diff(np.vstack([R, R[:1]]), axis=0).T))]; L = seg[-1]
+        k = int(np.searchsorted(seg, s0)) % len(R)
+        R = np.insert(R, k, [q.x, q.y], axis=0); s = np.insert(seg[:-1], k, s0)
+        u = np.abs(s - s0); u = np.minimum(u, L - u) / ramp
+        w = np.where(u < 1, 1 - u * u * (3 - 2 * u), 0.0)
+        R = R + w[:, None] * d
+    g = Polygon(R).buffer(0)
+    g = max(getattr(g, 'geoms', [g]), key=lambda q: q.area)
+    return [[round(x, 3), round(y, 3)] for x, y in list(g.exterior.coords)[:-1]]
+
+
 def run(write=False):
     sys.path.insert(0, HERE); import author
     old = {'Essos': author.chaikin(author.ESSOS, 2), 'Sothoryos': author.chaikin(author.SOTHORYOS, 2)}   # our outlines
     tp = {}; extra = transplants(tp)
     out = {}
     donor = json.load(open(os.path.join(HERE, 'coast_donor.json')))
-    wc, wi = westeros(donor['coast'], donor['islands'])
+    import south, waters, io, contextlib
+    with contextlib.redirect_stdout(io.StringIO()): author.prepare()           # the settled map the south must respect
+    pl, riv = south.constraints(author)
+    avoid = [e['pts'] for e in extra if np.mean(np.asarray(e['pts'])[:, 0]) < 720]
+    wc, wi, pieces = westeros(donor['coast'], donor['islands'], avoid, pl, riv)
     clean = lambda g: g.buffer(0.5, join_style=1).buffer(-1.0, join_style=1).buffer(0.5, join_style=1).simplify(0.08)
     ringify = lambda q: [[round(x, 2), round(y, 2)] for x, y in list(q.exterior.coords)[:-1]]
     g = clean(unary_union([shapely.make_valid(Polygon(wc))] + [shapely.make_valid(Polygon(i['pts'])) for i in wi if not i['name'] and len(i['pts']) > 3]))
@@ -556,7 +597,20 @@ def run(write=False):
         if not i['name'] or len(i['pts']) < 4: continue
         h = clean(shapely.make_valid(Polygon(i['pts'])))
         named += [{'name': i['name'], 'pts': ringify(q)} for q in getattr(h, 'geoms', [h]) if q.geom_type == 'Polygon' and q.area > 0.4]
-    out['Westeros'] = {'coast': ringify(polys[0]), 'islands': [{'name': None, 'pts': ringify(q)} for q in polys[1:] if q.area > 0.4] + named}
+    isl_w = [{'name': None, 'pts': ringify(q)} for q in polys[1:] if q.area > 0.4] + named
+    anchors = [xy for _, xy, _, why in SOUTH if why != 'join']
+    isl_w = prune_isles(merge_named(isl_w))
+    coast_w, filled = ringify(polys[0]), []
+    for _ in range(3):                                                  # no false gulfs (rule 9b), until none are left
+        coast_w, f, gone = waters.fill(coast_w, [i['pts'] for i in isl_w] + avoid, (-1000, 1000, -2700, 1500),
+                                       absorb=[not i['name'] for i in isl_w] + [False] * len(avoid))
+        isl_w = [i for k, i in enumerate(isl_w) if k not in gone]; filled += f
+        if not f: break
+    print(f'  Westeros: {fill_islands(isl_w)} inlets filled on its islands')
+    coast_w = hold_anchors(coast_w, anchors)                           # every named anchor exactly on the shore (rule 7)
+    print(f'  Westeros: {len(filled)} unnamed inlets filled (' + ', '.join(f"{f['X']:.0f},{f['Y']:.0f} {f['depth'] or 0:.0f} mi" for f in filled[:12]) + ('…' if len(filled) > 12 else '') + ')')
+    out['Westeros'] = {'coast': coast_w, 'islands': isl_w,
+                       'stretches': [{'name': f"{p['from']} to {p['to']}" + (f" ({p['piece']}/{p['of']})" if p['of'] > 1 else ''), 'analogue': p['what']} for p in pieces]}
     print(f"  Westeros: {len(out['Westeros']['coast'])} points, {len(out['Westeros']['islands'])} islands")
     for nm, (cx, cy, half) in WZOOMS.items():
         preview(os.path.join(ROOT, 'tools', 'shots', f'shores-{nm}.png'), out['Westeros']['coast'], out['Westeros']['islands'],
@@ -569,8 +623,15 @@ def run(write=False):
         segs = [(w, ring_path(ring, st, shores[(i + 1) % len(shores)][0])) for i, (st, a, b, w) in enumerate(shores)]
         sheet(os.path.join(ROOT, 'tools', 'shots', f'shores-{name.lower()}-sheet.png'), segs, main, isles, author.PLACES)
         if name == 'Essos': got.update(tp)
-        print(f'  {name}: {len(main)} points, {len(isles)} islands, pins {got}')
-        out[name] = {'coast': main, 'islands': isles, 'pins': got}
+        filled = []; isles = prune_isles(isles)
+        for _ in range(3):                                              # no false gulfs (rule 9b), until none are left
+            main, f, gone = waters.fill(main, [i['pts'] for i in isles], box_[:4], res=1.0,
+                                        absorb=[not i.get('name') or i['name'] == 'isle' for i in isles])
+            isles = [i for k, i in enumerate(isles) if k not in gone]; filled += f
+            if not f: break
+        print(f'  {name}: {fill_islands(isles, 1.0)} inlets filled on its islands')
+        print(f'  {name}: {len(main)} points, {len(isles)} islands, {len(filled)} unnamed inlets filled, pins {got}')
+        out[name] = {'coast': main, 'islands': isles, 'pins': got, 'stretches': [{'name': f'{name}, stretch {i + 1}', 'analogue': w} for i, (st, a, b, w) in enumerate(shores)]}
         preview(os.path.join(ROOT, 'tools', 'shots', f'shores-{name.lower()}.png'), main, isles, box_, old[name], author.PLACES)
     for nm, (cx, cy, half) in ZOOMS.items():
         land = out['Essos' if cx > 700 and cy > -2950 else 'Sothoryos']

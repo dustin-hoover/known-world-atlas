@@ -27,8 +27,8 @@ If anything here conflicts with `docs/geodyssey/LAWS.md`, the laws win.
   Some engine notes in `AGENTS.md` still use Arda's names (Hobbiton, Shire Reckoning); they describe the shared
   engine, not this world's data.
 - **Current state:** 308 places ranked by importance; the North's coast from Britain's real shape; everything
-  south of the North rebuilt on the official map's layout through 110 fixed coastal points with real-coast
-  detail between them; Essos and Sothoryos with real shores laid along our own outline; 14 rivers with real
+  south of the North running between 40 named coastal anchors, each stretch a whole real coastline turned to fit;
+  Essos and Sothoryos with real shores laid along our own outline; 14 rivers with real
   meanders; about seventy characters with journeys across all five novels; a dozen battles; seasons; weather
   (off by default).
 
@@ -91,7 +91,7 @@ Stop and report instead of acting if you are about to:
   (reference images and downloaded data stay out of git);
 - hand-edit a generated file (`src/geo.js`, `src/sources.js`, `docs/SOURCES.md`, `dist/`, `site/`,
   `tools/known/coast_shores.json`, `tools/known/coast_donor.json`);
-- change the fixed coastal points in `tools/known/coast_fixed.py` (they come from the official map, which only
+- change the named anchors in `tools/known/coast_fixed.py` (frozen; their positions come from the published map, which only
   the owner's computer has);
 - add tracking, analytics, ads, external network calls, or any dependency not already in `package.json`.
 
@@ -102,11 +102,12 @@ Stop and report instead of acting if you are about to:
 | `tools/known/author.py` | the hand-authored world: rivers, lakes, ranges, forests, roads, realms' claims, the first place list, labels, `STATEMENTS` (audit tests), castles | geography and data agents |
 | `tools/known/gazetteer.py` | every further place the books name, with position rules and grades; `RANKS` | gazetteer agents |
 | `tools/known/cast.py` | characters, journeys, travel modes, sea lanes, rulers, deaths, battles, events | cast agents |
-| `tools/known/coast_fixed.py` | 110 fixed points of the southern coast (official map positions) | owner only |
+| `tools/known/coast_fixed.py` | the 40 named anchors of the southern coast (frozen; positions only) | owner only |
 | `tools/known/shores.py` | builds every coast from our outline plus real Earth coast detail; island transplants and pins | geography agents |
 | `tools/known/donor.py` | the North's coast from Britain; the Iron Islands from Orkney | geography agents (rarely) |
 | `tools/known/realms.py`, `paths.py` | realm borders fitted to the land; journey legs kept on land or sea | engine agents |
 | `tools/known/checks.py` | places against the shore, travellers against the water | everyone runs it |
+| `tools/known/gate.py` | the release gate: rivers, mouths, ports, rings, islands, flips, anchors, the Neck, seas, inlets, the Wall, travellers (G1-G19) | everyone runs it; any FAIL blocks a release |
 | `tools/refs/notrace.py` | the no-tracing check on coasts (needs the owner's reference image) | owner runs it |
 | `tools/sources/audit.js` | measures the map against `STATEMENTS` | everyone runs it |
 | `src/*.js` | the app: `app.js` (map, UI, layers), `gen.js` (terrain), `rasters.js`, `worker.js`, `ground.js` and `world3d.js` (ground view), `avatars.js` (sprites), `wx.js` (calendar, weather) | engine agents |
@@ -146,6 +147,7 @@ npm run author        # regenerate src/geo.js and src/sources.js from tools/know
 npm run check         # syntax-check every src/*.js file
 npm run audit         # test the map against STATEMENTS; writes docs/SOURCES.md
 python3 tools/known/checks.py   # places against the shore, travellers against the water (exit 1 on a new failure)
+python3 tools/known/gate.py     # the release gate (exit 1 on any FAIL)
 npm run dev           # build and serve http://localhost:8765/dist/preview.html
 ```
 
@@ -237,7 +239,7 @@ You add places to `tools/known/gazetteer.py` (Part 4.1).
 You work on rivers, lakes, roads, ranges, forests, marshes and coasts in `author.py` and `shores.py`.
 - Our shapes are our own: control points in miles, smoothed, then real Earth detail laid along them. Never
   shape a feature after a published or fan map.
-- New rivers need a course that ends on the coast (south of the North at a fixed point: `RIVER_MOUTHS`) and an
+- New rivers need a course that ends on the coast (south of the North at a named anchor: `RIVER_MOUTHS`) and an
   Earth analogue in `shores.py` `RIVERS` if it should meander.
 - New islands are real islands moved bodily (`shores.py` `TRANSPLANTS`), with their castles pinned to the real
   island's town (`TRANSPLANT_PINS`).
@@ -335,13 +337,13 @@ otherwise. Each task says which role takes it.
   which bank, with citations. Today only 14 rivers exist (the Trident and its forks, the Blackwater Rush, the
   Mander, the Honeywine, the Torrentine, the Greenblood, the White Knife, the Last River, the Milkwater, the
   Rhoyne, the Skahazadhan).
-- **Engineering:** add courses in `author.py` `RIVERS`, mouths at fixed points, towns on their banks; pick an Earth
+- **Engineering:** add courses in `author.py` `RIVERS`, mouths at named anchors or on the shore, towns on their banks; pick an Earth
   analogue for the meanders. Regenerate with `shores.py` (needs the Natural Earth files).
 
 ## P7 — Named waters and coastal features (researcher)
 
 - **Goal:** every sea, bay, strait, sound, cape, point and island the books name, with what the text says about
-  where it is. The owner checks positions against the official map and adds fixed points or labels.
+  where it is. The owner checks positions against the published map and adds labels.
 
 ## P8 — Roads, fords, bridges, ferries (researcher, then geography engineer)
 

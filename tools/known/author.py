@@ -210,13 +210,13 @@ RIVERS = [
     {'name': 'The Rhoyne', 'alt': 'the Mother Rhoyne', 'w0': 60, 'w1': 900, 'rank': 1, 'pts': [[1150, -650], [1180, -850], [1230, -1050], [1300, -1500], [1360, -1800], [1420, -2205]]},
     {'name': 'The Skahazadhan', 'w0': 40, 'w1': 300, 'rank': 2, 'pts': [[2900, -1650], [2800, -1820], [2700, -1960]]},
 ]
-# the rivers of the south reach the sea at the coast's fixed points (tools/known/coast_fixed.py)
+# the rivers of the south reach the sea at the coast's named anchors (tools/known/coast_fixed.py)
 import sys as _sys
 _sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from coast_fixed import SOUTH as COAST_FIXED
-FIXED_AT = {n: list(xy) for n, xy, _ in COAST_FIXED}
+FIXED_AT = {n: list(xy) for n, xy, _, why in COAST_FIXED if why != 'join'}
 RIVER_MOUTHS = {'The White Knife': 'White Harbor', 'The Trident': 'The Trident, mouth', 'The Blackwater Rush': 'King\'s Landing',
-                'The Mander': 'The Mander, estuary', 'The Honeywine': 'Oldtown', 'The Torrentine': 'Starfall',
+                'The Mander': 'The Mander, mouth', 'The Honeywine': 'Oldtown', 'The Torrentine': 'Starfall',
                 'The Greenblood': 'The Greenblood, mouth'}
 for r in RIVERS:
     if r['name'] in RIVER_MOUTHS: r['pts'][-1] = FIXED_AT[RIVER_MOUTHS[r['name']]]
@@ -299,7 +299,7 @@ PLACES = [
     P('The Isle of Faces', 'landmark', 117, -990, 'river', 'The Riverlands', 'An island of weirwoods in the Gods Eye.', rank=4),
     P('The Ruby Ford', 'ford', 173, -892, 'river', 'The Riverlands', 'Where the Kingsroad crosses the Trident.', rank=4),
     P('The Inn at the Crossroads', 'village', 187, -938, 'river', 'The Riverlands', 'An inn where the Kingsroad, the River Road and the High Road meet.', rank=4),
-    P('Saltpans', 'town', 321, -943, 'river', 'The Riverlands', 'A small port on the Bay of Crabs.', rank=5),
+    P('Saltpans', 'port', 321, -943, 'river', 'The Riverlands', 'A small port on the Bay of Crabs.', rank=5),
     P('Maidenpool', 'port', 294, -976, 'river', 'The Riverlands', 'A port town on the Bay of Crabs.', rank=4),
     P('Stoney Sept', 'town', 35, -1082, 'river', 'The Riverlands', 'A walled town in the southern riverlands.', rank=4, culture='northern', r=0.25, pop=3000),
     P('Raventree Hall', 'fortress', -26, -814, 'river', 'The Riverlands', 'Seat of House Blackwood.', rank=5),
@@ -485,8 +485,8 @@ def in_poly(x, y, poly):
 
 
 def snap_walls(coast):
-    """Run each ice wall's ends out (or back) along its line to meet the sea, ending a mile into the water:
-    the Wall goes from the Bay of Ice to the Bay of Seals (AGOT)."""
+    """Run each ice wall's ends out (or back) along its line to meet the sea, ending on the shore itself (no gap, no
+    overhang): the Wall goes from the Bay of Ice to the Bay of Seals (AGOT)."""
     import math
     for w in WALLS:
         if not w.get('ice'): continue
@@ -495,7 +495,9 @@ def snap_walls(coast):
             d = -L * 0.6
             while not in_poly(ex + dx * d, ey + dy * d, coast) and d < 0: d += 0.25     # if the end is at sea, come back to land
             while in_poly(ex + dx * d, ey + dy * d, coast) and d < 120: d += 0.25       # then out to the shore
-            w['pts'][e] = [round(ex + dx * (d + 1), 1), round(ey + dy * (d + 1), 1)]
+            d -= 0.25
+            while in_poly(ex + dx * (d + 0.02), ey + dy * (d + 0.02), coast): d += 0.02  # to within a few yards of it
+            w['pts'][e] = [round(ex + dx * d, 2), round(ey + dy * d, 2)]
     return WALLS
 
 
@@ -520,7 +522,7 @@ def settle(places, coast):
     for p in places:
         if sub(p) or p[1] == 'wonder': continue  # landmarks in a city wait for the city; the Titan stands in the water
         P = Point(p[2], p[3]); d = edge.distance(P); inside = land.contains(P)
-        if (p[1] == 'port' or p[0] in ON_SEA) and (not inside or d > 1.5): Q = inward(P, 0.6)
+        if (p[1] == 'port' or p[0] in ON_SEA) and (not inside or d > 0.8): Q = inward(P, 0.5)
         elif not inside: Q = inward(P, 2.0)
         else: continue
         moved[p[0]] = (Q.x - p[2], Q.y - p[3])
@@ -548,18 +550,16 @@ SEA_RIVERS = {'The White Knife', 'The Last River', 'The Milkwater', 'The Trident
 
 
 def river_mouths(coast_s):
-    """Every river that reaches the sea ends on the shore and opens into an estuary: the river is trimmed where it
-    first leaves the land (or carried on to the nearest shore), and the land is cut by a funnel along its last miles,
-    from the river's own width to a mouth sized by it. Returns the new coast; Essos's ring is changed in place."""
-    import math
+    """Every river that reaches the sea ends on the shore: it is trimmed where it first leaves the land, or carried on
+    to the nearest shore. The land is never cut (no estuary slits: the coast stays one valid ring and no river runs
+    over the sea). Returns the coast unchanged."""
     from shapely.geometry import Polygon, LineString, Point
-    from shapely.ops import unary_union, nearest_points
+    from shapely.ops import nearest_points
     main = Polygon(coast_s).buffer(0)
     essos = next(i for i in ISLANDS if i['name'] == 'Essos'); ess = Polygon(essos['pts']).buffer(0)
-    cuts = {'main': [], 'essos': []}
     for r in RIVERS:
         pts = [tuple(p) for p in r['pts']]; E = Point(pts[-1])
-        key, land = ('main', main) if main.distance(E) <= ess.distance(E) else ('essos', ess)
+        land = main if main.distance(E) <= ess.distance(E) else ess
         edge = land.boundary
         if r['name'] not in SEA_RIVERS and edge.distance(E) > 30: continue     # it ends in a lake or another river
         out = [pts[0]]
@@ -573,27 +573,7 @@ def river_mouths(coast_s):
             q = nearest_points(edge, Point(out[-1]))[0]
             if q.distance(Point(out[-1])) > 0.01: out.append((q.x, q.y))
         r['pts'] = [[round(x, 2), round(y, 2)] for x, y in out]
-        W = max(1.0, min(8.0, r.get('w1', 200) / 1609 * 12)); L = 6 + 3 * W
-        # walk back L miles from the mouth, laying circles that widen toward the sea
-        seg, acc, circles = list(zip(out[::-1], out[::-1][1:])), 0.0, []
-        for a, b in seg:
-            d = math.hypot(b[0] - a[0], b[1] - a[1])
-            for k in range(int(d / 0.4) + 1):
-                s = acc + k * 0.4
-                if s > L: break
-                t = k * 0.4 / d if d else 0
-                circles.append(Point(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t).buffer(W / 2 * (1 - s / L) ** 1.3 + 0.05, 12))
-            acc += d
-            if acc > L: break
-        circles.append(Point(out[-1]).buffer(W * 0.6, 16))
-        cuts[key].append(unary_union(circles))
-    def cut(g, cs):
-        if not cs: return g
-        g = g.difference(unary_union(cs))
-        return max(getattr(g, 'geoms', [g]), key=lambda q: q.area)
-    ring = lambda g: [[round(x, 2), round(y, 2)] for x, y in list(g.exterior.coords)[:-1]]
-    essos['pts'] = ring(cut(ess, cuts['essos']))
-    return ring(cut(main, cuts['main']))
+    return coast_s
 
 
 def colours(fitted):
@@ -654,9 +634,14 @@ def prepare():
     coast_s = river_mouths(westeros_coast())
     snap_walls(coast_s)
     W0, W1 = WALLS[0]['pts'][0], WALLS[0]['pts'][-1]
-    for p in PLACES:
-        if p[0] == 'Eastwatch-by-the-Sea': p[2], p[3] = round(W1[0] - 3, 1), round(W1[1] + 2, 1)
-        if p[0] == 'Westwatch-by-the-Bridge': p[2], p[3] = round(W0[0] + 3, 1), round(W0[1] - 1, 1)
+    from shapely.geometry import LineString as _L, Point as _Pt
+    wall = _L(WALLS[0]['pts'])
+    for p in PLACES:                                   # the Watch's castles stand on the Wall's line; the end castles a mile in
+        if p[0] == 'Eastwatch-by-the-Sea': q = wall.interpolate(wall.length - 0.8)
+        elif p[0] == 'Westwatch-by-the-Bridge': q = wall.interpolate(0.8)
+        elif p[5] == 'The Wall' and p[4] == 'watch': q = wall.interpolate(wall.project(_Pt(p[2], p[3])))
+        else: continue
+        p[2], p[3] = round(q.x, 2), round(q.y, 2)
     for p in PLACES:
         if p[0] in CASTLES:
             o = p[7]; c = CASTLES[p[0]]; o['castle'], o['cr'] = c[0], c[1]
@@ -683,6 +668,7 @@ def prepare():
         g = max(getattr(g, 'geoms', [g]), key=lambda q: q.area)
         i['pts'] = [[round(x, 2), round(y, 2)] for x, y in list(g.exterior.coords)[:-1]]
     ISLANDS[:] = [i for i in ISLANDS if len(i['pts']) > 2]
+    name_islands()
     settle(PLACES, coast_s)
     from shapely.geometry import Polygon as _P
     from shapely.ops import unary_union as _U
@@ -701,7 +687,87 @@ def prepare():
         a = next(p for p in PLACES if p[0] == name); b = next(p for p in PLACES if p[0] == by)
         a[2], a[3] = round(b[2] + dx, 1), round(b[3] + dy, 1)
     settle([p for p in PLACES if p[0] in BESIDE], coast_s)
+    the_neck(coast_s)
+    seas_on_water(coast_s)
     return coast_s
+
+
+# the seven Iron Islands, each ring from Orkney named by where it lies (our arrangement; the castles on each follow it)
+IRON_ISLANDS = {'Great Wyk': (-364, -771), 'Saltcliffe': (-383, -810), 'Orkmont': (-278, -712), 'Blacktyde': (-337, -702),
+                'Old Wyk': (-349, -735), 'Harlaw': (-282, -746), 'Pyke': (-309, -726)}
+ONE_POLYGON = ('Skagos', 'Bear Island', 'Tarth', 'Dragonstone', 'Driftmark', 'Estermont', 'The Arbor', 'Fair Isle', 'Bloodstone')
+ISLE_OF_CEDARS = (2292, -2364)          # the island at the mouth of Slaver's Bay, on the Gulf of Grief (ADWD)
+ISLET_MAX = 10.0                        # sq mi: smaller unnamed islands stay as islets, larger ones go
+
+
+def name_islands():
+    """Every island is named or small (gate rule G5): the Iron Islands one by one, Skagos, Bear Island and the other
+    named islands each one polygon, the Isle of Cedars named, and unnamed land of ISLET_MAX sq mi or more removed."""
+    from shapely.geometry import Polygon, Point
+    from shapely.ops import unary_union
+    ring = lambda g: [[round(x, 2), round(y, 2)] for x, y in list(g.exterior.coords)[:-1]]
+    keep = []
+    iron = [i for i in ISLANDS if i['name'] == 'The Iron Islands']
+    for i in iron:                                                     # nearest name, one ring each
+        c = Polygon(i['pts']).representative_point()
+        i['name'] = min(IRON_ISLANDS, key=lambda n: math_hypot(IRON_ISLANDS[n][0] - c.x, IRON_ISLANDS[n][1] - c.y))
+    cedars = min((i for i in ISLANDS if i['name'] in (None, 'isle') and Polygon(i['pts']).area >= ISLET_MAX),
+                 key=lambda i: Polygon(i['pts']).centroid.distance(Point(*ISLE_OF_CEDARS)), default=None)
+    if cedars is not None and Polygon(cedars['pts']).centroid.distance(Point(*ISLE_OF_CEDARS)) < 60: cedars['name'] = 'The Isle of Cedars'
+    for name in ONE_POLYGON:
+        parts = [i for i in ISLANDS if i['name'] == name]
+        if len(parts) < 2: continue
+        g = unary_union([Polygon(i['pts']).buffer(0) for i in parts]).buffer(4, join_style=1).buffer(-4, join_style=1)
+        gs = sorted(getattr(g, 'geoms', [g]), key=lambda q: -q.area)
+        for i in parts: ISLANDS.remove(i)
+        ISLANDS.append({'name': name, 'pts': ring(gs[0])})
+        ISLANDS.extend({'name': 'islet', 'pts': ring(q)} for q in gs[1:] if q.area < ISLET_MAX)
+    for i in list(ISLANDS):
+        if i['name'] not in (None, 'isle'): continue
+        if Polygon(i['pts']).area >= ISLET_MAX: ISLANDS.remove(i)          # a large leftover the books do not name
+        else: i['name'] = 'islet'
+
+
+def the_neck(coast):
+    """The Neck is a wetland on the land, never the sea; Moat Cailin stands on the causeway where the Kingsroad leaves
+    the marsh's northern edge (AGOT)."""
+    from shapely.geometry import Polygon, LineString, Point
+    from shapely.ops import nearest_points
+    land = Polygon(coast).buffer(0)
+    m = next(x for x in MARSHES if x['name'] == 'The Neck')
+    g = Polygon(m['pts']).buffer(0).intersection(land.buffer(-0.3))
+    g = max(getattr(g, 'geoms', [g]), key=lambda q: q.area)
+    m['pts'] = [[round(x, 2), round(y, 2)] for x, y in list(g.exterior.coords)[:-1]]
+    kr = next(r for r in ROADS if r['name'] == 'The Kingsroad'); road = LineString(kr['pts'])
+    x = road.intersection(g.exterior)
+    pts = [x] if x.geom_type == 'Point' else list(getattr(x, 'geoms', []))
+    if not pts: return
+    q = max(pts, key=lambda p: p.y)                                    # the northern edge, where the causeway begins
+    mc = next(p for p in PLACES if p[0] == 'Moat Cailin')
+    group = [p for p in PLACES if p is mc or (p[1] in ('landmark', 'tower') and math_hypot(p[2] - mc[2], p[3] - mc[3]) < 6)]
+    dx, dy = q.x - mc[2], q.y - mc[3]
+    for p in group: p[2], p[3] = round(p[2] + dx, 2), round(p[3] + dy, 2)
+
+
+def seas_on_water(coast):
+    """A sea's label sits on its own water, well out from the shore: a label on the land or hard by it moves to the
+    point nearby farthest from any shore."""
+    from shapely.geometry import Polygon, Point
+    from shapely.ops import unary_union
+    land = unary_union([Polygon(coast).buffer(0)] + [Polygon(i['pts']).buffer(0) for i in ISLANDS if len(i['pts']) > 2])
+    for s in SEA_LABELS:
+        P = Point(s[1], s[2])
+        if not land.contains(P) and land.distance(P) >= 8: continue
+        best = None
+        for r in range(4, 160, 4):
+            for k in range(0, 360, 10):
+                import math
+                q = Point(s[1] + r * math.cos(math.radians(k)), s[2] + r * math.sin(math.radians(k)))
+                if land.contains(q): continue
+                d = land.distance(q) - r * 0.08                        # far from the shore, not far from where it was
+                if best is None or d > best[0]: best = (d, q)
+            if best and best[0] > 12: break
+        if best: s[1], s[2] = round(best[1].x), round(best[1].y)
 
 
 # towns the books put at a river's mouth: each stands on its river's last mile, its landmarks moving with it, and on

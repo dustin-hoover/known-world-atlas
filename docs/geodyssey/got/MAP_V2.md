@@ -146,16 +146,17 @@ the owner's "merge".
 - **Coasts (phase 3, ahead of order):** the North from Britain with real detail on every long edge; Essos and
   Sothoryos from real shores laid along our outline; every named island drawn from a real one
   (`tools/known/donor.py`, `tools/known/shores.py`, `docs/geodyssey/got/EARTH_ANALOGUES.md`).
-- **Southern Westeros on the official layout:** the Neck, the westerlands, the Reach, Dorne, the stormlands, the
-  crownlands, the Vale and the Fingers now follow the official map's shapes. About 45 places and seven island groups
-  were matched with the official map; a smooth fit carried the official positions into our frame (keeping our scale:
-  the Wall's 300 miles and Westeros's 3,000), and everything south of the North moved with them once. The coast runs
-  through 110 fixed points (`tools/known/coast_fixed.py`): capes, bays' heads, river mouths, coastal castles and towns,
-  and each of the Fingers. The line between them is ours, with real coast laid along it. Places that disagreed most
-  with the official map moved furthest: Seagard (to Ironman's Bay's south shore), the Crag, Highgarden (south, by the
-  Mander's bend), Horn Hill and Nightsong, the Tor and Ghost Hill (to Dorne's northern coast).
-  The no-tracing check (`python3 tools/refs/notrace.py`, run where the official preview is on hand) measures each
-  stretch between fixed points: at most 35% of any stretch lies within 1.5 miles of the official line (the limit is 60%).
+- **Southern Westeros from named anchors (round 1 fixes, A1):** the coast south of the North meets the published map
+  only at 40 named anchors (`tools/known/coast_fixed.py`, frozen with a count and checksum): castles and towns the
+  novels set on the shore, capes, river mouths, and the heads and mouths of named waters. Between them each stretch is
+  a real Earth coastline turned and scaled to run from one anchor to the next (`tools/known/south.py`), chosen so that
+  the places the books set inland stay inland, the ports stay on the shore and the rivers stay on the land. Unnamed
+  inlets deeper than 15 miles are filled everywhere (`tools/known/waters.py`), the anchors are held exactly with a
+  20-mile ramp, and rivers end at the shore without estuary slits. Places carried onto the published layout keep their
+  positions, graded `map`. The no-tracing check (`python3 tools/refs/notrace.py`, owner only) tests each stretch for
+  hugging the official line (at most 15% within 1.5 mi; the limit is 25%) and for bends that follow it (correlation
+  under 0.5 everywhere; the self-test on the official line fails every stretch). The release gate is
+  `python3 tools/known/gate.py`.
 - **Rivers:** each takes the bends of its Earth analogue; towns on a river stay on it.
 - **Phase 2 (gazetteer, Westeros):** under way in `tools/known/gazetteer.py`: the nineteen castles of the Wall, the
   seats of the North, the riverlands, the Vale, the Iron Islands, the westerlands, the crownlands, the stormlands, the

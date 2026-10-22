@@ -6,9 +6,9 @@ Places: 308. Grades: inferred 168, map 72, text 53, estimate 15. References chec
 
 | | Statement | Source | Grade | Map | Expected |
 |---|---|---|---|---|---|
-| ok | The Wall runs a hundred leagues, about 300 miles, from the Bay of Ice to the Bay of Seals. | AGOT | text | 292 mi (-3%) | 300 ± 30 mi |
-| ok | Westeros is about 3,000 miles long from the Wall to Dorne. | AUTHOR · medium | author | 2687 mi (-10%) | 3000 ± 450 mi |
-| note | The North is said to be about as large as the other kingdoms together. Ours is smaller: a design choice that keeps the published layout south of the Neck. | AUTHOR | design | 0.45 (744k / 1661k sq mi) | 1 ± 0.2 |
+| ok | The Wall runs a hundred leagues, about 300 miles, from the Bay of Ice to the Bay of Seals. | AGOT | text | 294 mi (-2%) | 300 ± 30 mi |
+| ok | Westeros is about 3,000 miles long from the Wall to Dorne. | AUTHOR · medium | author | 2688 mi (-10%) | 3000 ± 450 mi |
+| note | The North is said to be about as large as the other kingdoms together. Ours is smaller: a design choice that keeps the published layout south of the Neck. | AUTHOR | design | 0.45 (703k / 1557k sq mi) | 1 ± 0.2 |
 
 All firm statements hold. "note" marks statements graded below the novels (the author's interviews) or design choices; they guide, the novels decide.
 
