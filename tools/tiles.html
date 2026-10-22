@@ -26,18 +26,18 @@ function show(label,z,X,Y,mode=0,span=1){
   log.push(label+' '+(performance.now()-s).toFixed(0)+'ms');
   const d=document.createElement('div');d.appendChild(c);d.appendChild(document.createTextNode(label));document.getElementById('out').appendChild(d);
 }
-show('z2 world',2,600,-500,0,2);
-show('z4 ME',4,500,-300,0,2);
-show('z6 Gondor',6,700,-600,0,2);
-show('z7 Shire',7,0,-10);
-show('z8 Misty',8,430,-150);
-show('z9 Rohan',9,480,-440);
-show('z11 Mordor',11,860,-560);
-show('z13 Shire',13,0,0);
-show('z15 Hobbiton',15,-1,0);
-show('z14 MT',14,720,-600);
-show('z16 Mirkwood',16,650,100);
-show('z6 parchment',6,300,-200,1,2);
-show('z5 hypso',5,500,-300,2);
+show('z2 world',2,1200,-1200,0,2);
+show('z4 Westeros',4,0,-1000,0,2);
+show('z6 the Riverlands',6,150,-950,0,2);
+show('z7 the North',7,0,-10);
+show('z8 the Vale',8,420,-760);
+show('z9 the Reach',9,-250,-1800);
+show('z11 Dorne',11,300,-2150);
+show('z13 Winterfell',13,0,0);
+show('z15 Winterfell',15,0.4,-0.3);
+show('z14 King\'s Landing',14,224,-1302);
+show('z16 the Wolfswood',16,-60,40);
+show('z6 parchment',6,100,-900,1,2);
+show('z5 hypso',5,0,-1000,2);
 document.title='done '+(t1-t0).toFixed(0)+' '+log.join(' | ');
 </script></body></html>

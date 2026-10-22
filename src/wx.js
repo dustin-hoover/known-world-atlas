@@ -212,7 +212,7 @@ function sample(X, Y, t, st, sys, lore) {
 function describe(o) {
   const spd = Math.hypot(o.u, o.v);
   let sky;
-  if (o.dark > 0.4) sky = 'Darkness out of Mordor';
+  if (o.dark > 0.4) sky = 'Smoke and darkness';
   else if (o.R > 4) sky = o.snow > 0.5 ? 'Heavy snow' : 'Heavy rain';
   else if (o.R > 0.8) sky = o.snow > 0.5 ? 'Snow' : (o.C > 0.9 && o.T > 14 ? 'Thundery rain' : 'Rain');
   else if (o.R > 0) sky = o.snow > 0.5 ? 'Light snow' : 'Drizzle';

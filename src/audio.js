@@ -1,25 +1,27 @@
 /* ============================================================================
-   ARDA SOUND — an original, generative score and ambience made with Web Audio.
+   SOUND — an original, generative score and ambience made with Web Audio.
    The music follows the region in view; the ambience follows the weather.
    ========================================================================== */
 (function () {
 'use strict';
 const A = { on: false, music: 0.7, amb: 0.6, mood: null, ctx: null };
-window.ARDA_AUDIO = A;
+window.ATLAS_AUDIO = A;
 
 const NOTE = n => 440 * Math.pow(2, (n - 69) / 12);
 const MODES = { ionian: [0, 2, 4, 5, 7, 9, 11], dorian: [0, 2, 3, 5, 7, 9, 10], aeolian: [0, 2, 3, 5, 7, 8, 10], lydian: [0, 2, 4, 6, 7, 9, 11], mixolydian: [0, 2, 4, 5, 7, 9, 10], phrygian: [0, 1, 3, 5, 7, 8, 10] };
 /* Each mood: title, root (MIDI), mode, bpm, chord degrees, instruments. */
 const MOODS = {
-  shire: { title: 'The Green Hills', root: 62, mode: 'ionian', bpm: 92, prog: [0, 3, 0, 4, 5, 3, 0, 4], lead: 'flute', arp: 'pluck', pad: 0.5, drone: 0, drum: 0, swing: 0.08, density: 0.75 },
-  elven: { title: 'Halls of the Firstborn', root: 64, mode: 'lydian', bpm: 58, prog: [0, 1, 5, 3, 0, 4, 1, 0], lead: 'choir', arp: 'harp', pad: 0.9, drone: 0.2, drum: 0, swing: 0, density: 0.5 },
-  rohan: { title: 'Horns of the Mark', root: 62, mode: 'dorian', bpm: 80, prog: [0, 6, 3, 0, 0, 6, 4, 0], lead: 'fiddle', arp: 'pluck', pad: 0.6, drone: 0.6, drum: 0.7, swing: 0, density: 0.65 },
-  gondor: { title: 'The Tower of Guard', root: 60, mode: 'aeolian', bpm: 66, prog: [0, 5, 2, 6, 0, 3, 4, 4], lead: 'horn', arp: 'harp', pad: 0.8, drone: 0.3, drum: 0.5, swing: 0, density: 0.45 },
-  mordor: { title: 'The Shadow', root: 48, mode: 'phrygian', bpm: 48, prog: [0, 1, 0, 6, 0, 1, 5, 1], lead: 'choirLow', arp: null, pad: 0.7, drone: 1, drum: 0.9, swing: 0, density: 0.3 },
-  dwarf: { title: 'Under the Mountain', root: 50, mode: 'aeolian', bpm: 62, prog: [0, 5, 6, 0, 0, 3, 4, 0], lead: 'choirLow', arp: 'anvil', pad: 0.6, drone: 0.8, drum: 0.6, swing: 0, density: 0.4 },
+  south: { title: 'Green Fields', root: 62, mode: 'ionian', bpm: 92, prog: [0, 3, 0, 4, 5, 3, 0, 4], lead: 'flute', arp: 'pluck', pad: 0.5, drone: 0, drum: 0, swing: 0.08, density: 0.75 },
+  east: { title: 'Silk and Spice', root: 64, mode: 'lydian', bpm: 58, prog: [0, 1, 5, 3, 0, 4, 1, 0], lead: 'choir', arp: 'harp', pad: 0.9, drone: 0.2, drum: 0, swing: 0, density: 0.5 },
+  north: { title: 'The Cold Moors', root: 62, mode: 'dorian', bpm: 80, prog: [0, 6, 3, 0, 0, 6, 4, 0], lead: 'fiddle', arp: 'pluck', pad: 0.6, drone: 0.6, drum: 0.7, swing: 0, density: 0.65 },
+  cities: { title: 'Walls and Harbours', root: 60, mode: 'aeolian', bpm: 66, prog: [0, 5, 2, 6, 0, 3, 4, 4], lead: 'horn', arp: 'harp', pad: 0.8, drone: 0.3, drum: 0.5, swing: 0, density: 0.45 },
+  far: { title: 'The Long Night Air', root: 48, mode: 'phrygian', bpm: 48, prog: [0, 1, 0, 6, 0, 1, 5, 1], lead: 'choirLow', arp: null, pad: 0.7, drone: 1, drum: 0.9, swing: 0, density: 0.3 },
+  heights: { title: 'High Stone', root: 50, mode: 'aeolian', bpm: 62, prog: [0, 5, 6, 0, 0, 3, 4, 0], lead: 'choirLow', arp: 'anvil', pad: 0.6, drone: 0.8, drum: 0.6, swing: 0, density: 0.4 },
+  sands: { title: 'Red Sands', root: 52, mode: 'phrygian', bpm: 70, prog: [0, 1, 3, 1, 0, 6, 5, 1], lead: 'fiddle', arp: 'pluck', pad: 0.6, drone: 0.5, drum: 0.4, swing: 0.05, density: 0.5 },
+  grass: { title: 'The Grass Sea', root: 57, mode: 'mixolydian', bpm: 84, prog: [0, 6, 4, 0, 3, 6, 4, 0], lead: 'fiddle', arp: 'pluck', pad: 0.5, drone: 0.7, drum: 0.7, swing: 0, density: 0.6 },
   wild: { title: 'The Wild Lands', root: 57, mode: 'dorian', bpm: 60, prog: [0, 3, 6, 0, 3, 4, 0, 6], lead: 'flute', arp: 'harp', pad: 0.7, drone: 0.4, drum: 0, swing: 0, density: 0.35 },
-  sea: { title: 'The Great Sea', root: 55, mode: 'mixolydian', bpm: 52, prog: [0, 6, 3, 0, 4, 3, 6, 0], lead: 'choir', arp: 'harp', pad: 1, drone: 0.3, drum: 0, swing: 0, density: 0.3 },
-  world: { title: 'Arda Round', root: 57, mode: 'lydian', bpm: 54, prog: [0, 4, 5, 3, 0, 1, 4, 0], lead: 'choir', arp: 'harp', pad: 1, drone: 0.2, drum: 0, swing: 0, density: 0.3 },
+  sea: { title: 'Open Water', root: 55, mode: 'mixolydian', bpm: 52, prog: [0, 6, 3, 0, 4, 3, 6, 0], lead: 'choir', arp: 'harp', pad: 1, drone: 0.3, drum: 0, swing: 0, density: 0.3 },
+  world: { title: 'The Turning World', root: 57, mode: 'lydian', bpm: 54, prog: [0, 4, 5, 3, 0, 1, 4, 0], lead: 'choir', arp: 'harp', pad: 1, drone: 0.2, drum: 0, swing: 0, density: 0.3 },
 };
 A.MOODS = MOODS;
 
@@ -175,8 +177,8 @@ function scheduleBar(t) {
   }
   // percussion
   if (m.drum) {
-    if (m === MOODS.mordor || m === MOODS.dwarf) { INST.drum(t, 0.22 * m.drum, 0.8); if (bar % 2) INST.drum(t + beat * 2.5, 0.12 * m.drum, 0.8); }
-    else if (m === MOODS.rohan) { for (const b of [0, 1.5, 2, 3]) INST.drum(t + b * beat, (b === 0 ? 0.18 : 0.09) * m.drum, 1.1); }
+    if (m === MOODS.far || m === MOODS.heights) { INST.drum(t, 0.22 * m.drum, 0.8); if (bar % 2) INST.drum(t + beat * 2.5, 0.12 * m.drum, 0.8); }
+    else if (m === MOODS.north || m === MOODS.grass) { for (const b of [0, 1.5, 2, 3]) INST.drum(t + b * beat, (b === 0 ? 0.18 : 0.09) * m.drum, 1.1); }
     else if (bar % 2 === 0) { INST.drum(t, 0.16 * m.drum, 0.9); INST.drum(t + beat * 3.5, 0.07 * m.drum, 0.9); }
   }
   bar++;

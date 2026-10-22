@@ -1,6 +1,6 @@
 :root {
   /* Layout: full-bleed planet. Instruments float: search + rail top-left, working panel left,
-     place dossier right, Shire-calendar timeline along the bottom edge. One committed dark look. */
+     place dossier right, calendar timeline along the bottom edge. One committed dark look. */
   --ink: #0a0d12;
   --panel: rgba(15, 19, 26, 0.9);
   --panel-solid: #12171f;

@@ -1,5 +1,5 @@
 /* ============================================================================
-   THE KNOWN WORLD — application (a fork of Arda Atlas)
+   GEODYSSEY: THE KNOWN WORLD — application
    ========================================================================== */
 (async function () {
 'use strict';
@@ -71,7 +71,7 @@ function run(msg, signal) {
 }
 lstep('Waking the maesters (' + NW + ' workers)…', 46);
 await Promise.all(POOL.concat([WXW]).map(w => callWorker(w, { type: 'init', data: DATA })));
-window.ARDA_RUN = run;
+window.ATLAS_RUN = run;
 
 /* ---------------- geometry helpers ---------------- */
 const ll = (X, Y) => { const p = GEN.toLL(X, Y); return [R5(p[0]), R5(p[1])]; };
@@ -110,8 +110,11 @@ const PL = GEO.PLACES.map((p, i) => {
 });
 const PLN = Object.fromEntries(PL.map(p => [p.name, p]));
 const PEAKN = Object.fromEntries(GEO.PEAKS.map(p => [p.name, p]));
-const TYPE_LABEL = { city: 'City', fortress: 'Fortress', town: 'Town', village: 'Village', ruin: 'Ruin', elven: 'Elven realm', dwarven: 'Dwarf-hold', port: 'Haven', tower: 'Tower', bridge: 'Bridge', ford: 'Ford', landmark: 'Landmark', cave: 'Cave', wonder: 'Wonder', beacon: 'Beacon hill', peak: 'Peak', range: 'Mountain range', river: 'River', lake: 'Lake', forest: 'Forest', marsh: 'Marsh', region: 'Region', realm: 'Realm', sea: 'Sea' };
-const PEOPLE_LABEL = { hobbit: 'Hobbits', men: 'Men', elves: 'Elves', dwarves: 'Dwarves', dunedain: 'Dúnedain', rohirrim: 'Rohirrim', gondor: 'Men of Gondor', orcs: 'Orcs', haradrim: 'Haradrim', ents: 'Ents', other: '—' };
+const TYPE_LABEL = { city: 'City', fortress: 'Fortress', town: 'Town', village: 'Village', ruin: 'Ruin', port: 'Port', tower: 'Tower', bridge: 'Bridge', ford: 'Ford', landmark: 'Landmark', cave: 'Cave', wonder: 'Wonder', beacon: 'Beacon hill', peak: 'Peak', range: 'Mountain range', river: 'River', lake: 'Lake', forest: 'Forest', marsh: 'Marsh', region: 'Region', realm: 'Realm', sea: 'Sea' };
+const PEOPLE_LABEL = { north: 'Northmen', watch: "The Night's Watch", crannog: 'Crannogmen', free: 'Free folk', river: 'Rivermen', vale: 'Valemen', iron: 'Ironborn',
+  west: 'Westermen', crown: 'Crownlanders', storm: 'Stormlanders', reach: 'Reachmen', dorne: 'Dornishmen', braavos: 'Braavosi', lorath: 'Lorathi', freecity: "Free Cities' folk",
+  valyria: 'Valyrians (long gone)', dothraki: 'Dothraki', ghiscari: 'Ghiscari', qarth: 'Qartheen', yiti: 'Yi Tish', shadow: 'Folk of the Shadow Lands', ib: 'Ibbenese',
+  summer: 'Summer Islanders', naath: 'Naathi', sothoryos: 'Unknown (estimate)', lhazar: 'Lhazareen', east: 'Folk of the far east', other: '—' };
 
 /* ---------------- icons ---------------- */
 function icon(draw, size = 22) {
@@ -127,8 +130,6 @@ const ICONS = {
   village: (g, s) => { g.fillStyle = '#e8dcc0'; g.strokeStyle = '#1c150c'; g.lineWidth = 1.6; g.beginPath(); g.arc(s / 2, s / 2, 3.4, 0, 7); g.fill(); g.stroke(); },
   fortress: (g, s) => { const m = s / 2; g.fillStyle = '#e9dfc6'; g.strokeStyle = '#1c150c'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(m - 7, m + 6); g.lineTo(m - 7, m - 4); g.lineTo(m - 4, m - 4); g.lineTo(m - 4, m - 7); g.lineTo(m - 1, m - 7); g.lineTo(m - 1, m - 4); g.lineTo(m + 1, m - 4); g.lineTo(m + 1, m - 7); g.lineTo(m + 4, m - 7); g.lineTo(m + 4, m - 4); g.lineTo(m + 7, m - 4); g.lineTo(m + 7, m + 6); g.closePath(); g.fill(); g.stroke(); },
   ruin: (g, s) => { g.strokeStyle = '#f0e6cc'; g.lineWidth = 3.4; g.setLineDash([2.6, 2.4]); g.beginPath(); g.arc(s / 2, s / 2, 5.5, 0, 7); g.stroke(); g.strokeStyle = '#1c150c'; g.lineWidth = 1.2; g.setLineDash([]); g.beginPath(); g.arc(s / 2, s / 2, 7.2, 0, 7); g.stroke(); },
-  elven: (g, s) => { const m = s / 2; g.fillStyle = '#d7ecf2'; g.strokeStyle = '#10222a'; g.lineWidth = 1.5; g.beginPath(); for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2 - Math.PI / 2, r = i % 2 ? 3 : 8; g.lineTo(m + Math.cos(a) * r, m + Math.sin(a) * r); } g.closePath(); g.fill(); g.stroke(); },
-  dwarven: (g, s) => { const m = s / 2; g.fillStyle = '#e8c89a'; g.strokeStyle = '#1c150c'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(m, m - 8); g.lineTo(m + 8, m + 6); g.lineTo(m - 8, m + 6); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#1c150c'; g.fillRect(m - 2, m, 4, 6); },
   port: (g, s) => { const m = s / 2; g.strokeStyle = '#1c150c'; g.lineWidth = 4; const d = () => { g.beginPath(); g.moveTo(m, m - 7); g.lineTo(m, m + 6); g.moveTo(m - 5, m - 3); g.lineTo(m + 5, m - 3); g.moveTo(m - 7, m + 1); g.quadraticCurveTo(m - 6, m + 7, m, m + 7); g.quadraticCurveTo(m + 6, m + 7, m + 7, m + 1); g.stroke(); }; d(); g.strokeStyle = '#d9eef4'; g.lineWidth = 2; d(); },
   tower: (g, s) => { const m = s / 2; g.fillStyle = '#efe6cf'; g.strokeStyle = '#1c150c'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(m - 3, m + 7); g.lineTo(m - 2, m - 5); g.lineTo(m, m - 8); g.lineTo(m + 2, m - 5); g.lineTo(m + 3, m + 7); g.closePath(); g.fill(); g.stroke(); },
   beacon: (g, s) => { const m = s / 2; g.fillStyle = '#ffb347'; g.strokeStyle = '#2a1405'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(m, m - 8); g.quadraticCurveTo(m + 6, m - 1, m + 3.5, m + 5); g.lineTo(m - 3.5, m + 5); g.quadraticCurveTo(m - 6, m - 1, m, m - 8); g.fill(); g.stroke(); },
@@ -139,27 +140,23 @@ const ICONS = {
   wonder: (g, s) => { const m = s / 2; g.fillStyle = '#f7d27a'; g.strokeStyle = '#2a1a05'; g.lineWidth = 1.4; g.beginPath(); for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 - Math.PI / 2, r = i % 2 ? 3.4 : 8; g.lineTo(m + Math.cos(a) * r, m + Math.sin(a) * r); } g.closePath(); g.fill(); g.stroke(); },
   peak: (g, s) => { const m = s / 2; g.fillStyle = '#efe4c8'; g.strokeStyle = '#1c150c'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(m, m - 6); g.lineTo(m + 6, m + 5); g.lineTo(m - 6, m + 5); g.closePath(); g.fill(); g.stroke(); },
   volcano: (g, s) => { const m = s / 2; g.fillStyle = '#e0643a'; g.strokeStyle = '#1c0a05'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(m - 2.5, m - 5); g.lineTo(m + 2.5, m - 5); g.lineTo(m + 7, m + 5); g.lineTo(m - 7, m + 5); g.closePath(); g.fill(); g.stroke(); },
-  stone: (g, s) => { const m = s / 2; const gr = g.createRadialGradient(m, m, 1, m, m, 9); gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.35, '#b9a6ff'); gr.addColorStop(1, 'rgba(120,100,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(m, m, 9, 0, 7); g.fill(); g.fillStyle = '#20183a'; g.beginPath(); g.arc(m, m, 3.2, 0, 7); g.fill(); },
 };
 
 /* ---------------- GeoJSON data ---------------- */
 const RANK_MINZ = [0, 3.2, 4.6, 5.8, 6.9, 7.8, 6.4];   // rank 6: a point marker from mid zoom, its name only close in
-const placeFeats = PL.map(p => pt(p.X, p.Y, { id: p.id, name: p.name, type: p.type, rank: p.rank, big: p.rank === 1 && ['city', 'elven', 'dwarven', 'fortress'].includes(p.type) ? 1 : 0 }));
-const peakFeats = GEO.PEAKS.filter(p => p.kind !== 'seamount' && !['The Hill', 'Edoras hill', 'Hill of Guard', 'Bree-hill', 'Carrock', 'Dol Guldur', 'Cerin Amroth'].includes(p.name))
+const placeFeats = PL.map(p => pt(p.X, p.Y, { id: p.id, name: p.name, type: p.type, rank: p.rank, big: p.rank === 1 && ['city', 'fortress'].includes(p.type) ? 1 : 0 }));
+const peakFeats = GEO.PEAKS.filter(p => p.kind !== 'seamount')
   .map(p => pt(p.x, p.y, { name: p.name, icon: p.kind === 'volcano' ? 'i-volcano' : 'i-peak', minz: p.r > 6 ? 6 : 8 }));
 const rangeFeats = GEO.RANGES.filter(r => r.label).map(r => ({ type: 'Feature', geometry: { type: 'LineString', coordinates: lineLL(r.pts) }, properties: { name: r.name.toUpperCase().split('').join(' ') } }));
 const riverFeats = GEO.RIVERS.map(r => ({ type: 'Feature', geometry: { type: 'LineString', coordinates: lineLL(r.pts) }, properties: { name: /Rivers of|Southern|Great River of|River of the East|Red River/.test(r.name) ? '' : r.name, rank: r.rank } }));
 const lakeFeats = GEO.LAKES.map(l => ({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [ring(l)] }, properties: { name: l.name } }));
-const forestLabelFeats = GEO.FORESTS.filter(f => !/woods of|forests of|taiga|eastern woods|woods of lindon|Forest of the Beornings/i.test(f.name)).map(f => { const c = centroid(f.pts); return pt(c[0], c[1], { name: f.name, big: f.pts.length > 12 ? 1 : 0 }); });
+const forestLabelFeats = GEO.FORESTS.filter(f => !f.unlabelled).map(f => { const c = centroid(f.pts); return pt(c[0], c[1], { name: f.name, big: f.pts.length > 12 ? 1 : 0 }); });
 const marshLabelFeats = GEO.MARSHES.filter(m => !/Southern/.test(m.name)).map(m => { const c = centroid(m.pts); return pt(c[0], c[1], { name: m.name }); });
 const regionFeats = GEO.REGION_LABELS.filter(r => r[1] > -5000).map(r => pt(r[1], r[2], { name: r[0].split('').join(r[3] === 'realm' ? ' ' : ' '), cls: r[3], size: r[6], minz: r[4], maxz: r[5] }));
 const seaFeats = GEO.SEA_LABELS.map(s => pt(s[1], s[2], { name: s[0], size: s[3], minz: s[4], maxz: s[5] }));
 const roadFeats = GEO.ROADS.map(r => ({ type: 'Feature', geometry: { type: 'LineString', coordinates: lineLL(r.pts) }, properties: { name: r.name, cls: r.cls } }));
 const wallFeats = GEO.WALLS.map(w => ({ type: 'Feature', geometry: { type: 'LineString', coordinates: (w.circle ? circ(w.circle) : w.pts).map(p => ll(p[0], p[1])) }, properties: { name: w.name, ice: w.ice ? 1 : 0 } }));
-const palPts = GEO.PALANTIRI.stones.map(n => PLN[n] || PLN[n === 'Minas Tirith' ? 'Minas Tirith' : n]).filter(Boolean);
-const palFeats = palPts.map(p => pt(p.X, p.Y, { name: 'Palantír of ' + p.name }))
-  .concat(GEO.PALANTIRI.links.map(([a, b]) => ({ type: 'Feature', geometry: { type: 'LineString', coordinates: lineLL([[PLN[a].X, PLN[a].Y], [PLN[b].X, PLN[b].Y]]) }, properties: { name: a + ' – ' + b } })));
-// a world's beacon chain (Arda: Minas Tirith to Edoras); none in the Known World
+// a world's beacon chain (GEO.BEACONS, in order); none in the Known World yet
 const beaconLine = { type: 'Feature', geometry: { type: 'LineString', coordinates: GEO.BEACONS.length > 1 ? lineLL(GEO.BEACONS.map(n => [PLN[n].X, PLN[n].Y])) : [] }, properties: {} };
 function realmFeats(era) { return GEO.REALMS[era].map(r => ({ type: 'Feature', geometry: geom(r), properties: { name: r.name, color: r.color } })); }
 function realmLabels(era) { return GEO.REALMS[era].map(r => { const c = r.label || (r.circle ? r.circle : centroid(r.pts)); return pt(c[0], c[1], { name: r.name }); }); }
@@ -189,7 +186,7 @@ function buildingFeats() {
   };
   const seen = new Set();
   for (const p of PL) {
-    if (!p.culture || !p.r || p.culture === 'hobbit' || p.culture === 'lorien') continue;
+    if (!p.culture || !p.r) continue;
     const B = GEN.buildingsNear(p.X, p.Y, p.r * 1.4);
     for (const b of B.list) {
       const key = b.x.toFixed(5) + b.y.toFixed(5); if (seen.has(key)) continue; seen.add(key);
@@ -219,7 +216,7 @@ let tileSeason = 0;   // the stories open in high summer
 function setImagery(base, lv) {
   const layers = map.getStyle().layers, i = layers.findIndex(l => l.id === 'imagery'), before = layers[i + 1] && layers[i + 1].id;
   map.removeLayer('imagery'); map.removeSource('imagery');
-  map.addSource('imagery', { type: 'raster', tiles: ['arda://img/{z}/{x}/{y}/' + base + '/' + lv], tileSize: 256, maxzoom: 16 });
+  map.addSource('imagery', { type: 'raster', tiles: ['atlas://img/{z}/{x}/{y}/' + base + '/' + lv], tileSize: 256, maxzoom: 16 });
   map.addLayer({ id: 'imagery', type: 'raster', source: 'imagery', paint: { 'raster-fade-duration': 180 } }, before);
 }
 function refreshSeason() {
@@ -228,8 +225,8 @@ function refreshSeason() {
 }
 /* ---------------- map ---------------- */
 lstep('Setting the stars in the sky…', 58);
-maplibregl.addProtocol('arda', async (params, abort) => {
-  const [kind, z, x, y, mode, season] = params.url.slice(7).split('/');
+maplibregl.addProtocol('atlas', async (params, abort) => {
+  const [kind, z, x, y, mode, season] = params.url.slice(8).split('/');
   const r = await run({ type: kind === 'dem' ? 'dem' : 'img', z: +z, x: +x, y: +y, mode: +mode || 0, season: +season || 0 }, abort.signal);
   return { data: r.bmp };
 });
@@ -241,14 +238,14 @@ const style = {
   version: 8,
   projection: { type: 'globe' },
   sources: Object.fromEntries([
-    ['imagery', { type: 'raster', tiles: ['arda://img/{z}/{x}/{y}/0/0'], tileSize: 256, maxzoom: 16 }],
-    ['dem', { type: 'raster-dem', tiles: ['arda://dem/{z}/{x}/{y}'], tileSize: 256, maxzoom: 11, encoding: 'terrarium' }],
+    ['imagery', { type: 'raster', tiles: ['atlas://img/{z}/{x}/{y}/0/0'], tileSize: 256, maxzoom: 16 }],
+    ['dem', { type: 'raster-dem', tiles: ['atlas://dem/{z}/{x}/{y}'], tileSize: 256, maxzoom: 11, encoding: 'terrarium' }],
     src('places', FC(placeFeats)), src('peaks', FC(peakFeats)), src('ranges', FC(rangeFeats)), src('rivers', FC(riverFeats)), src('lakes', FC(lakeFeats)),
     src('forests', FC(forestLabelFeats)), src('marshes', FC(marshLabelFeats)), src('regions', FC(regionFeats)), src('seas', FC(seaFeats)),
-    src('roads', FC(roadFeats)), src('walls', FC(wallFeats)), src('palantiri', FC(palFeats)), src('beacons', FC([beaconLine])),
+    src('roads', FC(roadFeats)), src('walls', FC(wallFeats)), src('beacons', FC([beaconLine])),
     src('realms', FC(realmFeats('AC298'))), src('realm-labels', FC(realmLabels('AC298'))), src('admin', FC(adminFeats)), src('admin-labels', FC(adminLabels)),
     src('peoples', FC(peopleFeats)), src('people-labels', FC(peopleLabels)), src('grid', GRID.lines), src('grid-labels', GRID.labels),
-    src('buildings', FC(buildingFeats())), src('journeys', FC([])), src('journey-pos', FC([])), src('battles', FC([])), src('landmarks', FC([])), src('dead', FC([])), src('measure', FC([])), src('isobars', FC([])), src('hl', FC([])), src('lights', FC([])),
+    src('buildings', FC(buildingFeats())), src('journeys', FC([])), src('journey-pos', FC([])), src('battles', FC([])), src('dead', FC([])), src('measure', FC([])), src('isobars', FC([])), src('hl', FC([])), src('lights', FC([])),
   ]),
   layers: [
     { id: 'bg', type: 'background', paint: { 'background-color': '#0b1a2a' } },
@@ -272,7 +269,6 @@ const style = {
     { id: 'wall-crest', type: 'line', source: 'walls', filter: ['==', ['get', 'ice'], 1], paint: { 'line-color': '#ffffff', 'line-width': ['interpolate', ['exponential', 1.6], ['zoom'], 3, 1.2, 6, 2.2, 10, 3.5, 13, 8], 'line-offset': ['interpolate', ['exponential', 1.6], ['zoom'], 3, -1.6, 6, -3.2, 10, -5, 13, -11] } },
     { id: 'buildings-3d', type: 'fill-extrusion', source: 'buildings', minzoom: 12.5, paint: { 'fill-extrusion-color': ['get', 'c'], 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-base': 0, 'fill-extrusion-opacity': ['interpolate', ['linear'], ['zoom'], 12.5, 0, 13.3, 0.95] } },
     { id: 'beacons-line', type: 'line', source: 'beacons', layout: { visibility: 'none' }, paint: { 'line-color': '#ffb347', 'line-width': 1.6, 'line-dasharray': [1, 2], 'line-opacity': 0.9 } },
-    { id: 'palantiri-line', type: 'line', source: 'palantiri', filter: ['==', ['geometry-type'], 'LineString'], layout: { visibility: 'none' }, paint: { 'line-color': '#b9a6ff', 'line-width': 1.6, 'line-dasharray': [2, 2], 'line-opacity': 0.9 } },
     { id: 'isobars', type: 'line', source: 'isobars', layout: { visibility: 'none' }, paint: { 'line-color': '#e6f2f7', 'line-width': ['case', ['==', ['%', ['get', 'p'], 8], 0], 1.3, 0.7], 'line-opacity': 0.75 } },
     { id: 'journeys-all', type: 'line', source: 'journeys', filter: ['==', ['get', 'part'], 'all'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['get', 'color'], 'line-width': ['interpolate', ['linear'], ['zoom'], 3, 2.2, 8, 3.2, 12, 4.5], 'line-opacity': 0.55, 'line-dasharray': [1.4, 1.6] } },
     { id: 'journeys-case', type: 'line', source: 'journeys', filter: ['==', ['get', 'part'], 'done'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#0d1016', 'line-width': ['interpolate', ['linear'], ['zoom'], 3, 6, 8, 8.5, 12, 12], 'line-opacity': 0.45, 'line-blur': 1.5 } },
@@ -292,11 +288,8 @@ const style = {
     { id: 'wall-label', type: 'symbol', source: 'walls', filter: ['==', ['get', 'ice'], 1], minzoom: 4, layout: { 'symbol-placement': 'line', 'symbol-spacing': 420, 'text-field': 'T H E   W A L L', 'text-font': TXT_REG, 'text-size': ['interpolate', ['linear'], ['zoom'], 4, 11, 9, 17], 'text-letter-spacing': 0.35, 'text-offset': [0, -1.6], 'text-keep-upright': true }, paint: { 'text-color': '#dff3ff', 'text-halo-color': 'rgba(6,16,26,0.9)', 'text-halo-width': 1.8 } },
     { id: 'realms-label', type: 'symbol', source: 'realm-labels', minzoom: 3, layout: { visibility: 'none', 'text-field': ['get', 'name'], 'text-font': TXT_REG, 'text-size': ['interpolate', ['linear'], ['zoom'], 3, 13, 7, 20], 'text-letter-spacing': 0.2, 'text-max-width': 9 }, paint: { 'text-color': '#fff1cc', 'text-halo-color': HALO, 'text-halo-width': 1.6 } },
     { id: 'regions', type: 'symbol', source: 'regions', layout: { 'text-field': ['get', 'name'], 'text-font': TXT_REG, 'text-size': ['interpolate', ['linear'], ['zoom'], 3, ['*', ['get', 'size'], 12], 8, ['*', ['get', 'size'], 20]], 'text-letter-spacing': 0.35, 'text-max-width': 30, 'symbol-sort-key': ['-', 2, ['get', 'size']] }, filter: ['all'], paint: { 'text-color': ['match', ['get', 'cls'], 'realm', '#fff0c8', '#eadfc4'], 'text-halo-color': 'rgba(18,12,4,0.65)', 'text-halo-width': 1.2, 'text-opacity': 0.9 } },
-    { id: 'palantiri-pts', type: 'symbol', source: 'palantiri', filter: ['==', ['geometry-type'], 'Point'], layout: { visibility: 'none', 'icon-image': 'i-stone', 'icon-allow-overlap': true, 'text-field': ['get', 'name'], 'text-font': TXT_IT, 'text-size': 12, 'text-offset': [0, 1.1], 'text-anchor': 'top', 'text-optional': true }, paint: { 'text-color': '#d9d0ff', 'text-halo-color': HALO, 'text-halo-width': 1.2 } },
     { id: 'hl', type: 'symbol', source: 'hl', layout: { visibility: 'none', 'text-field': ['get', 't'], 'text-font': TXT_UIB, 'text-size': 26, 'text-allow-overlap': true }, paint: { 'text-color': ['match', ['get', 't'], 'L', '#ff8a6a', '#8ecbff'], 'text-halo-color': 'rgba(0,0,0,0.6)', 'text-halo-width': 1.5 } },
     { id: 'isobar-labels', type: 'symbol', source: 'isobars', layout: { visibility: 'none', 'symbol-placement': 'line', 'symbol-spacing': 300, 'text-field': ['to-string', ['get', 'p']], 'text-font': TXT_UI, 'text-size': 11 }, paint: { 'text-color': '#e6f2f7', 'text-halo-color': 'rgba(0,0,0,0.6)', 'text-halo-width': 1.2 } },
-    // Orodruin and Minas Tirith drawn large: the Mountain's fire follows the story (updateLandmarks)
-    { id: 'landmarks-art', type: 'symbol', source: 'landmarks', minzoom: 3.2, layout: { 'icon-image': ['get', 'icon'], 'icon-size': ['interpolate', ['linear'], ['zoom'], 3.2, 0.8, 6, 1.3, 9, 2, 12, 2.6], 'icon-anchor': 'bottom', 'icon-offset': ['coalesce', ['get', 'off'], ['literal', [0, 0]]], 'icon-allow-overlap': true, 'icon-ignore-placement': true } },
   ].concat([1, 2, 3, 4, 5].map(r => ({
     id: 'places-' + r, type: 'symbol', source: 'places', minzoom: RANK_MINZ[r], filter: ['all', ['==', ['get', 'rank'], r], ['!', ['in', ['get', 'type'], ['literal', ['bridge', 'ford', 'beacon']]]]],
     layout: { 'icon-image': ['concat', 'i-', ['get', 'type']], 'icon-size': r === 1 ? 0.8 : r === 2 ? 0.72 : 0.62, 'icon-allow-overlap': r <= 2, 'text-field': ['get', 'name'], 'text-font': r === 1 ? TXT_UIB : r === 2 ? TXT_UIM : TXT_UI, 'text-size': r === 1 ? 16 : r === 2 ? 14.5 : 13, 'text-anchor': 'left', 'text-offset': [0.85, 0], 'text-optional': true, 'symbol-sort-key': r },
@@ -328,7 +321,7 @@ const map = new maplibregl.Map({
   container: 'map', style, ...START, maxPitch: 85, attributionControl: false, fadeDuration: 180,
   canvasContextAttributes: { antialias: true }, maxTileCacheZoomLevels: 5,
 });
-window.ARDA_MAP = map;
+window.ATLAS_MAP = map;
 
 let mapLoaded = false;
 await new Promise(res => map.on('load', res));
@@ -456,7 +449,7 @@ function drawNight() {
   const feats = PL.filter(p => p.pop).map(p => {
     const [lon, lat] = GEN.toLL(p.X, p.Y);
     const el = WX.sunVector(S.t, lon, lat).el;
-    return pt(p.X, p.Y, { glow: GEN.sat((-el - 1) / 6) * (p.culture === 'mordor' ? 0.4 : 0.9), s: Math.min(3, 0.6 + Math.log10(p.pop) * 0.6) });
+    return pt(p.X, p.Y, { glow: GEN.sat((-el - 1) / 6) * 0.9, s: Math.min(3, 0.6 + Math.log10(p.pop) * 0.6) });
   });
   map.getSource('lights').setData(FC(feats));
 }
@@ -633,7 +626,7 @@ function storyHolding(id, t) {
 const tParse = v => typeof v === 'number' ? v : WX.parse(v);
 const BATTLES = GEO.BATTLES.map((b, i) => ({ ...b, i, t0: tParse(b.from), t1: tParse(b.to) }));
 // The slider is weighted by what happens: each party on the road, each event and each battle widens a
-// day, so the crowded last month gets room and the months of rest in Rivendell or Lórien shrink. Playback keeps an even pace in slider
+// day, so the crowded weeks get room and the long rests shrink. Playback keeps an even pace in slider
 // terms, so it hurries through the quiet months and slows for the road and the battles.
 const WARP = {};
 function warpOf(story) {
@@ -646,12 +639,12 @@ function warpOf(story) {
   }
   for (const e of EVENTS[story] || []) { const d = Math.floor(WX.parse(e[0]) - a); if (d >= 0 && d < n) moved[d] += 0.6; }
   for (const bt of BATTLES) if (bt.story === story) for (let d = Math.max(0, Math.floor(bt.t0 - a)); d < Math.min(n, Math.ceil(bt.t1 - a)); d++) moved[d] += 1;
-  // long spells with nothing at all (the seventeen years between Bilbo's Party and Frodo's setting out) shrink to a
+  // long spells with nothing at all shrink to a
   // sliver; playback keeps the pace of the eventful days and runs through them in about ten seconds
-  const busy = new Float64Array(n + 1); for (let d = 0; d < n; d++) busy[d + 1] = busy[d] + (moved[d] > 0.06 ? 1 : 0);   // half a mile a day or an event: a creeping Gollum is not travel
+  const busy = new Float64Array(n + 1); for (let d = 0; d < n; d++) busy[d + 1] = busy[d] + (moved[d] > 0.06 ? 1 : 0);   // half a mile a day or an event: a crawl is not travel
   const near = d => busy[Math.min(n, d + 31)] - busy[Math.max(0, d - 30)] > 0;
   let act = 0, actN = 0;
-  // each quiet spell gets at most a small share of the track, however long (centuries before The Hobbit)
+  // each quiet spell gets at most a small share of the track, however long
   for (let d = 0; d < n; d++) w[d] = near(d) ? 0.15 + Math.min(5, moved[d]) : -1;
   for (let d = 0; d < n;) { if (w[d] >= 0) { d++; continue; } let e = d; while (e < n && w[e] < 0) e++; const q = Math.min(0.0005, 2.5 / (e - d)); for (let k = d; k < e; k++) w[k] = q; d = e; }
   for (let d = 0; d < n; d++) if (w[d] > 0.01) { act += w[d]; actN++; }
@@ -676,32 +669,7 @@ function updateBattles() {
   }
   S.battles = feats.length; map.getSource('battles').setData(FC(feats));
 }
-// Mount Doom: dormant in Bilbo's day (it woke in 2954), burning through the War, erupting as the Ring is unmade
-function doomHeat(t) {
-  if (S.story === 'hobbit') return 0;
-  const end = WX.parse('3019 3 25.4');
-  return t >= end && t < end + 2 ? 2 : t < end + 12 ? 1 : 0;
-}
-const LANDMARK_ART = [];   // drawn landmarks come with the world's own art (Arda: Orodruin, Minas Tirith)
-function updateLandmarks() {
-  if (!mapLoaded || !window.AVATARS) return;
-  const f = Math.floor(performance.now() / 260) % 4, heat = doomHeat(S.t), feats = [];
-  for (const [kind, X, Y] of LANDMARK_ART) {
-    const fr = kind === 'doom' ? f : f >> 1, id = 'lm:' + kind + fr + ':' + heat;
-    if (!map.hasImage(id)) { const cv = AVATARS.landmark(kind, fr, heat); map.addImage(id, cv.getContext('2d').getImageData(0, 0, cv.width, cv.height), { pixelRatio: 2 }); }
-    feats.push(pt(X, Y, { icon: id }));
-  }
-  // the Party's fireworks while they last (GEO.FIREWORKS), the dragon at the end
-  for (const fw of GEO.FIREWORKS) {
-    if (fw.story !== S.story || S.t < WX.parse(fw.from) || S.t > WX.parse(fw.to)) continue;
-    const fr = Math.floor(performance.now() / 200) % 8, dr = S.t >= WX.parse(fw.dragon) ? 1 : 0, id = 'lm:fw' + fr + ':' + dr;
-    if (!map.hasImage(id)) { const cv = AVATARS.landmark('fireworks', fr, dr); map.addImage(id, cv.getContext('2d').getImageData(0, 0, cv.width, cv.height), { pixelRatio: 2 }); }
-    feats.push(pt(fw.x, fw.y, { icon: id, off: [0, -34] }));      // bursting above the party's heads
-  }
-  map.getSource('landmarks').setData(FC(feats));
-}
-setInterval(() => { if (!document.hidden) updateLandmarks(); }, 200);
-// battles, flyers and the Eye keep moving while the clock is stopped
+// battles and flyers keep moving while the clock is stopped
 setInterval(() => { if (document.hidden || S.playing) return; if (S.battles) updateBattles(); if (S.idleAnim) updateJourneys(true); }, 170);
 function showBattle(b) {
   const P = WX.parts(b.t0), Q = WX.parts(b.t1);
@@ -763,7 +731,7 @@ function updateJourneys(posOnly) {
     feats.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: lineLL(j.wp.map(w => [w.X, w.Y])) }, properties: { part: 'all', color: j.color } });
     const p = partyAt(j, S.t);
     if (!p) continue;
-    // a party that hands over to another (Merry & Pippin, Gandalf the Grey) or whose story ends leaves no dot behind
+    // a party that hands over to another or whose story ends leaves no dot behind
     const gone = p.done && j.hide;
     const done = j.wp.slice(0, p.idx + 1).map(w => [w.X, w.Y]).concat([[p.X, p.Y]]);
     if (done.length > 1) feats.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: lineLL(done) }, properties: { part: 'done', color: j.color } });
@@ -782,9 +750,9 @@ function updateJourneys(posOnly) {
       const q = partyAt(m[0].j, S.t + 0.05) || m[0].p, r = partyAt(m[0].j, S.t - 0.05) || m[0].p;
       const a = map.project(ll(r.X, r.Y)), b = map.project(ll(q.X, q.Y)); flip = b.x - a.x < -0.5;
     }
-    const idle = mode === 'fly' || mode === 'fire' || mode === 'dragon' || ids.includes('sauron') || ids.includes('smaug') || ids.includes('shelob') || ids.includes('balrog'); if (idle) idleAnim = true;
+    const idle = mode === 'fly' || mode === 'fire' || mode === 'dragon'; if (idle) idleAnim = true;
     const f = moving || idle || (mode !== 'walk' && mode !== 'under' && mode !== 'ride' && S.playing) ? Math.floor(performance.now() / (mode === 'fly' ? 120 : 150)) % 4 : 0;
-    const ic = AVATARS.icon(ids, color, S.t, f, mode, flip), id = 'av:' + ic.key.normalize('NFD').replace(/[^\x20-\x7e]/g, '') + ':' + f;   // ASCII ids: MapLibre would not draw 'Khazad-dûm'
+    const ic = AVATARS.icon(ids, color, S.t, f, mode, flip), id = 'av:' + ic.key.normalize('NFD').replace(/[^\x20-\x7e]/g, '') + ':' + f;   // ASCII ids: MapLibre skips image ids with accents
     if (!map.hasImage(id)) map.addImage(id, ic.canvas.getContext('2d').getImageData(0, 0, ic.canvas.width, ic.canvas.height), { pixelRatio: 2 });
     pos.push(pt(X, Y, { name: m.length > 1 || ids.length > 1 ? ic.name : m[0].j.name, color, icon: id, n: m.length, X, Y }));
   }
@@ -870,12 +838,11 @@ const LAYER_GROUPS = {
   roads: ['roads-case', 'roads-line', 'walls'],
   infra: ['places-infra'],
   beacons: ['beacons-line', 'places-beacons'],
-  palantiri: ['palantiri-line', 'palantiri-pts'],
   grid: ['grid-lines', 'grid-labels'],
   regions: ['regions'],
   journeys: ['journeys-all', 'journeys-case', 'journeys-done', 'battles-av', 'journeys-pos', 'journeys-av', 'journeys-pos-label'],
 };
-const LAYER_ON = { rivers: 1, mountains: 1, forests: 1, seas: 1, places: 1, peoples: 0, realms: 0, admin: 0, roads: 1, infra: 1, beacons: 0, palantiri: 0, grid: 0, regions: 1, journeys: 1 };
+const LAYER_ON = { rivers: 1, mountains: 1, forests: 1, seas: 1, places: 1, peoples: 0, realms: 0, admin: 0, roads: 1, infra: 1, beacons: 0, grid: 0, regions: 1, journeys: 1 };
 function setGroup(k, on) {
   LAYER_ON[k] = on ? 1 : 0;
   for (const id of LAYER_GROUPS[k]) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
@@ -1000,7 +967,7 @@ const PANELS = {
     <p class="note">Cinematic flights over the terrain. Drag the map at any time to take the controls back.</p>
     ${TOURS.map((t, i) => `<div class="row" style="align-items:flex-start"><div style="flex:1;min-width:0"><div style="font:18px/1.2 var(--font-display)">${esc(t.name)}</div><div class="note">${esc(t.blurb)}</div></div><button class="btn primary" data-tour="${i}">Fly</button></div>`).join('')}`,
   sound: () => {
-    const A = window.ARDA_AUDIO, M = A.MOODS;
+    const A = window.ATLAS_AUDIO, M = A.MOODS;
     return `<div class="ph"><h2>Music &amp; sound</h2><button class="x" aria-label="Close">×</button></div>
     <p class="note">An original score composed live in your browser. It changes with the land you're looking at. The ambience follows the weather: wind, rain and birdsong.</p>
     <div class="btns" style="margin:12px 0 4px"><button class="btn primary" id="sndPlay">${A.on ? 'Pause' : 'Play music'}</button></div>
@@ -1067,7 +1034,7 @@ const PANEL_INIT = {
     panel.querySelectorAll('[data-lore]').forEach(b => b.onclick = () => { setTime(WX.parse(b.dataset.lore) + 0.3); if (!wxOn('clouds')) { setWx('clouds', true); $('#w-clouds').checked = true; } flyToXY(+b.dataset.x, +b.dataset.y, 6, 30); });
   },
   sound: () => {
-    const A = window.ARDA_AUDIO;
+    const A = window.ATLAS_AUDIO;
     $('#sndPlay').onclick = async () => { if (A.on) A.stop(); else { await A.start(); soundFocus(); } openPanel('sound'); openPanel('sound'); };
     $('#sndMood').onchange = e => { S.moodLock = e.target.value || null; soundFocus(); };
     $('#volM').oninput = e => A.setMusic(+e.target.value);
@@ -1080,19 +1047,19 @@ const PANEL_INIT = {
 function moodAt(X, Y, zoom) {
   if (zoom < 3.2) return 'world';
   GEN.evaluate(X, Y, 1);
-  if (GEN.R.s <= 0) return zoom < 6 && Math.hypot(X - 329, Y + 342) < 900 ? 'wild' : 'sea';
-  const mtn = GEN.F[2];
-  const inR = n => { const r = GEO.REALMS.TA3018.find(r => r.name === n); return r && inPoly(X, Y, r); };
-  if (inR('Mordor') || inR('Dol Guldur') || inR('Isengard') || Math.hypot(X - 266, Y - 268) < 70) return 'mordor';
-  if (['Lindon', 'Imladris', 'Lothlórien', 'Woodland Realm'].some(inR)) return 'elven';
-  if (Math.hypot(X - 402, Y + 172) < 30 || inR('Erebor & Dale') || inR('Iron Hills') || mtn > 0.35) return 'dwarf';
-  if (inR('The Shire') || inR('Buckland') || inR('Bree-land')) return 'shire';
-  if (inR('Rohan')) return 'rohan';
-  if (inR('Gondor')) return 'gondor';
-  return 'wild';
+  if (GEN.R.s <= 0) return 'sea';
+  if (GEN.F[2] > 0.35) return 'heights';
+  const realm = (GEO.REALMS[S.era] || []).find(r => inPoly(X, Y, r)), n = realm ? realm.name : '';
+  if (n === 'Beyond the Wall') return 'far';
+  if (n === 'The North' || n === 'The Iron Islands') return 'north';
+  if (n === 'Dorne') return 'sands';
+  if (n === 'The Dothraki Sea') return 'grass';
+  if (['Braavos', 'Pentos', 'Norvos', 'Qohor', 'Myr', 'Volantis'].includes(n)) return 'cities';
+  if (["Slaver's Bay", 'Qarth', 'Yi Ti'].includes(n)) return 'east';
+  return realm ? 'south' : 'wild';
 }
 function soundFocus() {
-  const A = window.ARDA_AUDIO; if (!A || !A.on) return;
+  const A = window.ATLAS_AUDIO; if (!A || !A.on) return;
   let X, Y, t = S.t, near;
   const G = window.GROUND && window.GROUND.G;
   if (G && G.active) { X = G.X0 + G.px / GEN.MI; Y = G.Y0 - G.pz / GEN.MI; t = G.t; near = 1; }
@@ -1112,7 +1079,7 @@ setInterval(soundFocus, 2000);
 function flyToXY(X, Y, zoom, pitch, bearing, duration) {
   map.flyTo({ center: ll(X, Y), zoom, pitch: pitch ?? 55, bearing: bearing ?? map.getBearing(), duration: duration ?? 4200, essential: true, curve: 1.5 });
 }
-const ZOOM_FOR = { city: 13.2, town: 13.6, village: 14.5, fortress: 13.4, ruin: 13.5, elven: 13, dwarven: 12, port: 12.8, tower: 13.5, bridge: 14.2, ford: 14.2, landmark: 13.5, cave: 13.5, wonder: 13, beacon: 12.5, peak: 11, range: 7, river: 7, lake: 9.5, forest: 8, marsh: 9.5, region: 6.5, realm: 5.8, sea: 5 };
+const ZOOM_FOR = { city: 13.2, town: 13.6, village: 14.5, fortress: 13.4, ruin: 13.5, port: 12.8, tower: 13.5, bridge: 14.2, ford: 14.2, landmark: 13.5, cave: 13.5, wonder: 13, beacon: 12.5, peak: 11, range: 7, river: 7, lake: 9.5, forest: 8, marsh: 9.5, region: 6.5, realm: 5.8, sea: 5 };
 
 /* ---------------- search ---------------- */
 const INDEX = [];
@@ -1225,20 +1192,9 @@ const ACTIONS = {
   fly: s => flyToXY(s.X, s.Y, s.zoom || 13, 65, map.getBearing() + 30, 4500),
   ground: s => openGround(s.X, s.Y, s.name),
   meet: s => openGround(s.X, s.Y - 0.009, null, { heading: 0, title: s.name }),
-  halls: s => openHalls(HALLS[s.name], s.name),
   measure: s => { if (!S.measure) toggleMeasure(); S.measure.push([s.X, s.Y]); drawMeasure(); },
 };
 const PKM = ['Winterfell'];
-// places with a walkable interior under the mountain
-const HALLS = { 'Erebor': 'erebor', 'Front Gate of Erebor': 'erebor', 'Side Door of Erebor': 'erebor', 'Khazad-dûm': 'moria', 'West-gate of Moria': 'moria', 'Dimrill Gate': 'moria' };
-const HALL_TITLE = { erebor: 'The Halls of Erebor', moria: 'Khazad-dûm' };
-const hallBtn = name => HALLS[name] ? `<button class="btn" data-act="halls"><svg viewBox="0 0 24 24"><path d="M3 21V11a9 9 0 0 1 18 0v10"/><path d="M9 21v-6a3 3 0 0 1 6 0v6"/></svg>Enter the halls</button>` : '';
-function openHalls(kind, name) {
-  if (!window.GROUND) { toast('The ground view is still loading. Try again in a moment.'); return; }
-  togglePlay(false);
-  const p = PLN[name] || { X: 0, Y: 0 };
-  window.GROUND.open({ interior: kind, spawn: name === 'Side Door of Erebor' ? 'door' : 'gate', X: p.X, Y: p.Y, t: S.t, title: HALL_TITLE[kind], sub: '', run, weatherAt, staticAt, places: PL, peaks: GEO.PEAKS, onExit: () => {} });
-}
 function distLine(X, Y) {
   const d = Math.hypot(X, Y);
   return `${d.toFixed(0)} mi (${(d / 3).toFixed(0)} leagues) from Winterfell`;
@@ -1259,7 +1215,7 @@ function showPlace(p) {
     <dt>Ground</dt><dd>${esc(b.name)}</dd><dt>Elevation</dt><dd>${Math.round(Math.max(0, b.h))} m · ${Math.round(Math.max(0, b.h) * 3.281).toLocaleString()} ft</dd>
     <dt>Position</dt><dd class="mono">${fmtLL(lon, lat)}<br>${fmtXY(p.X, p.Y)}</dd><dt>Distance</dt><dd>${distLine(p.X, p.Y)}</dd>${sourceRow(p.name)}</dl>
     <div class="eyebrow">Weather · ${esc(WX.parts(S.t).name)} ${WX.fmtTime(WX.parts(S.t).hour)}</div><div class="wxwrap">${wxBlock(p.X, p.Y)}</div>
-    <div class="btns" style="margin-top:12px"><button class="btn primary" data-act="ground"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.2"/><path d="M12 8v7M8.5 11h7M12 15l-3 6M12 15l3 6"/></svg>Ground view</button>${hallBtn(p.name)}<button class="btn" data-act="fly">Fly over</button><button class="btn" data-act="measure">Measure from here</button></div>`,
+    <div class="btns" style="margin-top:12px"><button class="btn primary" data-act="ground"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.2"/><path d="M12 8v7M8.5 11h7M12 15l-3 6M12 15l3 6"/></svg>Ground view</button><button class="btn" data-act="fly">Fly over</button><button class="btn" data-act="measure">Measure from here</button></div>`,
     { kind: 'place', X: p.X, Y: p.Y, name: p.name, zoom: ZOOM_FOR[p.type] });
 }
 function showPoint(X, Y, o = {}) {
@@ -1335,7 +1291,7 @@ function drawMeasure() {
   if (m.length > 1) feats.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: lineLL(m) }, properties: {} });
   map.getSource('measure').setData(FC(feats));
   let d = 0; for (let i = 1; i < m.length; i++) d += Math.hypot(m[i][0] - m[i - 1][0], m[i][1] - m[i - 1][1]);
-  if (m.length > 1) toast(`<b>${d.toFixed(1)} miles</b> · ${(d / 3).toFixed(1)} leagues · ${(d * 1.609).toFixed(0)} km — about ${Math.max(1, Math.round(d / 20))} days on foot at a hobbit's pace, ${Math.max(1, Math.round(d / 45))} riding`, 0);
+  if (m.length > 1) toast(`<b>${d.toFixed(1)} miles</b> · ${(d / 3).toFixed(1)} leagues · ${(d * 1.609).toFixed(0)} km — about ${Math.max(1, Math.round(d / 20))} days on foot at a steady pace, ${Math.max(1, Math.round(d / 45))} riding`, 0);
 }
 let toastTimer = 0;
 function toast(html, ms = 3500) {
@@ -1369,7 +1325,7 @@ async function openGround(X, Y, name, opt = {}) {
     heading = (Math.atan2(p.X - X, p.Y - Y) * 180 / Math.PI + 360) % 360;
   }
   if (opt.heading != null) heading = opt.heading;
-  window.GROUND.open({ X, Y, heading, t: S.t, title: opt.title || name || (np.d < 3 ? 'Near ' + np.p.name : biomeAt(X, Y).name), sub: fmtXY(X, Y) + ' of Winterfell', run, weatherAt, staticAt, places: PL, peaks: GEO.PEAKS, travellers: window.AVATARS ? travellersAt : null, battles: battlesAt, heat: doomHeat, season: seasonLevel, fireworks: GEO.FIREWORKS.filter(f => f.story === S.story), onExit: t => { if (t) setTime(t); } });
+  window.GROUND.open({ X, Y, heading, t: S.t, title: opt.title || name || (np.d < 3 ? 'Near ' + np.p.name : biomeAt(X, Y).name), sub: fmtXY(X, Y) + ' of Winterfell', run, weatherAt, staticAt, places: PL, peaks: GEO.PEAKS, travellers: window.AVATARS ? travellersAt : null, battles: battlesAt, season: seasonLevel, onExit: t => { if (t) setTime(t); } });
 }
 function hashAng(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return (h % 628) / 100; }
 
@@ -1448,7 +1404,7 @@ setTimeout(() => $('#loader').remove(), 1200);
 await sleep(1600);
 if (map.getZoom() < 2) map.flyTo({ center: ll(60, -1050), zoom: 3.4, pitch: 20, bearing: 0, duration: 6500, curve: 1.3, essential: true });
 
-window.ARDA = { map, S, setTime, GEO, showPlace, openGround, openHalls, travellersAt, PL, PLN, flyToXY, setWx, setGroup, setBase, openPanel, playTour, TOURS, warpTo };
+window.ATLAS = { map, S, setTime, GEO, showPlace, openGround, travellersAt, PL, PLN, flyToXY, setWx, setGroup, setBase, openPanel, playTour, TOURS, warpTo };
 document.title = document.title;
 })().catch(e => {
   console.error(e);

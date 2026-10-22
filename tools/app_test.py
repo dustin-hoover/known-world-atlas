@@ -17,14 +17,14 @@ async def main(steps, w=1440, h=900):
           for st in steps:
               kind=st[0]
               if kind=='waitready':
-                  await pg.wait_for_function("window.ARDA && document.getElementById('loader')==null", timeout=240000)
+                  await pg.wait_for_function("window.ATLAS && document.getElementById('loader')==null", timeout=240000)
                   print('ready', round(time.time()-t0,1))
               elif kind=='eval':
                   r = await pg.evaluate(st[1]); 
                   if r is not None: print('eval->', str(r)[:500])
               elif kind=='idle':
                   try:
-                      await pg.wait_for_function("window.ARDA && ARDA.map.loaded() && ARDA.map.areTilesLoaded()", timeout=st[1] if len(st)>1 else 120000, polling=500)
+                      await pg.wait_for_function("window.ATLAS && ATLAS.map.loaded() && ATLAS.map.areTilesLoaded()", timeout=st[1] if len(st)>1 else 120000, polling=500)
                   except Exception as e: print('idle timeout')
                   await asyncio.sleep(1.0)
               elif kind=='sleep':

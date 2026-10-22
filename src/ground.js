@@ -1,5 +1,5 @@
 /* ============================================================================
-   GROUND — a walkable, ground-level view of Arda built with three.js
+   GROUND — a walkable, ground-level view of the world built with three.js
    ========================================================================== */
 let THREE = null;
 const MI = 1609.344;
@@ -97,7 +97,7 @@ function bindInput() {
     if (!G.active) return;
     keys[e.key.toLowerCase()] = true;
     if (e.key === 'Escape') close();
-    if (e.key.toLowerCase() === 't' && !G.hall) { G.t += 1 / 24; updateAtmos(true); }
+    if (e.key.toLowerCase() === 't') { G.t += 1 / 24; updateAtmos(true); }
     if (e.key === '[' || e.key === ']') setRate(e.key === ']' ? 1 : -1);
     if (['w', 'a', 's', 'd', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(e.key.toLowerCase())) e.preventDefault();
   });
@@ -121,7 +121,6 @@ function heightFn(grid, n, half) {
   };
 }
 function groundAt(x, z) {
-  if (G.hall) return G.hall.floorAt(x, z, G.hallY) ?? G.hallY ?? 0;
   let h = G.nearH ? G.nearH(x - G.nearOff.x, z - G.nearOff.z) : null;
   if (h === null && G.farH) h = G.farH(x, z);
   return Math.max(h ?? 0, G.seaLevel);
@@ -249,7 +248,7 @@ function buildTrees(arr, hAt) {
   return group;
 }
 
-const WALLC = { hobbit: [0.55, 0.62, 0.3], bree: [0.62, 0.55, 0.45], rohan: [0.5, 0.36, 0.22], gondor: [0.86, 0.84, 0.8], minastirith: [0.92, 0.91, 0.88], osgiliath: [0.66, 0.64, 0.6], elf: [0.86, 0.85, 0.8], lorien: [0.9, 0.9, 0.86], lake: [0.42, 0.32, 0.24], dale: [0.62, 0.56, 0.5], harad: [0.84, 0.76, 0.6], isengard: [0.2, 0.2, 0.22], mordor: [0.14, 0.13, 0.14], morgul: [0.58, 0.66, 0.62], east: [0.7, 0.6, 0.45], beorning: [0.45, 0.33, 0.2], dwarf: [0.5, 0.48, 0.44], dunland: [0.42, 0.34, 0.24], woodmen: [0.45, 0.33, 0.22], ruin: [0.62, 0.6, 0.56] };
+const WALLC = { northern: [0.62, 0.55, 0.45], stone: [0.86, 0.84, 0.8], sunbaked: [0.88, 0.8, 0.66], lakeside: [0.42, 0.34, 0.26], roundhut: [0.72, 0.62, 0.46], ruin: [0.66, 0.64, 0.6], castle: [0.6, 0.58, 0.55] };
 function buildBuildings(B, X0, Y0, hAt) {
   const pos = [], col = [], idx = [];
   let vi = 0;
@@ -291,14 +290,12 @@ function buildBuildings(B, X0, Y0, hAt) {
     vi += 14;
   };
   for (const b of B.list) {
-    if (b.culture === 'lorien' || b.culture === 'elf') continue;
     const x = (b.x - X0) * MI, z = -(b.y - Y0) * MI;
     const y0 = hAt(x, z) - 0.5;
     const roof = b.c.map(v => Math.pow(v / 255, 2.2));
     const wall = (WALLC[b.culture] || [0.6, 0.55, 0.5]).map(v => Math.pow(v, 1.5));
-    if (b.culture === 'hobbit' && b.round) { const doors = [[0.1, 0.25, 0.1], [0.6, 0.45, 0.1], [0.15, 0.25, 0.45], [0.5, 0.12, 0.08]]; mound(x, z, b.w * 0.8, y0, doors[Math.floor(Math.abs(b.x * 1e5)) % 4]); continue; }
     if (b.round) { box(x, z, b.w * 0.8, b.w * 0.8, b.a, y0, b.h * 0.6, roof, roof, true); continue; }
-    const gable = !['harad', 'minastirith', 'gondor', 'osgiliath', 'mordor', 'isengard', 'dwarf', 'ruin'].includes(b.culture) || (b.culture === 'gondor' && b.w < 13);
+    const gable = !['sunbaked', 'stone', 'ruin'].includes(b.culture) || (b.culture === 'stone' && b.w < 13);
     box(x, z, b.w, b.d, b.a, y0, b.h * (b.ruin ? 0.4 : 1), wall, roof, gable, b.ruin);
   }
   for (const s of B.special) {
@@ -478,7 +475,7 @@ function travTexture(canvas, key) {
 /* ---- armies on the field: within a few km a battle or muster becomes ranks of soldiers, riders and beasts ---- */
 const ARMY = new Map();
 const ARMY_NEAR = 6000, ARMY_M = 0.05;      // metres per canvas pixel for the soldiers (≈ 2 m a man, 2.6 m a rider)
-const FLYERS = new Set(['eagle', 'nazgul', 'bat']);
+const FLYERS = new Set();
 function hashF(i, k) { const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); }
 function buildArmy(b, cx, cz) {
   const grp = new THREE.Group(), units = [];
@@ -488,7 +485,7 @@ function buildArmy(b, cx, cz) {
     for (const [kind, n] of side.units) for (let i = 0; i < n * (FLYERS.has(kind) ? 2 : 5); i++) list.push(kind);
     let col = 0, row = 0;
     list.forEach((kind, i) => {
-      const fly = FLYERS.has(kind), big = ['mumak', 'troll', 'ent', 'huorn', 'beorn', 'bolg'].includes(kind);
+      const fly = FLYERS.has(kind), big = kind === 'giant';
       let x, z, y = 0;
       if (fly) { x = cx - dir * (40 + hashF(i, si) * 160); z = cz + (hashF(i, si + 7) - 0.5) * 300; y = 35 + hashF(i, 3) * 40; }
       else {
@@ -545,17 +542,17 @@ function clearTravellers() {
 }
 function updateTravellers(ts) {
   const A = window.AVATARS, o = G.o;
-  if (!A || !o || !o.travellers || G.hall) { if (TRAV.items.size) clearTravellers(); return; }
+  if (!A || !o || !o.travellers) { if (TRAV.items.size) clearTravellers(); return; }
   let box = $('#gtrav'); if (!box) { box = document.createElement('div'); box.id = 'gtrav'; $('#ground').appendChild(box); }
   if (ts - TRAV.last > 170) {
     TRAV.last = ts;
     const f = Math.floor(ts / 150) % 4, rx = Math.cos(G.yaw), rz = Math.sin(G.yaw), seen = new Set(), want = [];
     for (const c of o.travellers(G.t)) {
       const x = (c.X - G.X0) * MI, z = -(c.Y - G.Y0) * MI, d = Math.hypot(x - G.px, z - G.pz); if (d > 30000) continue;
-      const mounted = c.mode !== 'walk' && c.mode !== 'under', idle = c.mode === 'fly' || c.mode === 'fire' || c.ids.some(i => i === 'sauron' || i === 'smaug' || i === 'shelob');
+      const mounted = c.mode !== 'walk' && c.mode !== 'under', idle = c.mode === 'fly' || c.mode === 'fire' || c.mode === 'dragon';
       const flip = mounted && (c.vx * MI * rx + -c.vy * MI * rz) < 0;
       const ic = A.icon(c.ids, c.color, G.t, c.moving || idle ? f : 0, c.mode, flip);
-      want.push({ key: 'p:' + ic.key.split('|').slice(0, 2).join('|'), eye: c.ids.includes('sauron'), x, z, vx: c.vx * MI, vz: -c.vy * MI, t0: G.t, canvas: ic.canvas, tkey: ic.key + (c.moving || idle ? f : 0) + (flip ? 'w' : ''), name: ic.name, air: c.mode === 'fly' || c.mode === 'fire' ? 120 : 0 });
+      want.push({ key: 'p:' + ic.key.split('|').slice(0, 2).join('|'), x, z, vx: c.vx * MI, vz: -c.vy * MI, t0: G.t, canvas: ic.canvas, tkey: ic.key + (c.moving || idle ? f : 0) + (flip ? 'w' : ''), name: ic.name, air: c.mode === 'fly' || c.mode === 'fire' ? 120 : 0 });
     }
     const near = o.battles ? updateArmies(ts, o.battles(G.t)) : new Set();
     if (o.battles) for (const b of o.battles(G.t)) {
@@ -583,13 +580,12 @@ function updateTravellers(ts) {
     let ex = it.x + it.vx * (G.t - it.t0), ez = it.z + it.vz * (G.t - it.t0), top = 0;       // glide on between refreshes
     for (const o of G.solids || []) {
       const dx = ex - o.x, dz = ez - o.z, d = Math.hypot(dx, dz); if (d >= o.r) continue;
-      if (it.eye) { ex = o.x; ez = o.z; top = o.h + 10; continue; }      // the Eye keeps its watch from the summit
       const cx = G.px - o.x, cz = G.pz - o.z, cd = Math.hypot(cx, cz) || 1;   // otherwise stand at the foot, on your side
       const ux = d > 1 ? dx / d * 0.35 + cx / cd * 0.65 : cx / cd, uz = d > 1 ? dz / d * 0.35 + cz / cd * 0.65 : cz / cd, ul = Math.hypot(ux, uz) || 1;
       ex = o.x + ux / ul * (o.r + 4); ez = o.z + uz / ul * (o.r + 4);
     }
     const d = Math.hypot(ex - G.px, ez - G.pz), boost = Math.min(60, Math.max(1, d / 220)), k = PX_M * (it.k || 1) * boost;
-    const sw = it.canvas.width * k * (it.eye ? 6 : 1), sh = it.canvas.height * k * (it.eye ? 6 : 1), y = groundAt(ex, ez) - 0.2 + (top || it.air * Math.min(1, boost));
+    const sw = it.canvas.width * k, sh = it.canvas.height * k, y = groundAt(ex, ez) - 0.2 + (top || it.air * Math.min(1, boost));
     it.sprite.position.set(ex, y, ez); it.sprite.scale.set(sw, sh, 1);
     p.set(ex, y + sh * 1.04, ez).project(G.camera);
     if (p.z > 1 || p.x < -1.1 || p.x > 1.1 || p.y < -1.1 || p.y > 1.1) { it.el.hidden = true; continue; }
@@ -662,41 +658,6 @@ async function loadFar(X, Y) {
 }
 
 /* ---------------- lifecycle ---------------- */
-/* Underground: a lit hall instead of terrain, sky and weather. */
-function openHall(o) {
-  G.helpHTML = G.helpHTML || $('#ghelp').innerHTML;
-  const H = W3hall(o.interior);
-  G.hall = H; G.hallY = 0;
-  G.scene.add(H.group);
-  G.sky.visible = false; G.grass.visible = false; G.rain.visible = false;
-  G.sun.intensity = 0; G.sun.castShadow = false;
-  G.hemi.intensity = o.interior === 'erebor' ? 2.2 : 1.3; G.hemi.color.set(0x8a7a66); G.hemi.groundColor.set(0x1a1410);
-  G.scene.fog.color.set(o.interior === 'erebor' ? 0x120c08 : 0x05070a); G.scene.fog.near = 20; G.scene.fog.far = o.interior === 'erebor' ? 520 : 300;
-  G.renderer.setClearColor(0x000000); G.renderer.toneMappingExposure = 1.15;
-  const sp = H.spawns[o.spawn] || H.spawn;
-  G.px = sp.x; G.pz = sp.z; G.yaw = sp.yaw; G.pitch = 0.08; G.hallY = H.floorAt(sp.x, sp.z) ?? 0; G.fly = 0;
-  if (H.dwarves) {
-    // Dáin's folk about their halls
-    const pts = [];
-    for (let i = 0; i < 70; i++) { const x = (Math.random() - 0.5) * 44, z = 40 - Math.random() * 450; if (H.floorAt(x, z) !== null) pts.push({ x, y: 0, z }); }
-    for (let i = 0; i < 20; i++) { const x = -140 + Math.random() * 90, z = -100 + Math.random() * 100; if (H.floorAt(x, z) !== null) pts.push({ x, y: 0, z }); }
-    const B = { list: pts.map(p => ({ x: p.x / MI, y: -p.z / MI, w: 0, d: 0, a: 0, culture: 'dwarf' })) };
-    const folk = W3people(B, 0, 0, null, { floorAt: H.floorAt, max: 90 });
-    H.group.add(folk); const u = H.update; H.update = (dt, t) => { u(dt, t); folk.userData.update(dt); };
-  }
-  $('#gplace').textContent = o.title; $('#gsub').textContent = H.info;
-  $('#gmini').hidden = true; $('#glabels').innerHTML = ''; G.labels = null;
-  $('#ghelp').innerHTML = '<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk · drag to look · <kbd>Shift</kbd> run · <kbd>Space</kbd>/<kbd>C</kbd> climb & descend';
-}
-function closeHall() {
-  if (!G.hall) return;
-  G.scene.remove(G.hall.group);
-  G.hall.group.traverse(m => { if (m.geometry) m.geometry.dispose(); if (m.material) [].concat(m.material).forEach(x => { if (x.map) x.map.dispose(); x.dispose(); }); });
-  G.hall = null;
-  G.sky.visible = true; G.grass.visible = true; G.sun.castShadow = true; $('#gmini').hidden = false;
-  G.hemi.groundColor.set(0x5a5040); $('#ghelp').innerHTML = G.helpHTML;
-}
-
 // the pace of story time while you walk: travellers move along their roads, the sun goes over
 const RATES = [0, 1, 10, 60, 600, 3600];
 G.rateI = 2;
@@ -714,9 +675,8 @@ async function open(o) {
   G.o = o; G.t = o.t; setRate(0); G.X0 = o.X; G.Y0 = o.Y; G.px = 0; G.pz = 0; G.yaw = (o.heading || 0) * Math.PI / 180; G.pitch = 0.02; G.fly = 0;
   G.seaLevel = 0; G.nearH = null; G.farH = null; G.wx = null; G.grassAt = null; G.nearCanvas = null; if (G.grass) G.grass.count = 0; G.spawnX = 0; G.spawnZ = 0; G.camera.position.set(0, 0, 0);
   for (const k of ['far', 'sea', 'nearGroup', 'marks']) if (G[k]) { G.scene.remove(G[k]); G[k] = null; }
-  closeHall(); G.nearOff = null; clearTravellers(); TRAV.last = -1e9;
+  G.nearOff = null; clearTravellers(); TRAV.last = -1e9;
   G.active = true;
-  if (o.interior) { openHall(o); $('#gload').hidden = true; loop(); return; }
   loop();
   $('#gload').textContent = 'Surveying the horizon…';
   await loadFar(o.X, o.Y);
@@ -744,18 +704,12 @@ function loop(ts = 0) {
   if (keys.arrowright && !keys.d) { G.yaw += dt * 1.2; s -= 1; }
   const fx = Math.sin(G.yaw), fz = -Math.cos(G.yaw);
   const mx = (fx * f + Math.cos(G.yaw) * s) * run * dt * (1 + G.fly / 40), mz = (fz * f + Math.sin(G.yaw) * s) * run * dt * (1 + G.fly / 40);
-  if (G.hall) {
-    // slide along walls; never step into a chasm or up a sheer face
-    const fl = G.hall.floorAt, y0 = fl(G.px, G.pz, G.hallY) ?? G.hallY, ok = (x, z) => { const y = fl(x, z, y0); return y !== null && y - y0 < 1.3; };
-    if (ok(G.px + mx, G.pz + mz)) { G.px += mx; G.pz += mz; } else if (ok(G.px + mx, G.pz)) G.px += mx; else if (ok(G.px, G.pz + mz)) G.pz += mz;
-    G.hallY = fl(G.px, G.pz, G.hallY) ?? G.hallY;
-  } else { G.px += mx; G.pz += mz; }
+  G.px += mx; G.pz += mz;
   if (keys[' ']) G.fly = Math.min(3000, G.fly + dt * (20 + G.fly));
   if (keys.c) G.fly = Math.max(0, G.fly - dt * (20 + G.fly));
-  if (G.hall) G.fly = Math.max(0, Math.min(G.fly, G.hall.ceilingAt(G.px, G.pz) - G.hallY - 2));
   const lim = 55000; G.px = Math.max(-lim, Math.min(lim, G.px)); G.pz = Math.max(-lim, Math.min(lim, G.pz));
   const gy = groundAt(G.px, G.pz);
-  const eye = gy + (G.hall ? 1.45 : 1.7) + G.fly;
+  const eye = gy + 1.7 + G.fly;
   const cy0 = G.camera.position.y;   // ease over small steps; jump when the ground under us changes a lot (new patch, slow device)
   G.camera.position.set(G.px, cy0 && Math.abs(eye - cy0) < 40 ? cy0 + (eye - cy0) * Math.min(1, dt * 12) : eye, G.pz);
   const cp = Math.cos(G.pitch);
@@ -765,14 +719,13 @@ function loop(ts = 0) {
     G.sun.position.set(G.px + G.sunDir.x * 1200, G.camera.position.y + G.sunDir.y * 1200, G.pz + G.sunDir.z * 1200);
     G.sun.target.position.set(G.px, G.camera.position.y, G.pz); G.sun.target.updateMatrixWorld();
   }
-  if (!G.hall && G.wx) G.t += realDt * RATES[G.rateI] / 86400;
+  if (G.wx) G.t += realDt * RATES[G.rateI] / 86400;
   G.skyMat.uniforms.time.value += dt;
   if (G.nearGroup && G.nearGroup.userData.update) G.nearGroup.userData.update(dt, ts / 1000);
-  if (G.marks && !G.hall) G.marks.userData.update(dt, ts / 1000);
-  if (G.hall) G.hall.update(dt, ts / 1000);
+  if (G.marks) G.marks.userData.update(dt, ts / 1000);
   G.grassTime.value += dt;
-  if (!G.hall && G.grassAt && Math.hypot(G.px - G.grassAt.x, G.pz - G.grassAt.z) > 12) placeGrass();
-  if (G.rain.visible && !G.hall) {
+  if (G.grassAt && Math.hypot(G.px - G.grassAt.x, G.pz - G.grassAt.z) > 12) placeGrass();
+  if (G.rain.visible) {
     const a = G.rain.geometry.attributes.position, sp = G.wx.snow > 0.5 ? 2.2 : 14;
     for (let i = 0; i < a.count; i++) { let y = a.getY(i) - sp * dt; if (y < 0) y += 60; a.setY(i, y); }
     a.needsUpdate = true; G.rain.position.set(G.px, G.camera.position.y - 20, G.pz);
@@ -785,8 +738,8 @@ function loop(ts = 0) {
   }
   if (G.labels) updateLabels();
   updateTravellers(ts);
-  if (!G.hall) drawMini();
-  if (!G.hall && G.wx && Math.floor(ts / 1000) !== G.lastSec) { G.lastSec = Math.floor(ts / 1000); updateAtmos(G.lastSec % 10 === 0); }
+  drawMini();
+  if (G.wx && Math.floor(ts / 1000) !== G.lastSec) { G.lastSec = Math.floor(ts / 1000); updateAtmos(G.lastSec % 10 === 0); }
   G.renderer.render(G.scene, G.camera);
 }
 

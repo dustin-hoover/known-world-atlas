@@ -1,5 +1,5 @@
 /* ============================================================================
-   GEN — the world engine (The Known World fork of Arda Atlas). Deterministic procedural Earth-like surface
+   GEN — the world engine of Geodyssey's Known World. Deterministic procedural Earth-like surface
    generated from authored geography rasters. Shared by the page and workers.
    ========================================================================== */
 const GEN = (() => {
@@ -93,12 +93,12 @@ const sstep = (a, b, v) => { const t = sat((v - a) / (b - a)); return t * t * (3
 const mix = (a, b, t) => a + (b - a) * t;
 
 /* ---------------- rasters ---------------- */
-let M = null, G = null, PEAKS = [], NUM = null, VEC = null, FLATS = [];
+let M = null, G = null, PEAKS = [], VEC = null, FLATS = [];
 const NCH = 16;
 const CH = { land:0, cont:1, mtn:2, hill:3, forest:4, gold:5, dark:6, marsh:7, arid:8, farm:9, ash:10, valley:11, uplift:12, grass:13, ice:14, lake:15 };
 
 function init(data) {
-  M = data.main; G = data.glob; PEAKS = data.peaks || []; NUM = data.numenor; FLATS = data.flats || [];
+  M = data.main; G = data.glob; PEAKS = data.peaks || []; FLATS = data.flats || [];
   if (data.vectors) initVectors(data.vectors);
   CO = data.coast ? initCoast(data.coast) : null;
 }
@@ -286,16 +286,6 @@ function sampleGlob(lon, lat) {
 /* Results of the last evaluate() call */
 const R = { h: 0, s: 0, sd: 0, wx: 0, wy: 0, wm: 0, lat: 0, lon: 0, base: 0, mtn: 0, stream: 0 };
 
-function numenorField(X, Y) {
-  if (!NUM) return 0;
-  const dx = X - NUM.cx, dy = Y - NUM.cy;
-  const d = Math.hypot(dx, dy);
-  if (d > NUM.r * 1.25) return 0;
-  const a = Math.atan2(dy, dx) + Math.PI / 2;
-  const star = 0.5 + 0.5 * Math.pow(Math.abs(Math.cos(a * 2.5)), 1.6);
-  const rr = NUM.r * (0.42 + 0.58 * star);
-  return sstep(rr, rr * 0.75, d);
-}
 
 function peakAt(X, Y, pix) {
   let add = 0;
@@ -308,36 +298,12 @@ function peakAt(X, Y, pix) {
     if (d >= reach / p.r) continue;
     let prof;
     if (p.kind === 'volcano') {
-      // Orodruin (LR VI.3): a huge base about two thirds of the mountain's height, its shoulders broad and
-      // scarred, and on it a steep ash-cone half as high again, with a fiery crater at the top
+      // a volcano: a broad base about two thirds of the mountain's height and on it a steep ash-cone, with a
+      // crater at the top
       const base = 0.66 * Math.pow(sat((1 - d) / 0.62), 1.25), cone = 0.36 * Math.pow(Math.max(0, 1 - d / 0.2), 1.15);
       prof = base + cone;
       if (d < 0.035) prof -= (0.035 - d) * 4.5;
       prof *= 1 + 0.06 * noise(X * 3, Y * 3) * sat(d * 4);
-    } else if (p.kind === 'knee') {
-      // the Hill of Guard: seven terraces, one under each circle of Minas Tirith, each a hundred feet above the
-      // last, on a shoulder of Mindolluin that runs back west into the mountain
-      const dm = d * p.r * MI, R0 = 60, step = 95, lift = p.h / 7.6, edge = R0 + 7 * step;
-      let terr = 0;
-      if (dm < edge) { terr = p.h - lift * 7; for (let k = 0; k < 7; k++) terr += lift * sstep(R0 + k * step + 16, R0 + k * step, dm); }
-      else terr = (p.h - lift * 7) * sstep(p.r * MI, edge, dm);
-      let ridge = 0;
-      if (p.to) {
-        const vx = p.to[0] - p.x, vy = p.to[1] - p.y, L = Math.hypot(vx, vy), t = (dx * vx + dy * vy) / (L * L);
-        if (t > -0.01 && t < 1) { const q = Math.abs(dx * vy - dy * vx) / L, w = 0.2 + 0.7 * Math.max(0, t); ridge = p.h * (1 + 2.2 * Math.max(0, t)) * Math.exp(-Math.pow(q / w, 2)); }
-      }
-      prof = Math.max(terr, ridge) / p.h;
-    } else if (p.kind === 'lonely') {
-      // the Lonely Mountain: a steep central massif and six great spurs; the River Running leaves the
-      // Front Gate down the valley between the two southern spurs
-      const ang = Math.atan2(dy, dx), dr = d * p.r;
-      const adiff = a => Math.abs(((ang - a) % 6.2832 + 9.4248) % 6.2832 - 3.1416);
-      let spur = 0;
-      for (let k = 0; k < 6; k++) { const da = adiff(p.gate + (k + 0.5) * Math.PI / 3); spur = Math.max(spur, Math.exp(-Math.pow(da * dr / (0.9 + 0.12 * dr), 2))); }
-      const core = Math.pow(Math.max(0, 1 - d / 0.34), 1.1);
-      prof = Math.max(core, spur * Math.pow(Math.max(0, 1 - d / 0.85), 1.4) * 0.5);
-      prof *= 1 - 0.75 * Math.exp(-Math.pow(adiff(p.gate) * dr / 0.7, 2)) * sstep(0.22, 0.4, d);
-      if (pix < 0.2) prof *= 1 + 0.18 * ridgedA(X, Y, 0.9, Math.max(pix, 0.004)) * sat(d * 3);
     } else if (p.kind === 'hill') {
       prof = 0.5 + 0.5 * Math.cos(Math.PI * d);
       prof *= prof;
@@ -410,7 +376,7 @@ function evaluate(X, Y, pix) {
   let h;
   if (s > 0) {
     const inland = sat((cont - 0.5) * 2.2);
-    // low country by the sea: the ground rises over the first forty miles inland (as the Yorkshire Wolds or the Fens)
+    // low country by the sea: the ground rises over the first forty miles inland
     const nearSea = 0.35 + 0.65 * sstep(0, 40, R.sd);
     const st = CO ? shoreKind(X, Y) : KZ;            // the style of the range here (author.py TERRAIN_ZONES)
     const dry = Math.max(F[8], st[4]), alpine = st[5]; // dry ranges rise sharply from flat plains (Hajar, Sierra Nevada)
@@ -457,7 +423,7 @@ function evaluate(X, Y, pix) {
       const dx = X - f.x, dy = Y - f.y;
       if (dx > f.r || dx < -f.r || dy > f.r || dy < -f.r) continue;
       const d = Math.sqrt(dx * dx + dy * dy) / f.r;
-      if (d < 1 && f.sea) { const t = sstep(1, 0.25, d); h = mix(h, Math.min(h, 4 + (h - 4) * 0.03), t); str *= 1 - t; R.stream = str; }   // havens lie on the shore
+      if (d < 1 && f.sea) { const t = sstep(1, 0.25, d); h = mix(h, Math.min(h, 4 + (h - 4) * 0.03), t); str *= 1 - t; R.stream = str; }   // ports lie on the shore
       else if (d < 1) { const t = sstep(1, 0.2, d) * 0.85; h = mix(h, Math.min(h, base + f.lift + (h - base) * 0.25), t); str *= 1 - t; R.stream = str; }
     }
     if (PEAKS.length) h += peakAt(X, Y, pix);
@@ -472,13 +438,6 @@ function evaluate(X, Y, pix) {
     // a mid-ocean ridge running down the Sunset Sea
     const rdg = Math.exp(-Math.pow((X + 1700 + 120 * Math.sin(Y * 0.004)) / 90, 2));
     h += rdg * 1900 * (0.7 + 0.3 * noise(X * 0.02, Y * 0.02)) * deep;
-    const nf = numenorField(X, Y);
-    if (nf > 0) {
-      const top = -520 + 260 * fbm(X * 0.02, Y * 0.02, 3);
-      h = mix(h, Math.max(h, top), nf);
-      const dm = Math.hypot(X - NUM.cx, Y - NUM.cy);
-      if (dm < 22) h = Math.max(h, -60 - dm * 18);
-    }
     R.base = 0;
   }
   R.h = h; R.mtn = mtn;
@@ -519,9 +478,9 @@ function blend(r, g, b, t) { tmp3[0] += (r - tmp3[0]) * t; tmp3[1] += (g - tmp3[
 
 // farmland: Voronoi parcels subdivided into strip fields, with hedgerows
 const FC = [[190,170,112],[170,152,104],[150,140,96],[104,124,66],[88,112,58],[124,104,78],[112,92,70],[140,134,90],[96,116,64],[118,128,74]];
-function fields(X, Y, cell, pix, hobbit) {
+function fields(X, Y, cell, pix, small) {
   // a rotated grid of blocks; each block split into strips of varying width
-  const th = 0.6 * noise(X * 0.05 + 11, Y * 0.05 - 7) + (hobbit ? 0.3 : 0.9);
+  const th = 0.6 * noise(X * 0.05 + 11, Y * 0.05 - 7) + (small ? 0.3 : 0.9);
   const c = Math.cos(th), s = Math.sin(th);
   let u = (X * c + Y * s) / cell, v = (-X * s + Y * c) / cell;
   u += 0.18 * noise(u * 0.35, v * 0.35); v += 0.18 * noise(u * 0.35 + 5, v * 0.35 - 3);
@@ -529,7 +488,7 @@ function fields(X, Y, cell, pix, hobbit) {
   const fu = u - bi, fv = v * 0.7 - bj;
   const pid = hash2(bi, bj, 11);
   const vert = hash2(bi, bj, 13) < 0.5;
-  const ns = 1 + Math.floor(hash2(bi, bj, 15) * (hobbit ? 3 : 5));
+  const ns = 1 + Math.floor(hash2(bi, bj, 15) * (small ? 3 : 5));
   const q = vert ? fu : fv;
   const sid = Math.floor(q * ns);
   const k = hash2(sid + bi * 7, bj, 17);
@@ -539,7 +498,7 @@ function fields(X, Y, cell, pix, hobbit) {
   const eu = Math.min(fu, 1 - fu) * cell, ev = Math.min(fv, 1 - fv) * cell / 0.7;
   const es = Math.min(q * ns - sid, sid + 1 - q * ns) / ns * cell * (vert ? 1 : 1 / 0.7);
   const edge = Math.min(eu, ev);
-  const hedgeW = hobbit ? 0.006 : 0.004;
+  const hedgeW = small ? 0.006 : 0.004;
   let hedge = edge < hedgeW + pix * 0.5 ? sat(1 - (edge - hedgeW) / (pix + 1e-6)) : 0;
   if (es < 0.0015 + pix * 0.5 && pid >= 0.3 && pix < 0.006) hedge = Math.max(hedge, 0.2 * sat(1 - (es - 0.0015) / (pix + 1e-6)));
   const tram = (pix < cell * 0.03) ? 0.05 * Math.sin((vert ? fv : fu) * cell / 0.004) : 0;
@@ -552,8 +511,7 @@ function fields(X, Y, cell, pix, hobbit) {
 const ORCH_SP = 0.0044;
 function orchardAt(X, Y, farm = F[9]) {
   if (farm <= 0.2) return null;
-  const hob = farm > 0.85 && Math.abs(Y) < 120 && X > -80 && X < 70;
-  const f = fields(X, Y, hob ? 0.2 : 0.34, 0.0005, hob);
+  const f = fields(X, Y, 0.34, 0.0005, false);
   if (!f[5] || f[3] > 0.05) return null;
   const c = Math.cos(f[6]), s = Math.sin(f[6]);
   const a = X * c + Y * s, b = -X * s + Y * c;
@@ -653,12 +611,11 @@ function colorAt(X, Y, h, slope, pix, mode, dsea) {
   // farmland
   const farm = F[9];
   if (farm > 0.03) {
-    const hob = F[9] > 0.85 && Math.abs(Y) < 120 && X > -80 && X < 70;
-    const cell = hob ? 0.2 : 0.34;
+    const cell = 0.34;
     const pf = sstep(0.25, 0.6, farm + 0.35 * fbm(X * 0.08 + 3, Y * 0.08, 3));
     const favg = 0.5 * pf;
     if (pix < cell * 0.22) {
-      const f = fields(X, Y, cell, pix, hob);
+      const f = fields(X, Y, cell, pix, false);
       const t = sat((cell * 0.22 - pix) / (cell * 0.12)) * pf;
       blend(118, 128, 76, favg * (1 - t));
       const k = 0.4 + 0.6 * sat((cell * 0.08 - pix) / (cell * 0.05));
@@ -712,7 +669,7 @@ function colorAt(X, Y, h, slope, pix, mode, dsea) {
     const pools = fbmA(X, Y, 0.8, Math.max(pix, 0.002), 0.8, 12);
     if (pools > 0.18) blend(46, 64, 62, sat((pools - 0.18) * 6) * marsh);
   }
-  // ash and slag of Mordor
+  // ash and slag of volcanic country
   const ash = F[10];
   if (ash > 0.02) {
     const an = fbm(X * 0.08, Y * 0.08, 4);
@@ -988,75 +945,40 @@ function query(minx, miny, maxx, maxy) {
 /* Deterministic buildings of a settlement (cached). */
 const BCACHE = new Map();
 const STYLE = {
-  hobbit: { roof: [[116, 128, 70], [132, 112, 78], [150, 96, 70]], w: [7, 10], d: [6, 8], dens: 140, grid: 0, h: 4 },
-  bree: { roof: [[150, 122, 74], [96, 94, 98], [134, 104, 70]], w: [9, 14], d: [7, 9], dens: 380, grid: 0, h: 7 },
-  rohan: { roof: [[176, 146, 76], [160, 128, 68], [128, 100, 62]], w: [16, 26], d: [7, 10], dens: 320, grid: 0, h: 8 },
-  gondor: { roof: [[196, 190, 180], [112, 118, 128], [176, 168, 158], [150, 146, 140]], w: [10, 18], d: [9, 14], dens: 1400, grid: 1, h: 11 },
-  minastirith: { roof: [[222, 220, 214], [200, 198, 192], [180, 184, 190]], w: [9, 16], d: [8, 12], dens: 2600, grid: 2, h: 12 },
-  osgiliath: { roof: [[140, 138, 132], [118, 116, 110], [160, 156, 148]], w: [10, 22], d: [8, 16], dens: 500, grid: 1, h: 6, ruin: 1 },
-  elf: { roof: [[158, 170, 178], [182, 184, 176], [140, 150, 160]], w: [10, 16], d: [8, 12], dens: 90, grid: 0, h: 9 },
-  lorien: { roof: [[200, 200, 190]], w: [4, 6], d: [4, 6], dens: 30, grid: 0, h: 20 },
-  lake: { roof: [[112, 84, 62], [96, 80, 70], [130, 100, 72]], w: [8, 12], d: [6, 9], dens: 1600, grid: 0, h: 7 },
-  dale: { roof: [[146, 84, 62], [124, 92, 76], [160, 104, 80]], w: [9, 15], d: [8, 11], dens: 900, grid: 1, h: 9 },
-  harad: { roof: [[206, 186, 146], [196, 172, 132], [220, 200, 160]], w: [9, 16], d: [9, 16], dens: 2200, grid: 1, h: 7 },
-  isengard: { roof: [[40, 40, 44]], w: [6, 10], d: [6, 10], dens: 60, grid: 0, h: 4 },
-  mordor: { roof: [[38, 36, 38], [52, 48, 48]], w: [10, 30], d: [10, 24], dens: 300, grid: 0, h: 12 },
-  morgul: { roof: [[150, 168, 158], [120, 134, 128]], w: [8, 14], d: [8, 12], dens: 700, grid: 0, h: 10 },
-  east: { roof: [[180, 150, 110], [160, 120, 90], [190, 170, 130]], w: [6, 9], d: [6, 9], dens: 500, grid: 0, h: 3, round: 1 },
-  beorning: { roof: [[150, 118, 70]], w: [26, 34], d: [9, 12], dens: 20, grid: 0, h: 9 },
-  dwarf: { roof: [[112, 110, 106], [96, 94, 92], [128, 120, 110]], w: [8, 14], d: [8, 12], dens: 900, grid: 1, h: 7 },
-  dunland: { roof: [[120, 100, 70], [102, 88, 62], [92, 80, 58]], w: [7, 11], d: [5, 7], dens: 160, grid: 0, h: 5 },
-  woodmen: { roof: [[110, 90, 60], [96, 80, 56]], w: [8, 13], d: [6, 8], dens: 200, grid: 0, h: 6 },
+  northern: { roof: [[150, 122, 74], [96, 94, 98], [134, 104, 70]], w: [9, 14], d: [7, 9], dens: 380, grid: 0, h: 7 },
+  stone: { roof: [[196, 190, 180], [112, 118, 128], [176, 168, 158], [150, 146, 140], [160, 92, 66]], w: [10, 18], d: [9, 14], dens: 1400, grid: 1, h: 11 },
+  sunbaked: { roof: [[206, 186, 146], [196, 172, 132], [220, 200, 160]], w: [9, 16], d: [9, 16], dens: 2200, grid: 1, h: 7 },
+  lakeside: { roof: [[112, 84, 62], [96, 80, 70], [130, 100, 72]], w: [8, 12], d: [6, 9], dens: 1600, grid: 0, h: 7 },
+  roundhut: { roof: [[180, 150, 110], [160, 120, 90], [190, 170, 130]], w: [6, 9], d: [6, 9], dens: 500, grid: 0, h: 3, round: 1 },
   ruin: { roof: [[150, 146, 138], [130, 126, 120]], w: [8, 18], d: [8, 14], dens: 260, grid: 1, h: 5, ruin: 1 },
   castle: { roof: [[120, 116, 110]], w: [8, 12], d: [8, 10], dens: 0, grid: 0, h: 6 },
 };
 function buildings(si) {
   if (BCACHE.has(si)) return BCACHE.get(si);
   const s = SETTLE[si];
-  const st = STYLE[s.culture] || STYLE.bree;
+  const st = STYLE[s.culture] || STYLE.northern;
   const out = [];
   const rM = s.r * MI;
-  const n = s.feature ? 0 : Math.round(st.dens * s.r * s.r * Math.PI);
+  const n = Math.round(st.dens * s.r * s.r * Math.PI);
   const orient = hash2(si, 1, 5) * Math.PI;
   let tries = 0;
   while (out.length < n && tries < n * 4) {
     tries++;
     const a = hash2(si, tries, 31) * Math.PI * 2;
-    const rr = Math.pow(hash2(si, tries, 33), s.culture === 'minastirith' ? 0.8 : 0.6) * rM;
+    const rr = Math.pow(hash2(si, tries, 33), 0.6) * rM;
     let ex = Math.cos(a) * rr, ny = Math.sin(a) * rr;
-    if (s.culture === 'minastirith' && ex < -30) continue;           // city faces east; the mountain is behind
     if (s.castle && Math.hypot(ex - (s.cx || 0) * MI, ny - (s.cy || 0) * MI) < (s.cr || 0.15) * MI) continue;   // the castle's own ground
     const keep = 1 - Math.pow(rr / rM, 2) * 0.6;
     if (hash2(si, tries, 35) > keep) continue;
     let ang = st.grid ? orient + Math.round(hash2(si, tries, 37) * 2) * Math.PI / 2 : hash2(si, tries, 39) * Math.PI;
-    if (s.culture === 'minastirith') ang = Math.atan2(ny, ex) + Math.PI / 2;
-    if (s.name !== 'Esgaroth') { evaluate(s.x + ex / MI, s.y + ny / MI, 0.01); if (R.s <= 0.004 || F[15] > 0.5) continue; }   // no houses in the sea or a lake (Lake-town stands on the water)
+    evaluate(s.x + ex / MI, s.y + ny / MI, 0.01); if (R.s <= 0.004 || F[15] > 0.5) continue;   // no houses in the sea or a lake
     const w = mix(st.w[0], st.w[1], hash2(si, tries, 41)), d = mix(st.d[0], st.d[1], hash2(si, tries, 43));
     const col = st.roof[Math.floor(hash2(si, tries, 45) * st.roof.length)];
-    out.push({ x: s.x + ex / MI, y: s.y + ny / MI, w, d, a: ang, c: col, h: st.h * (0.8 + 0.5 * hash2(si, tries, 47)), round: st.round || (s.culture === 'hobbit' && hash2(si, tries, 49) < 0.7) ? 1 : 0, ruin: st.ruin || 0 });
+    out.push({ x: s.x + ex / MI, y: s.y + ny / MI, w, d, a: ang, c: col, h: st.h * (0.8 + 0.5 * hash2(si, tries, 47)), round: st.round ? 1 : 0, ruin: st.ruin || 0 });
   }
   // special structures
   const sp = [];
-  if (s.culture === 'minastirith') {
-    for (let k = 0; k < 7; k++) sp.push({ type: 'arc', x: s.x, y: s.y, r: (60 + k * 95) / MI, a0: -Math.PI * 0.62, a1: Math.PI * 0.62, w: 5 + (7 - k) * 1.2, h: 14 + k * 2, c: [236, 236, 230] });
-    sp.push({ type: 'tower', kind: 'ecthelion', x: s.x - 0.01, y: s.y, r: 9, h: 90, c: [246, 246, 244] });
-    sp.push({ type: 'prow', x: s.x, y: s.y, len: 620, c: [230, 230, 224] });
-  }
-  if (s.culture === 'isengard') {
-    sp.push({ type: 'arc', x: s.x, y: s.y, r: 0.5, a0: -Math.PI, a1: Math.PI, w: 30, h: 30, c: [52, 52, 56] });
-    sp.push({ type: 'tower', kind: 'orthanc', x: s.x, y: s.y, r: 22, h: 150, c: [26, 26, 30], square: 1 });
-  }
-  if (s.culture === 'rohan') {
-    sp.push({ type: 'arc', x: s.x, y: s.y, r: s.r * 0.9, a0: -Math.PI, a1: Math.PI, w: 3, h: 5, c: [120, 96, 64] });
-    if (s.name === 'Edoras') out.push({ x: s.x + 0.001, y: s.y + 0.002, w: 48, d: 18, a: 0.2, c: [214, 176, 64], h: 16, round: 0 });
-  }
-  if (s.culture === 'mordor' && s.name === 'Barad-dûr') sp.push({ type: 'tower', kind: 'baraddur', x: s.x, y: s.y, r: 60, h: 420, c: [18, 16, 18], square: 1 });
-  if (s.culture === 'morgul') sp.push({ type: 'tower', kind: 'morgul', x: s.x, y: s.y, r: 14, h: 110, c: [170, 196, 184] });
   if (s.castle) sp.push({ type: 'castle', kind: s.castle, x: s.x + (s.cx || 0), y: s.y + (s.cy || 0), c: [120, 116, 110] });
-  if (s.havens) sp.push({ type: 'havens', x: s.x, y: s.y, c: [226, 223, 214] });
-  if (s.feature) sp.push({ type: 'feature', kind: s.feature, x: s.x, y: s.y, face: s.gate || 0, c: [120, 116, 110] });
-  else if (s.gate) sp.push({ type: 'gate', x: s.x, y: s.y, face: s.gate, c: [120, 116, 110] });
-  if (s.culture === 'lorien') sp.push({ type: 'mallorn', x: s.x, y: s.y, r: 18, h: 75, c: [190, 190, 180] });
   const res = { list: out, special: sp };
   BCACHE.set(si, res);
   return res;
@@ -1127,8 +1049,8 @@ function drawVectors(ctx, proj, bbox, pix, mode) {
     const w = WALLS[e[1]];
     ctx.beginPath();
     w.pts2.forEach((p, i) => { const q = proj(p[0], p[1]); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); });
-    ctx.strokeStyle = w.name.includes('Isengard') ? 'rgb(40,40,44)' : 'rgb(150,146,138)';
-    ctx.lineWidth = Math.max((w.name.includes('Isengard') ? 30 : 8) / pm, 0.6); ctx.stroke();
+    ctx.strokeStyle = 'rgb(150,146,138)';
+    ctx.lineWidth = Math.max(8 / pm, 0.6); ctx.stroke();
   }
   // settlements
   if (pm < 26) for (const e of items) if (e[0] === 's') {
@@ -1184,6 +1106,6 @@ function buildingsNear(X, Y, rad) {
 }
 
 return { setSeason, D2R, MI, EARTH_C, toLL, toXY, noise, fbm, fbmA, hash2, sat, sstep, mix, clamp, init, evaluate, F, R, CH, tempAt, moistAt,
-  demTile, imageryTile, renderGrid, tileLL, drawVectors, buildingsNear, numenorField, orchardAt, coastSD, CS };
+  demTile, imageryTile, renderGrid, tileLL, drawVectors, buildingsNear, orchardAt, coastSD, CS };
 })();
 if (typeof self !== 'undefined') self.GEN = GEN;
