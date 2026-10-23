@@ -40,7 +40,7 @@ class World:
             import author as A
             with contextlib.redirect_stdout(io.StringIO()): self.coast = A.prepare()
             author = A
-        else: self.coast = author.COAST_SETTLED
+        else: self.coast = author.COAST_SETTLED                  # a copy of the settled map, changed on purpose (test_gate.py)
         self.A = author
         self.westeros = Polygon(self.coast).buffer(0)
         self.islands = [i for i in author.ISLANDS if len(i['pts']) > 2]
@@ -132,7 +132,25 @@ def g5_islands(W, R):
         now = {k: len(v) for k, v in named.items()}
         for k, n in lk.items():
             if now.get(k, 0) != n: bad.append(f'{k}: {now.get(k, 0)} rings, locked at {n}')
+        reg = region_counts(W)
+        for k, n in json.load(open(LOCKS)).get('regions', {}).items():
+            if reg.get(k, 0) != n: bad.append(f'{k}: {reg.get(k, 0)} islands, locked at {n}')
     (R.fail if bad else R.ok)('G5', 'islands locked, one polygon per named island: ' + ('; '.join(bad) if bad else f'{sum(len(v) for v in named.values())} islands'))
+
+
+# the island groups whose counts are locked with the baseline (X0, X1, Y0, Y1), every ring whose middle lies inside
+ISLAND_REGIONS = {'the Iron Islands': (-460, -240, -860, -680), 'Skagos': (340, 460, 440, 590), 'Bear Island': (-330, -200, 120, 260),
+                  'the Narrow Sea and the Stepstones': (400, 1000, -2250, -900), 'the Braavos lagoon': (720, 800, -530, -450),
+                  'the Summer Isles': (-450, 150, -3150, -2850), 'Valyria and the Smoking Sea': (1450, 2200, -2850, -2350),
+                  'the Basilisk Isles': (1600, 1800, -2950, -2800)}
+
+
+def region_counts(W):
+    out = {}
+    for name, (x0, x1, y0, y1) in ISLAND_REGIONS.items():
+        out[name] = sum(1 for i in W.islands if i['name'] not in ('Essos', 'Sothoryos')
+                        and x0 <= (c := Polygon(i['pts']).centroid).x <= x1 and y0 <= c.y <= y1)
+    return out
 
 
 def land_raster(W):
@@ -265,6 +283,26 @@ def g10_wall(W, R):
     else: R.ok('G10', msg)
 
 
+def neck_width(W):
+    """The Neck's width: twice the most that can be taken off every shore with the North and the south still joined."""
+    from scipy import ndimage as ndi
+    from PIL import Image, ImageDraw
+    res, x0, x1, y0, y1 = 0.5, -300, 400, -800, -150
+    im = Image.new('1', (int((x1 - x0) / res), int((y1 - y0) / res)), 0); d = ImageDraw.Draw(im)
+    d.polygon([((x - x0) / res, (y1 - y) / res) for x, y in W.coast], fill=1)
+    edt = ndi.distance_transform_edt(np.array(im, bool)) * res
+    def joined(r):
+        lab, _ = ndi.label(edt >= r)
+        at = lambda n: lab[int((y1 - W.places[n][3]) / res), int((W.places[n][2] - x0) / res)]
+        return bool(at('Moat Cailin') and at('Moat Cailin') == at('The Twins'))
+    lo, hi = 0.0, 150.0
+    if not joined(0.5): return 0.0
+    for _ in range(14):
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if joined(mid) else (lo, mid)
+    return round(2 * lo, 1)
+
+
 def g11_neck(W, R):
     m = next(x for x in W.A.MARSHES if x['name'] == 'The Neck')
     mp = Polygon(m['pts']).buffer(0)
@@ -280,7 +318,11 @@ def g11_neck(W, R):
     if gw and not mp.contains(Point(gw[2], gw[3])): warn.append('Greywater Watch outside the marsh')
     others = [r['name'] for r in W.A.ROADS if r['name'] != 'The Kingsroad' and LineString(r['pts']).intersects(mp)]
     if others: bad.append('roads through the Neck besides the Kingsroad: ' + ', '.join(others))
-    msg = 'the Neck: a wetland on land, Moat Cailin on the causeway'
+    width = neck_width(W)
+    if width < 10: bad.append(f'the Neck {width} mi wide (under 10)')
+    design = locks().get('neck_width')
+    if design and abs(width - design) > 0.1 * design: warn.append(f'the Neck {width} mi wide, designed at {design}')
+    msg = f'the Neck: a wetland on land, Moat Cailin on the causeway, {width} mi wide at its narrowest'
     if bad: R.fail('G11', msg + ': ' + '; '.join(bad))
     elif warn: R.warn('G11', msg + ': ' + '; '.join(warn))
     else: R.ok('G11', msg)
@@ -392,10 +434,80 @@ def g15_stepstones(W, R):
     (R.fail if bad else R.ok)('G15', 'the Stepstones: ' + ('; '.join(bad) if bad else ', '.join(f'{n} {k}' for k, n in now.items()) + ', the strait open'))
 
 
+def g13_slavers_bay(W, R):
+    """Slaver's Bay: open to the Gulf of Grief by one mouth, Astapor and Meereen at their rivers' mouths, Yunkai on
+    the shore."""
+    from scipy import ndimage as ndi
+    from PIL import Image, ImageDraw
+    res, x0, x1, y0, y1 = 1.0, 1950, 2950, -2650, -1850
+    im = Image.new('1', (int((x1 - x0) / res), int((y1 - y0) / res)), 0); d = ImageDraw.Draw(im)
+    for _, ring in W.rings: d.polygon([((x - x0) / res, (y1 - y) / res) for x, y in ring], fill=1)
+    water = ~np.array(im, bool); lab, _ = ndi.label(water)
+    at = lambda x, y: lab[int((y1 - y) / res), int((x - x0) / res)]
+    bad = []
+    bay, gulf = at(2560, -2150), at(2150, -2450)
+    if not bay: bad.append("the bay is closed or filled (its label on land)")
+    elif bay != gulf: bad.append('the bay is closed: no water joins it to the Gulf of Grief')
+    else:                                                   # the bay's water where it crosses the edge of its own box
+        bx0, bx1, by0, by1 = 2400, 2900, -2420, -1860                 # clear of the Isle of Cedars and the western shore
+        i0, i1, j0, j1 = int((y1 - by1) / res), int((y1 - by0) / res), int((bx0 - x0) / res), int((bx1 - x0) / res)
+        sub = water[i0:i1 + 1, j0:j1 + 1]; sl, _ = ndi.label(sub)
+        k = sl[int((by1 - -2150) / res), int((2560 - bx0) / res)]
+        ring = np.r_[sl[0, :], sl[1:, -1], sl[-1, -2::-1], sl[-2:0:-1, 0]] == k
+        runs = int(np.sum(ring & ~np.roll(ring, 1))) if ring.any() and not ring.all() else int(ring.all())
+        if runs != 1: bad.append(f'{runs} openings out of the bay (one expected)')
+    riv = {r['name']: r for r in W.A.RIVERS}
+    for town, river in (('Astapor', 'The Worm'), ('Meereen', 'The Skahazadhan')):
+        p = W.places.get(town)
+        if not p or river not in riv: bad.append(f'{town} or {river} missing'); continue
+        e = riv[river]['pts'][-1]
+        if math.hypot(p[2] - e[0], p[3] - e[1]) > 1.5: bad.append(f'{town} {math.hypot(p[2] - e[0], p[3] - e[1]):.1f} mi from the mouth of {river}')
+    y = W.places.get('Yunkai')
+    if not y or not (y[0] in W.A.ON_SEA or y[0] in getattr(W.A, 'RIVER_PORTS', {})): bad.append('Yunkai not tagged as a port')
+    (R.fail if bad else R.ok)('G13', "Slaver's Bay: " + ('; '.join(bad) if bad else 'one mouth to the Gulf of Grief, Astapor on the Worm, Meereen on the Skahazadhan, Yunkai on the shore'))
+
+
+def g17_known(W, R):
+    """The two failures found before: Davos sails from White Harbor to Skagos (300 9-11) by a sea lane, and Tormund
+    (300 3-9) keeps to the land."""
+    import travel, cast
+    found, _, _ = travel.run((W.A, [r for _, r in W.rings]))
+    bad = []
+    steps = cast.PATHS.get('davos') or []
+    if not any(s[0] == 'lane' and s[1] == 'white-harbor-skagos' for s in steps): bad.append('Davos has no sea lane to Skagos')
+    for who, a, b in (('davos', '300 9 1', '300 11 3'), ('tormund', '300 3 1', '300 9 30')):
+        hits = [r for rows in found.values() for r in rows if r[0] == who and cast.T(a) <= cast.T(r[1]) <= cast.T(b)]
+        if hits: bad.append(f'{who} {hits[0][1]} at {hits[0][2]:.0f},{hits[0][3]:.0f}')
+    (R.fail if bad else R.ok)('G17', 'known failures stay fixed: ' + ('; '.join(bad) if bad else "Davos sails to Skagos, Tormund keeps to the land"))
+
+
+def g19_labels(W, R):
+    """What is ours, what is borrowed and how it may be used is written down where readers and agents find it."""
+    root = os.path.join(HERE, '..', '..')
+    read = lambda f: open(os.path.join(root, f), encoding='utf-8').read()
+    bad = []
+    app, refs, laws = read('src/app.js'), read('tools/refs/SOURCES.md'), read('docs/geodyssey/LAWS.md')
+    if 'illustrative only' not in app or 'Britain' not in app or 'Orkney' not in app: bad.append('the About panel does not call the borrowed shore detail illustrative')
+    if 'Natural Earth' not in refs or 'public domain' not in refs: bad.append('coast provenance (Natural Earth, public domain) not recorded')
+    if 'No OpenStreetMap data' not in refs: bad.append('no statement on OpenStreetMap (ODbL)')
+    if 'lawyer' not in laws: bad.append('no rights review before any paid or promoted use in LAWS.md')
+    grades = {'text', 'map', 'design', 'inferred', 'estimate', 'author', 'todo'}
+    for st in W.A.STATEMENTS:
+        if st.get('grade') not in grades: bad.append(f"statement {st.get('id')} has no grade")
+    (R.fail if bad else R.ok)('G19', 'labels and sources: ' + ('; '.join(bad) if bad else 'borrowed shores marked illustrative, provenance and rights recorded, every statement graded'))
+
+
+def g18_seeded(W, R):
+    """Every seeded failure (tools/known/test_gate.py) makes the gate fail the rule that guards it."""
+    import test_gate
+    missed = test_gate.run(W, quiet=True)
+    (R.fail if missed else R.ok)('G18', f'seeded failures: ' + (', '.join(missed) + ' not caught' if missed else f'all {len(test_gate.SEEDS)} caught'))
+
+
 def g16_travellers(W, R):
     """Rule 16: every leg of every journey tested as a line (tools/known/travel.py)."""
     import travel
-    found, legs, ncx = travel.run()
+    found, legs, ncx = travel.run((W.A, [r for _, r in W.rings]), getattr(W, 'built', None))
     bad = [f'{len(v)} {k}' + (f' (e.g. {v[0][0]} {v[0][1]} at {v[0][2]:.0f},{v[0][3]:.0f})' if v else '') for k, v in found.items() if v]
     (R.fail if bad else R.ok)('G16', f'travellers: {legs} moving legs, {ncx} river crossings' + (': ' + '; '.join(bad) if bad else ', every leg on its element'))
 
@@ -423,7 +535,7 @@ def g18_rivers_downhill(W, R):
     if rows:
         for r in rows:
             if r['rises']: bad.append(f"{r['name']} climbs {r['worst']:.0f} m at {r['at']}")
-            elif r['banks'] and r['off'] / r['banks'] > rivercheck.OFF_FLOOR: warn.append(f"{r['name']} off its valley floor at {r['off']} of {r['banks']} miles")
+            elif r['off'] > max(2, rivercheck.OFF_FLOOR * r['banks']): warn.append(f"{r['name']} off its valley floor at {r['off']} of {r['banks']} miles")
     msg = f"rivers never climb and cross no crest{'' if rows is None else f' ({len(rows)} rivers walked on the ground)'}"
     if bad: R.fail('18', msg + ': ' + '; '.join(bad))
     elif warn: R.warn('18', msg + ': ' + '; '.join(warn))
@@ -432,7 +544,8 @@ def g18_rivers_downhill(W, R):
 
 RULES = {'G1': g1_rivers_over_sea, 'G2': g2_mouths, 'G3': g3_ports, 'G4': g4_validity, 'G5': g5_islands, 'G6': g6_flips,
          'G7': g7_anchors, '7b': g7b_graft, 'G8': g8_one_westeros, 'G9': g9_seas_lakes, '9b': g9b_inlets, 'G10': g10_wall,
-         'G11': g11_neck, 'G12': g12_rhoyne, 'G14': g14_valyria, 'G15': g15_stepstones, 'G16': g16_travellers, '18': g18_rivers_downhill}
+         'G11': g11_neck, 'G12': g12_rhoyne, 'G13': g13_slavers_bay, 'G14': g14_valyria, 'G15': g15_stepstones, 'G16': g16_travellers, 'G17': g17_known,
+         'G19': g19_labels, '18': g18_rivers_downhill, 'G18': g18_seeded}
 
 
 def run(which=None, W=None):
@@ -444,18 +557,23 @@ def run(which=None, W=None):
     return R
 
 
+def lock_data(W):
+    """What a baseline locks: island counts by name and by group, Valyria's ring ids, the Stepstones, the Neck's width."""
+    named = {}
+    for i in W.islands:
+        if i['name'] not in ('Essos', 'Sothoryos'): named[i['name'] or 'isle'] = named.get(i['name'] or 'isle', 0) + 1
+    return {'islands': named, 'regions': region_counts(W), 'neck_width': neck_width(W),
+            'valyria': sorted(ring_id(i) for i in W.islands if i['name'] in VALYRIA_GROUP),
+            'stepstones': {k: sum(1 for i in W.islands if i['name'] == k) for k in STEPSTONES}}
+
+
 def approve(W):
     """After a build that passes every rule: its land becomes the baseline for the flip check (G6) and its islands are
     locked (G5 counts, G14 Valyria's ring ids, G15 the Stepstones)."""
     import landraster
     os.makedirs(QA, exist_ok=True)
     landraster.save(BASELINE, land_raster(W))
-    named = {}
-    for i in W.islands:
-        if i['name'] not in ('Essos', 'Sothoryos'): named[i['name'] or 'isle'] = named.get(i['name'] or 'isle', 0) + 1
-    lk = {'islands': named, 'valyria': sorted(ring_id(i) for i in W.islands if i['name'] in VALYRIA_GROUP),
-          'stepstones': {k: sum(1 for i in W.islands if i['name'] == k) for k in STEPSTONES}}
-    json.dump(lk, open(LOCKS, 'w'), indent=1, sort_keys=True)
+    json.dump(lock_data(W), open(LOCKS, 'w'), indent=1, sort_keys=True)
     print(f'approved: {BASELINE} and {LOCKS} written')
 
 

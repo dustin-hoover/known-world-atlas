@@ -34,18 +34,26 @@ def world():
     return author, cast, polys
 
 
-def run(verbose=False):
+def run(prepared=None, built=None):
+    """-> ({kind: [(traveller, day, X, Y, why)]}, moving legs, crossings known). prepared: (author, polys) already
+    settled (the gate's World), else author.prepare() is run here; built: cast.BUILT to test instead of building it
+    (the seeded tests)."""
     import shapely
     from shapely.geometry import LineString, Point, Polygon
     from shapely.ops import unary_union
-    author, cast, polys = world()
-    import paths
+    import paths, cast
+    if prepared is None: author, cast, polys = world()
+    else:
+        author, polys = prepared
+        if built is None and not cast.BUILT:
+            with contextlib.redirect_stdout(io.StringIO()): cast.build(author.PLACES, author.ROADS, author.STORIES, polys, author.RIVERS)
+    B = built if built is not None else cast.BUILT
     land = unary_union([Polygon(pl).buffer(0) for pl in polys]); shapely.prepare(land); edge = land.boundary
     water = unary_union([LineString(r['pts']).buffer(BOAT) for r in author.RIVERS] + [Polygon(l['pts']).buffer(BOAT) for l in author.LAKES]
                         + [edge.buffer(BOAT)]); shapely.prepare(water)
     rivers = [(r['name'], LineString(r['pts'])) for r in author.RIVERS]
-    cx = cast.BUILT['crossings']
-    full, windows, CHARS, T = cast.BUILT['full'], cast.BUILT['windows'], cast.CHARS, cast.T
+    cx = B['crossings']
+    full, windows, CHARS, T = B['full'], B['windows'], cast.CHARS, cast.T
     rules = [(re.compile(rx), T(a), T(b), m) for rx, a, b, m in windows]
     def mode(k, t):
         if 'dragon' in CHARS[k]: return 'dragon'

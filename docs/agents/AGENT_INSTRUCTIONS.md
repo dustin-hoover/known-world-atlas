@@ -147,7 +147,9 @@ npm run author        # regenerate src/geo.js and src/sources.js from tools/know
 npm run check         # syntax-check every src/*.js file
 npm run audit         # test the map against STATEMENTS; writes docs/SOURCES.md
 python3 tools/known/checks.py   # places against the shore, journeys leg by leg (exit 1 on any failure)
-python3 tools/known/gate.py     # the release gate (exit 1 on any FAIL)
+python3 tools/known/gate.py     # the release gate (exit 1 on any FAIL); npm run gate
+python3 tools/known/test_gate.py   # the seeded failures alone (gate G18): each must be caught
+python3 tools/known/gate.py --baseline   # after a build that passes everything: approve its land and island locks
 npm run dev           # build and serve http://localhost:8765/dist/preview.html
 ```
 

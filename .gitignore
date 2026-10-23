@@ -22,3 +22,4 @@ tools/refs/*
 !tools/refs/compare.py
 !tools/refs/analogues.py
 !tools/refs/notrace.py
+.venv/

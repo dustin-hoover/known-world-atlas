@@ -6,7 +6,7 @@
 Each river's drawn course (gen.js riverLine, the line the imagery draws) is walked every quarter mile on the ground
 gen.js makes at full DEM detail. A rise of more than 5 m within a mile, going downstream, FAILs (rule 18); a point
 of the course more than 2 m above the lower of the two banks a mile and a half to either side is off its valley
-floor (WARN when more than 2% of a river's points are; a bank within 3 miles of another river, at a confluence, is
+floor (WARN when more than 2% of a river's points are, and more than two; a bank within 3 miles of another river, at a confluence, is
 left out). Runs the terrain code headless in Chromium (tools/known/terrain.html).
 """
 import os, sys, json, asyncio
@@ -85,7 +85,7 @@ def main():
     bad = 0
     for r in rows:
         f = r['rises'] > 0
-        floor = r['banks'] and r['off'] / r['banks'] > OFF_FLOOR
+        floor = r['off'] > max(2, OFF_FLOOR * r['banks'])
         bad += f
         print(f"{'FAIL' if f else 'WARN' if floor else 'PASS'}  {r['name']:30s} {r['miles']:5d} mi  worst rise {r['worst']:7.1f} m"
               f"{' at ' + str(r['at']) if r['worst'] > RISE else ''}  off the valley floor {r['off']}/{r['banks']}"

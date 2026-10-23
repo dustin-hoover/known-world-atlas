@@ -21,6 +21,12 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm run check
+      - name: Release gate (tools/known/gate.py; any FAIL stops the release)
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --quiet numpy shapely scipy pillow scikit-image playwright
+          .venv/bin/python -m playwright install --with-deps chromium
+          .venv/bin/python tools/known/gate.py
       - run: npm run build
       - uses: actions/upload-pages-artifact@v5
         with:

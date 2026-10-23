@@ -9,7 +9,9 @@
     "serve": "node scripts/serve.js",
     "check": "for f in src/*.js; do node --check $f || exit 1; done && echo syntax ok",
     "audit": "node tools/sources/audit.js --md docs/SOURCES.md",
-    "author": "python3 tools/known/author.py && node build.js"
+    "author": "python3 tools/known/author.py && node build.js",
+    "gate": "python3 tools/known/gate.py",
+    "gate:seeds": "python3 tools/known/test_gate.py"
   },
   "dependencies": {
     "@fontsource/alegreya-sans": "5.3.0",
