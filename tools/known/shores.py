@@ -1,5 +1,5 @@
 """Essos and Sothoryos from real shores: each stretch of our own outline takes the detail of a real coast of like
-character, and a few real islands and peninsulas are moved bodily (Valyria from the Peloponnese, Ib from Iceland).
+character, and a few real islands and peninsulas are moved bodily and disguised (Valyria, Ib, the Smoking Sea).
 
 Our outline (author.py ESSOS, SOTHORYOS) says where the coast runs, from the books and named places' positions.
 A real coast (Natural Earth 1:10m, public domain) is laid along it like a ribbon: the real coast is smoothed into a

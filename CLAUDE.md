@@ -1,4 +1,4 @@
-# The Known World — notes for Claude Code
+# The Known World — notes for coding agents
 
 A fork of Arda Atlas's engine for A Song of Ice and Fire. **Read docs/geodyssey/LAWS.md first** (books only,
 facts in our own words, never trace a published map, no adaptation material), then PLAYBOOK.md and got/PLAN.md.
@@ -124,11 +124,11 @@ plan), got/PLAN.md. Starter code lives in `worlds/` (`npm run worlds` validates 
 - Zoom expressions are allowed in layer `filter`s (used for region labels).
 - None of the `src/*.js` files may contain a closing script tag string; `build.js` refuses to build.
 
-## Hosting constraints (claude.ai artifact)
-`dist/index.html` must stay body-only with a `<title>` near the top. The artifact CSP allows scripts
-only from cdnjs, jsDelivr, unpkg; stylesheets only from Google Fonts; no fetch/XHR to other hosts,
-no iframes, no downloads. Blob workers, WebGL, Web Audio (after a click) and dynamic `import()` from
-jsDelivr all work. On a normal static host (`site/`) none of these limits apply.
+## Hosting constraints (hosts that wrap the page themselves)
+`dist/index.html` must stay body-only with a `<title>` near the top, for hosts that supply their own `<html>`/`<head>`
+and a strict content policy (no fetch/XHR to other hosts, no iframes, no downloads). The page loads nothing from any
+other site: build.js inlines the map engine, three.js and the fonts. Blob workers, WebGL and Web Audio (after a click)
+all work. On a normal static host (`site/`, GitHub Pages) none of these limits apply.
 
 ## Where to take it next
 See `dist/blueprint.html`: canon in PostGIS with provenance, eroded 30 m terrain, a conditioned
