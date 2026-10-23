@@ -49,7 +49,7 @@ PLACES = [
     G('The Torches', 'ruin', ('wall', 126), *WATCH, 'ADWD', 'An abandoned castle of the Watch on the Wall.', rank=6, grade='text'),
     G('Greenguard', 'ruin', ('wall', 143), *WATCH, 'ADWD', 'A castle of the Watch near the Wall\'s eastern end.', rank=6, grade='text'),
 
-    G('The Bridge of Skulls', 'landmark', ('in', 'Westwatch-by-the-Bridge', -2.0, 3.0), *WATCH, 'ACOK', 'The bridge across the Gorge west of the Shadow Tower.', grade='text'),
+    G('The Bridge of Skulls', 'landmark', ('in', 'Westwatch-by-the-Bridge', 5.9, 11.7), *WATCH, 'ACOK', 'The bridge across the Gorge, by Westwatch, west of the Shadow Tower.', grade='text'),
 
     # ------------------------------------------------------------ the North
     G('Wintertown', 'town', ('in', 'Winterfell', 2.5, -2.5), *N, 'AGOT', 'The town under Winterfell\'s walls, which fills in winter.', grade='text'),

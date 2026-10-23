@@ -80,10 +80,10 @@ def g3_ports(W, R):
     lakes = {l['name']: Polygon(l['pts']).exterior for l in W.A.LAKES}
     n = 0
     for p in W.A.PLACES:
-        coastal = p[1] == 'port' or p[7].get('coast') or p[0] in W.A.ON_SEA
+        coastal = p[1] == 'port' or p[7].get('coast') or p[0] in W.A.ON_SEA or p[0] in river_ports
         if not coastal: continue
         n += 1
-        if p[0] in river_ports:
+        if p[0] in river_ports:                                    # measured against its river or lake, never skipped
             on = river_ports[p[0]]; g = riv.get(on) or lakes.get(on)
             if g is None: bad.append(f'{p[0]} (tagged to {on}, which does not exist)'); continue
             d = g.distance(Point(p[2], p[3]))
@@ -333,6 +333,65 @@ def g12_rhoyne(W, R):
     (R.fail if bad else R.ok)('G12', msg + (': ' + '; '.join(bad) if bad else ''))
 
 
+VALYRIA_GROUP = ('Valyria', 'The Smoking Sea')
+
+
+def ring_id(i):
+    """A ring's id: its name, where it lies and how big it is. Any change to its shape changes the id."""
+    g = Polygon(i['pts'])
+    return f"{i['name']}@{g.centroid.x:.1f},{g.centroid.y:.1f}/{g.area:.1f}"
+
+
+def locks():
+    return json.load(open(LOCKS)) if os.path.exists(LOCKS) else {}
+
+
+def g14_valyria(W, R):
+    """Valyria and the Smoking Sea: the rings keep their locked ids (nothing merged, closed or lost), every ring valid,
+    and channels narrower than half a mile between them are listed for review."""
+    rings = [i for i in W.islands if i['name'] in VALYRIA_GROUP]
+    ids = sorted(ring_id(i) for i in rings)
+    bad, warn = [], []
+    for i in rings:
+        if not Polygon(i['pts']).is_valid: bad.append(f"{ring_id(i)} invalid")
+    lk = locks().get('valyria')
+    if lk is None: warn.append('no locked ids yet (approve a baseline with --baseline)')
+    else:
+        gone, new = sorted(set(lk) - set(ids)), sorted(set(ids) - set(lk))
+        if gone: bad.append(f'{len(gone)} locked rings changed or gone (e.g. {gone[0]})')
+        if new: bad.append(f'{len(new)} rings not in the lock (e.g. {new[0]})')
+    gs = [Polygon(i['pts']).buffer(0) for i in rings] + [Polygon(next(i for i in W.A.ISLANDS if i['name'] == 'Essos')['pts']).buffer(0)]
+    narrow = sum(1 for a in range(len(gs)) for b in range(a + 1, len(gs)) if 0 < gs[a].distance(gs[b]) < 0.5)
+    if narrow: warn.append(f'{narrow} channels under half a mile wide')
+    msg = f'Valyria and the Smoking Sea: {len(rings)} rings'
+    if bad: R.fail('G14', msg + ': ' + '; '.join(bad))
+    elif warn: R.warn('G14', msg + ': ' + '; '.join(warn))
+    else: R.ok('G14', msg + ', ids locked')
+
+
+STEPSTONES = {'The Stepstones': 3, 'Bloodstone': 1}
+
+
+def g15_stepstones(W, R):
+    """The Stepstones: the locked count of islands, and the strait between Dorne and the Disputed Lands open (a channel
+    at least 2 mi wide from the Sea of Dorne's mouth to the Summer Sea)."""
+    from scipy import ndimage as ndi
+    from PIL import Image, ImageDraw
+    want = locks().get('stepstones', STEPSTONES)
+    now = {k: sum(1 for i in W.islands if i['name'] == k) for k in want}
+    bad = [f'{k}: {now[k]} islands, locked at {n}' for k, n in want.items() if now[k] != n]
+    res, x0, x1, y0, y1 = 0.5, 560, 1000, -2400, -1850
+    im = Image.new('1', (int((x1 - x0) / res), int((y1 - y0) / res)), 0); d = ImageDraw.Draw(im)
+    for _, ring in W.rings: d.polygon([((x - x0) / res, (y1 - y) / res) for x, y in ring], fill=1)
+    water = ~np.array(im, bool)
+    passable = ndi.distance_transform_edt(water) * res >= 1.0
+    lab, _ = ndi.label(passable)
+    at = lambda x, y: lab[int((y1 - y) / res), int((x - x0) / res)]
+    a, b = at(660, -1950), at(800, -2300)
+    if not (a and a == b): bad.append('the strait between Dorne and the Disputed Lands is closed (no channel 2 mi wide)')
+    (R.fail if bad else R.ok)('G15', 'the Stepstones: ' + ('; '.join(bad) if bad else ', '.join(f'{n} {k}' for k, n in now.items()) + ', the strait open'))
+
+
 NAMED_PASSES = ("The Prince's Pass", 'The Boneway', 'The Bloody Gate', 'The Skirling Pass')
 
 
@@ -365,7 +424,7 @@ def g18_rivers_downhill(W, R):
 
 RULES = {'G1': g1_rivers_over_sea, 'G2': g2_mouths, 'G3': g3_ports, 'G4': g4_validity, 'G5': g5_islands, 'G6': g6_flips,
          'G7': g7_anchors, '7b': g7b_graft, 'G8': g8_one_westeros, 'G9': g9_seas_lakes, '9b': g9b_inlets, 'G10': g10_wall,
-         'G11': g11_neck, 'G12': g12_rhoyne, '18': g18_rivers_downhill}
+         'G11': g11_neck, 'G12': g12_rhoyne, 'G14': g14_valyria, 'G15': g15_stepstones, '18': g18_rivers_downhill}
 
 
 def run(which=None, W=None):
@@ -377,7 +436,26 @@ def run(which=None, W=None):
     return R
 
 
+def approve(W):
+    """After a build that passes every rule: its land becomes the baseline for the flip check (G6) and its islands are
+    locked (G5 counts, G14 Valyria's ring ids, G15 the Stepstones)."""
+    import landraster
+    os.makedirs(QA, exist_ok=True)
+    landraster.save(BASELINE, land_raster(W))
+    named = {}
+    for i in W.islands:
+        if i['name'] not in ('Essos', 'Sothoryos'): named[i['name'] or 'isle'] = named.get(i['name'] or 'isle', 0) + 1
+    lk = {'islands': named, 'valyria': sorted(ring_id(i) for i in W.islands if i['name'] in VALYRIA_GROUP),
+          'stepstones': {k: sum(1 for i in W.islands if i['name'] == k) for k in STEPSTONES}}
+    json.dump(lk, open(LOCKS, 'w'), indent=1, sort_keys=True)
+    print(f'approved: {BASELINE} and {LOCKS} written')
+
+
 if __name__ == '__main__':
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
-    R = run(args or None); R.show()
+    W = World()
+    R = run(args or None, W); R.show()
+    if '--baseline' in sys.argv:
+        if R.failed() or args: print('not approved: a baseline needs every rule run and none failing'); sys.exit(1)
+        approve(W)
     sys.exit(1 if R.failed() else 0)

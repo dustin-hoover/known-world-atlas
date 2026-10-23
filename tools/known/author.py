@@ -202,6 +202,8 @@ RIVERS = [
     {'name': 'The Blue Fork', 'w0': 30, 'w1': 200, 'rank': 3, 'pts': [[192, -671], [154, -768], [173, -892]]},
     {'name': 'The Red Fork', 'w0': 30, 'w1': 220, 'rank': 2, 'pts': [[-212, -974], [-140, -938], [-41, -901], [76, -886], [173, -892]]},
     {'name': 'The Trident', 'w0': 220, 'w1': 420, 'rank': 1, 'pts': [[173, -892], [225, -930]]},
+    # Riverrun stands where the Tumblestone flows into the Red Fork (AGOT); its course is ours
+    {'name': 'The Tumblestone', 'w0': 20, 'w1': 160, 'rank': 3, 'to': 'The Red Fork', 'pts': [[-150, -790], [-100, -830], [-62, -868], [-38, -898]]},
     {'name': 'The Blackwater Rush', 'w0': 40, 'w1': 380, 'rank': 1, 'pts': [[-233, -1137], [-86, -1210], [72, -1266], [227, -1299]]},
     {'name': 'The Mander', 'w0': 40, 'w1': 420, 'rank': 1, 'pts': [[130, -1411], [-24, -1479], [-140, -1694], [-236, -1841], [-342, -1787], [-392, -1705]]},
     {'name': 'The Honeywine', 'w0': 20, 'w1': 200, 'rank': 3, 'pts': [[-348, -1967], [-403, -2024], [-426, -2153]]},
@@ -359,6 +361,7 @@ PLACES = [
     P('Eastwatch-by-the-Sea', 'fortress', 157, 458, 'watch', 'The Wall', 'The Watch\'s castle at the Wall\'s eastern end, on the Bay of Seals.', rank=3),
     P('The Shadow Tower', 'fortress', -110, 452, 'watch', 'The Wall', 'The westernmost manned castle of the Watch, by the mountains.', rank=3),
     P('Westwatch-by-the-Bridge', 'ruin', -145, 450, 'watch', 'The Wall', 'An abandoned castle near the Wall\'s western end.', rank=5),
+    P('The Gorge', 'landmark', -118, 474, 'watch', 'The Wall', 'A deep gorge between the Wall\'s western end and the Bay of Ice; raiders climb down into it to get round the Wall.', rank=5),
     P('The Nightfort', 'ruin', -40, 452, 'watch', 'The Wall', 'The oldest and largest castle on the Wall, long abandoned.', rank=4),
     P('Mole\'s Town', 'village', 20, 432, 'north', 'The Gift', 'A village south of Castle Black, much of it underground.', rank=5),
     P('Last Hearth', 'fortress', 110, 330, 'north', 'The North', 'Seat of House Umber.', rank=4),
@@ -436,7 +439,7 @@ PLACES = [
     # Dorne
     P('Sunspear', 'fortress', 588, -2243, 'dorne', 'Dorne', 'Seat of House Martell on the eastern coast of Dorne.', rank=2, culture='sunbaked', r=0.4, pop=10000),
     P('The Water Gardens', 'landmark', 546, -2268, 'dorne', 'Dorne', 'A palace of pools and fountains by the sea.', rank=4),
-    P('Planky Town', 'port', 518, -2391, 'dorne', 'Dorne', 'A river port of boats lashed together at the mouth of the Greenblood.', rank=4),
+    P('Planky Town', 'port', 545, -2308, 'dorne', 'Dorne', 'A river port of boats lashed together at the mouth of the Greenblood.', rank=4),
     P('Yronwood', 'fortress', 163, -2212, 'dorne', 'Dorne', 'Seat of House Yronwood.', rank=4),
     P('Starfall', 'fortress', -224, -2372, 'dorne', 'Dorne', 'Seat of House Dayne where the Torrentine meets the sea.', rank=4),
     P('Hellholt', 'fortress', 92, -2411, 'dorne', 'Dorne', 'Seat of House Uller in the sands.', rank=5),
@@ -545,6 +548,10 @@ ROADS = [
     {'name': 'The Demon Road', 'cls': 3, 'pts': [[1420, -2200], [1700, -2280], [2000, -2300], [2452, -2150]]},
 ]
 WALLS = [{'name': 'The Wall', 'ice': 1, 'pts': [[-145, 449], [-60, 451], [20, 452], [100, 454], [157, 456]]}]
+# the Gorge parts the Wall's western end from the Bay of Ice; the Bridge of Skulls crosses it (ACOK, ADWD). A dry canyon
+# cut into the ground (gen.js beds, `cut` metres below the land, walls `steep` times a river valley's); its course is ours
+GORGES = [{'name': 'The Gorge', 'cut': 300, 'steep': 6, 'half': 0.12,
+           'pts': [[-108, 490], [-118, 474], [-126, 461], [-131, 455], [-134, 451.5]]}]
 
 STORIES = {
     'agot': {'title': 'A Game of Thrones', 'start': '298 1 1', 'end': '299 6 1'},
@@ -760,6 +767,7 @@ def prepare():
     from shapely.geometry import Polygon as _P
     from shapely.ops import unary_union as _U
     mouth_towns(_U([_P(coast_s).buffer(0)] + [_P(i['pts']).buffer(0) for i in ISLANDS if i['name'] in ('Essos', 'Sothoryos')]))
+    river_ports()
     # the gazetteer's places, set against the settled map, then settled themselves
     import gazetteer
     new, moved = gazetteer.resolve(PLACES, RIVERS, WALLS)
@@ -865,6 +873,35 @@ MOUTH_TOWNS = {'Planky Town': ('The Greenblood', 'mid'), 'White Harbor': ('The W
                'Volantis': ('The Rhoyne', 'mid'), 'Meereen': ('The Skahazadhan', 'near'), 'Astapor': ('The Worm', 'near')}
 
 
+# ports on a river or a lake: each stands on its water (the gate measures it there, not against the sea's shore)
+RIVER_PORTS = {'Riverrun': 'The Red Fork', 'The Twins': 'The Green Fork', 'Harrenhal': 'The Gods Eye',
+               "King's Landing": 'The Blackwater Rush', 'Oldtown': 'The Honeywine', 'White Harbor': 'The White Knife',
+               'Planky Town': 'The Greenblood', 'Volantis': 'The Rhoyne', 'Selhorys': 'The Rhoyne', 'Chroyane': 'The Rhoyne',
+               'Astapor': 'The Worm', 'Meereen': 'The Skahazadhan', 'Qohor': 'The Qhoyne', 'Norvos': 'The Noyne'}
+
+
+def river_ports():
+    """A river port stands on its river (a lake port a half mile in from its shore), its landmarks with it."""
+    import math
+    from shapely.geometry import LineString, Point, Polygon
+    riv = {r['name']: LineString(r['pts']) for r in RIVERS}; lak = {l['name']: Polygon(l['pts']) for l in LAKES}
+    for name, on in RIVER_PORTS.items():
+        t = next((p for p in PLACES if p[0] == name), None)
+        if not t: continue
+        P = Point(t[2], t[3])
+        if on in riv: q = riv[on].interpolate(riv[on].project(P))
+        else:
+            ring = lak[on].exterior; e = ring.interpolate(ring.project(P))
+            v = (P.x - e.x, P.y - e.y); L = math.hypot(*v) or 1
+            if lak[on].contains(P): v = (-v[0], -v[1])
+            q = Point(e.x + v[0] / L * 0.5, e.y + v[1] / L * 0.5)
+        dx, dy = q.x - t[2], q.y - t[3]
+        if math.hypot(dx, dy) < 0.05: continue
+        group = [p for p in PLACES if p is t or (p[1] in ('landmark', 'tower') and math.hypot(p[2] - t[2], p[3] - t[3]) < 8)]
+        for p in group: p[2], p[3] = round(p[2] + dx, 2), round(p[3] + dy, 2)
+        if math.hypot(dx, dy) > 0.5: print(f'  {name} stands on {on} (moved {math.hypot(dx, dy):.1f} mi)')
+
+
 def mouth_towns(land=None):
     import math
     from shapely.geometry import Point
@@ -885,7 +922,7 @@ def mouth_towns(land=None):
             d, q = min((ashore(g) for g in sides), key=lambda r: r[0])
             if q is not None: X, Y = q.x, q.y
         dx, dy = X - t[2], Y - t[3]
-        if math.hypot(dx, dy) > 80: continue
+        if math.hypot(dx, dy) > 30: print(f'  NOTE {town} is {math.hypot(dx, dy):.0f} mi from the mouth of {river}: check its authored position')
         group = [p for p in PLACES if p is t or (p[1] in ('landmark', 'tower') and math.hypot(p[2] - t[2], p[3] - t[3]) < 8)]
         for p in group: p[2], p[3] = round(p[2] + dx, 1), round(p[3] + dy, 1)
         print(f'  {town} stands at the mouth of {river} (moved {math.hypot(dx, dy):.1f} mi)')
@@ -929,7 +966,7 @@ const GEO = (() => {
         ('RIVERS', RIVERS), ('LAKES', LAKES), ('FORESTS', FORESTS), ('MARSHES', MARSHES), ('ARID', ARID), ('FARMS', FARMS),
         ('GRASS', GRASS), ('ASH', ASH), ('UPLIFT', UPLIFT), ('ICE', ICE), ('RELIEF', RELIEF),
         ('PLACES', PLACES), ('REGION_LABELS', REGION_LABELS), ('SEA_LABELS', SEA_LABELS), ('REALMS', REALMS),
-        ('ADMIN', ADMIN), ('PEOPLES', PEOPLES), ('ROADS', ROADS), ('WALLS', WALLS),
+        ('ADMIN', ADMIN), ('PEOPLES', PEOPLES), ('ROADS', ROADS), ('WALLS', WALLS), ('GORGES', GORGES),
         ('BEACONS', []), ('JOURNEYS', JOURNEYS),
         ('MODES', MODES), ('BATTLES', BATTLES), ('STORIES', STORIES), ('LORE_WEATHER', []),
         ('EVENTS', EVENTS), ('CAST', CAST),

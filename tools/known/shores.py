@@ -210,6 +210,7 @@ RIVERS = {
     'The Rhoyne, the middle mouth': (['Damietta Branch'], (31.15, 30.18), (31.84, 31.53), 'the Damietta branch of the Nile'),
     'The Rhoyne, the east mouth': (['Bratul Sfintu Gheorghe'], (28.88, 45.18), (29.61, 44.89), 'the St George arm'),
     'The Worm': (['Byk Menderes'], (30.48, 38.36), (27.18, 37.55), 'the Maeander'),
+    'The Tumblestone': (['Adige'], (10.71, 46.83), (12.32, 45.16), 'the Adige'),
 }
 RSIG, RSIG_MAX = 8.0, 30.0       # miles: bends smaller than this (more on a long river) are the real river's
 

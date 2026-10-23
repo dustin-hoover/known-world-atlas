@@ -26,9 +26,9 @@ If anything here conflicts with `docs/geodyssey/LAWS.md`, the laws win.
 - **Lineage:** the second world of Geodyssey, built on the engine of Arda Atlas (Tolkien).
   Some engine notes in `AGENTS.md` still use Arda's names (Hobbiton, Shire Reckoning); they describe the shared
   engine, not this world's data.
-- **Current state:** 310 places ranked by importance; the North's coast from Britain's real shape; everything
+- **Current state:** 311 places ranked by importance; the North's coast from Britain's real shape; everything
   south of the North running between 40 named coastal anchors, each stretch a whole real coastline turned to fit;
-  Essos and Sothoryos with real shores laid along our own outline; 26 rivers with real
+  Essos and Sothoryos with real shores laid along our own outline; 27 rivers with real
   meanders, each in a bed that never climbs; about seventy characters with journeys across all five novels; a dozen battles; seasons; weather
   (off by default).
 
@@ -243,6 +243,8 @@ You work on rivers, lakes, roads, ranges, forests, marshes and coasts in `author
   Earth analogue in `shores.py` `RIVERS` if it should meander. A tributary names the river it joins (`'to'`), a
   delta channel the river it leaves (`'of'`, listed in `DISTRIBUTARIES`); `join_tree()` ends each on its parent's
   final course. After changing courses, `python3 tools/known/shores.py --rivers` re-lays only the rivers.
+- A port on a river or a lake is listed in `author.py` `RIVER_PORTS`: it stands on its water and the gate (G3)
+  measures it there. A dry canyon the books name (the Gorge) is a `GORGES` entry: `gen.js` cuts it into the ground.
 - No river crosses a range's crest except at a named pass (the Prince's Pass, the Boneway, the Bloody Gate, the
   Skirling Pass): its valley would be a new pass. Rivers rise on a range's flank and run down from it.
 - Rivers never climb (rule 18): `gen.js` gives every river a bed that only falls toward its mouth and cuts the land
@@ -341,7 +343,7 @@ otherwise. Each task says which role takes it.
 ## P6 — Rivers, tributaries, lakes (researcher, then geography engineer)
 
 - **Goal:** every river, tributary and lake the books name in Westeros (then Essos): source, mouth, places on it,
-  which bank, with citations. Today 26 rivers exist: the Trident and its forks, the Blackwater Rush, the Mander,
+  which bank, with citations. Today 27 rivers exist: the Trident and its forks with the Tumblestone, the Blackwater Rush, the Mander,
   the Honeywine, the Torrentine, the Greenblood, the White Knife, the Last River, the Milkwater, the Skahazadhan,
   the Worm, and the Rhoyne with its daughters (the Upper and Little Rhoyne, the Noyne, the Qhoyne and the
   Darkwash, the Lhorulu, the Selhoru, the Volaena) and its delta's three other mouths. Lakes: the Gods Eye, the
