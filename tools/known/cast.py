@@ -4,7 +4,8 @@ LAWS: facts from the novels in our own words; looks from the text's descriptions
 rarely give a day, so every date here is an estimate and the app says so. Places are referred to by name
 (author.PLACES) or as [X, Y] in miles from Winterfell; legs follow the authored roads or sea lanes.
 """
-import math, re
+import math
+import paths, re
 
 MOON = 30
 
@@ -176,6 +177,7 @@ SEA = {  # sea lanes as [X, Y] waypoints (open water)
     'tarth-mainland': [[558, -1483], [520, -1520], [470, -1580], [420, -1615], [395, -1628]],
     'volon-therys-cape-wrath': [[1300, -2150], [1272, -2144], [936, -2048], [600, -1830], [520, -1790], [490, -1785]],
     'bay-of-seals-skagos': [[306, 338], [352, 472], [365, 510]],
+    'white-harbor-skagos': [[178, -325], [205, -395], [300, -445], [450, -380], [620, -200], [600, 100], [520, 300], [430, 470], [365, 510]],
 }
 
 
@@ -183,6 +185,10 @@ SEA = {  # sea lanes as [X, Y] waypoints (open water)
 # legs: ('via', road or lane name, from, to, date0, date1) expand along the road or sea lane
 def J(*steps): return list(steps)
 ROAD = lambda road, a, b, d0, d1: ('road', road, a, b, d0, d1)
+# by boat on a river, or down one river into the next: RIVER(['The Little Rhoyne', 'The Rhoyne'], a, b, d0, d1);
+# bank=+1 or -1 follows the left or right bank (looking downstream, whichever way the journey goes) a mile off the
+# water, as a riverside road
+RIVER = lambda rivers, a, b, d0, d1, bank=0: ('river', [rivers] if isinstance(rivers, str) else list(rivers), a, b, d0, d1, bank)
 LANE = lambda lane, d0, d1, back=False: ('lane', lane, d0, d1, back)
 
 # the march from Astapor to Yunkai and on to Meereen, overland round the bay
@@ -228,13 +234,15 @@ PATHS = {
                 ROAD('The Kingsroad', 'Winterfell', 'The Inn at the Crossroads', '298 4 26', '298 5 20'), ROAD('The High Road', 'The Inn at the Crossroads', 'The Eyrie', '298 5 21', '298 6 10'),
                 ('The Eyrie', '298 6 24'), ([246, -834], '298 7 20'), ([155, -807], '298 8 8'), ([135, -834], '298 8 14'), ('Harrenhal', '298 8 26'), ('Harrenhal', '298 12 20'),
                 ROAD('The Kingsroad', 'The Inn at the Crossroads', 'King\'s Landing', '298 12 22', '299 1 5'), ('King\'s Landing', '300 2 10'), LANE('kl-pentos', '300 2 11', '300 3 5'),
-                ('Pentos', '300 3 20'), ([1150, -850], '300 4 10'), ('Chroyane', '300 4 25'), ('Selhorys', '300 5 5'), ('Volantis', '300 5 20'), LANE('volantis-meereen', '300 6 1', '300 7 20'), ([2656, -1976], '300 7 21'),
+                ('Pentos', '300 3 20'), ('Ghoyan Drohe', '300 4 8'), RIVER(['The Little Rhoyne', 'The Rhoyne'], 'Ghoyan Drohe', 'Chroyane', '300 4 9', '300 4 25'),
+                RIVER('The Rhoyne', 'Chroyane', 'Selhorys', '300 4 26', '300 5 5'), RIVER('The Rhoyne', 'Selhorys', 'Volantis', '300 5 6', '300 5 20', 1),
+                LANE('volantis-meereen', '300 6 1', '300 7 20'), ([2656, -1976], '300 7 21'),
                 ([2600, -1990], '300 8 1'), ([2600, -1990], '300 13 5')),
     'cersei': J(('King\'s Landing', '297 12 1'), ROAD('The Kingsroad', 'King\'s Landing', 'Winterfell', '297 12 2', '298 2 1'), ('Winterfell', '298 2 20'),
                 *SOUTH, ('King\'s Landing', '300 13 5')),
     'jaime': J(('King\'s Landing', '297 12 1'), ROAD('The Kingsroad', 'King\'s Landing', 'Winterfell', '297 12 2', '298 2 1'), ('Winterfell', '298 2 20'),
                *SOUTH, ('King\'s Landing', '298 5 25'), ('Casterly Rock', '298 6 25'), ('The Golden Tooth', '298 7 10'),
-               ('Riverrun', '298 8 1'), ('The Whispering Wood', '298 8 15'), ('Riverrun', '298 8 18'), ('Riverrun', '299 7 1'), ([76, -886], '299 7 10'), ([192, -944], '299 8 5'),
+               ('Riverrun', '298 8 1'), ('The Whispering Wood', '298 8 15'), ('Riverrun', '298 8 18'), ('Riverrun', '299 6 30'), RIVER('The Red Fork', 'Riverrun', [76, -886], '299 7 1', '299 7 10'), ([192, -944], '299 8 5'),
                ('Harrenhal', '299 9 10'), ('Harrenhal', '299 11 1'), ROAD('The Kingsroad', 'The Inn at the Crossroads', 'King\'s Landing', '299 11 3', '300 1 1'), ('King\'s Landing', '300 5 15'),
                ('Riverrun', '300 7 1'), ('Raventree Hall', '300 8 15'), ('Raventree Hall', '300 13 5')),
     'tywin': J(('Casterly Rock', '297 13 1'), ('Casterly Rock', '298 5 20'), ('The Golden Tooth', '298 6 15'), ([155, -807], '298 8 8'), ([135, -834], '298 8 14'), ('Harrenhal', '298 8 26'), ('Harrenhal', '299 4 1'),
@@ -254,8 +262,8 @@ PATHS = {
                       ('King\'s Landing', '300 1 15'), LANE('kl-fingers', '300 1 16', '300 2 5'), ('The Eyrie', '300 2 15'), ('Gates of the Moon', '300 6 10'), ('Gates of the Moon', '300 13 5')),
     'varys': J(('King\'s Landing', '297 13 1'), ('King\'s Landing', '300 13 5')),
     'margaery': J(('Highgarden', '297 13 1'), ('Highgarden', '299 1 20'), ('Bitterbridge', '299 2 15'), ('Storm\'s End', '299 4 5'), ('Bitterbridge', '299 5 10'), ('King\'s Landing', '299 6 10'), ('King\'s Landing', '300 13 5')),
-    'brienne': J(('Evenfall Hall', '297 13 1'), ('Evenfall Hall', '299 1 1'), LANE('tarth-mainland', '299 1 2', '299 1 4'), ('Bitterbridge', '299 2 15'), ('Storm\'s End', '299 4 5'), ('Riverrun', '299 5 10'), ('Riverrun', '299 7 1'),
-                 ([76, -886], '299 7 10'), ([192, -944], '299 8 5'), ('Harrenhal', '299 9 10'), ('Harrenhal', '299 11 1'), ROAD('The Kingsroad', 'The Inn at the Crossroads', 'King\'s Landing', '299 11 3', '300 1 1'),
+    'brienne': J(('Evenfall Hall', '297 13 1'), ('Evenfall Hall', '299 1 1'), LANE('tarth-mainland', '299 1 2', '299 1 4'), ('Bitterbridge', '299 2 15'), ('Storm\'s End', '299 4 5'), ('Riverrun', '299 5 10'), ('Riverrun', '299 6 30'),
+                 RIVER('The Red Fork', 'Riverrun', [76, -886], '299 7 1', '299 7 10'), ([192, -944], '299 8 5'), ('Harrenhal', '299 9 10'), ('Harrenhal', '299 11 1'), ROAD('The Kingsroad', 'The Inn at the Crossroads', 'King\'s Landing', '299 11 3', '300 1 1'),
                  ('King\'s Landing', '300 3 1'), ('Rosby', '300 3 5'), ('Duskendale', '300 3 15'), ('Maidenpool', '300 4 10'), ('Saltpans', '300 5 10'), ('The Quiet Isle', '300 5 25'), ([209, -928], '300 7 1'), ([209, -928], '300 13 5')),
     'gendry': J(('King\'s Landing', '297 13 1'), ('King\'s Landing', '298 8 2'), ROAD('The Kingsroad', 'King\'s Landing', 'The Inn at the Crossroads', '298 8 3', '298 12 20'), ([136, -935], '299 1 10'),
                 ('Harrenhal', '299 2 1'), ('Harrenhal', '299 4 15'), ([38, -1002], '299 5 10'), ('Acorn Hall', '299 6 10'), ('Stoney Sept', '299 7 1'), ([69, -921], '299 7 25'), ([209, -913], '299 8 10'), ([209, -913], '300 13 5')),
@@ -267,7 +275,7 @@ PATHS = {
                  ('Deepwood Motte', '300 5 20'), ([-100, 20], '300 8 15'), ([-120, 40], '300 13 5')),
     'davos': J(('Dragonstone', '297 13 1'), ('Dragonstone', '299 5 20'), LANE('dragonstone-kl', '299 5 21', '299 6 1'), ([369, -1210], '299 6 10'), ('Dragonstone', '299 7 1'), ('Dragonstone', '299 13 1'),
                LANE('dragonstone-eastwatch', '299 13 2', '300 2 20'), ('Castle Black', '300 3 5'), ('Eastwatch-by-the-Sea', '300 3 20'), LANE('eastwatch-white-harbor', '300 3 21', '300 4 10'),
-               ('White Harbor', '300 4 12'), ('White Harbor', '300 9 1'), ([400, 300], '300 10 1'), ('Skagos', '300 11 1'), ('Skagos', '300 13 5')),
+               ('White Harbor', '300 4 12'), ('White Harbor', '300 9 1'), LANE('white-harbor-skagos', '300 9 2', '300 11 1'), ('Skagos', '300 11 2'), ('Skagos', '300 13 5')),
     'melisandre': J(('Dragonstone', '297 13 1'), ('Dragonstone', '299 3 15'), LANE('dragonstone-storms-end', '299 3 16', '299 3 25'), ('Storm\'s End', '299 4 5'),
                     ('Storm\'s End', '299 5 4'), LANE('dragonstone-storms-end', '299 5 5', '299 5 15', True), ('Dragonstone', '299 13 1'),
                     LANE('dragonstone-eastwatch', '299 13 2', '300 2 20'), ('Castle Black', '300 3 1'), ('Castle Black', '300 13 5')),
@@ -281,13 +289,17 @@ PATHS = {
     'jorah': J(('Pentos', '297 13 1'), ('Pentos', '298 2 20'), ([820, -1060], '298 2 25'), ([1300, -800], '298 3 20'), ([2000, -900], '298 4 15'), ('Vaes Dothrak', '298 5 1'), ('Vaes Dothrak', '298 6 15'),
                ([2500, -1400], '298 7 20'), ('A village of the Lamb Men', '298 8 15'), ('A village of the Lamb Men', '298 12 2'), ([2900, -1900], '298 13 5'), ('Vaes Tolorro', '299 1 15'),
                ([3300, -2400], '299 2 25'), ('Qarth', '299 3 1'), ('Qarth', '299 7 10'), LANE('qarth-astapor', '299 7 11', '299 8 10'), *SLAVERS,
-               ('Meereen', '300 2 12'), LANE('volantis-meereen', '300 2 13', '300 3 20', True), ('Selhorys', '300 5 5'), ('Volantis', '300 5 20'), LANE('volantis-meereen', '300 6 1', '300 7 20'), ([2656, -1976], '300 7 21'),
+               ('Meereen', '300 2 12'), LANE('volantis-meereen', '300 2 13', '300 3 20', True), RIVER('The Rhoyne', 'Volantis', 'Selhorys', '300 3 21', '300 5 5', 1),
+               RIVER('The Rhoyne', 'Selhorys', 'Volantis', '300 5 6', '300 5 20', 1), LANE('volantis-meereen', '300 6 1', '300 7 20'), ([2656, -1976], '300 7 21'),
                ([2600, -1990], '300 8 1'), ([2600, -1990], '300 13 5')),
     'missandei': J(('Astapor', '297 13 1'), *SLAVERS, ('Meereen', '300 13 5')),
     'barristan': J(('King\'s Landing', '297 13 1'), ('King\'s Landing', '298 6 1'), LANE('kl-pentos', '298 6 2', '298 7 1'), ('Pentos', '298 9 1'), ('Pentos', '299 5 1'), LANE('pentos-qarth', '299 5 2', '299 7 1'),
                    LANE('qarth-astapor', '299 7 11', '299 8 10'), *SLAVERS, ('Meereen', '300 13 5')),
     'quaithe': J(('Qarth', '297 13 1'), ('Qarth', '300 13 5')),
-    'griff': J(('Pentos', '300 3 20'), ([1150, -850], '300 4 10'), ('Chroyane', '300 4 25'), ('Selhorys', '300 5 1'), ([1300, -2150], '300 6 1'), LANE('volon-therys-cape-wrath', '300 6 2', '300 9 1'), ('Griffin\'s Roost', '300 9 5'), ('Griffin\'s Roost', '300 13 5')),
+    'griff': J(('Ghoyan Drohe', '300 3 20'), ('Ghoyan Drohe', '300 4 8'), RIVER(['The Little Rhoyne', 'The Rhoyne'], 'Ghoyan Drohe', 'Chroyane', '300 4 9', '300 4 25'),
+               RIVER('The Rhoyne', 'Chroyane', 'Selhorys', '300 4 26', '300 5 1'), RIVER('The Rhoyne', 'Selhorys', 'Volon Therys', '300 5 2', '300 5 25'),
+               RIVER(['The Rhoyne', 'The Rhoyne, the Sarhoy mouth'], 'Volon Therys', 'Sarhoy', '300 5 26', '300 6 1'), LANE('volon-therys-cape-wrath', '300 6 2', '300 9 1'),
+               ('Griffin\'s Roost', '300 9 5'), ('Griffin\'s Roost', '300 13 5')),
     'others': J(([-30, 900], '297 13 1'), ([-30, 600], '298 1 1'), ([-10, 760], '298 2 1'), ([-10, 760], '299 1 1'), ('The Fist of the First Men', '299 4 1'), ([-30, 600], '299 6 1'),
                 ([0, 560], '300 1 1'), ([30, 520], '300 13 5')),
     'coldhands': J(([0, 640], '297 13 1'), ([-30, 560], '299 8 20'), ('The Nightfort', '299 9 2'), ([-30, 520], '299 9 10'), ([-20, 700], '299 12 1'), ([20, 880], '300 2 1'), ('The cave of the three-eyed crow', '300 4 1'), ('The cave of the three-eyed crow', '300 13 5')),
@@ -332,15 +344,16 @@ MODES = [
     ['^(catelyn|tyrion|bronn)$', '298 4 3', '298 6 10', 'ride'],
     ['^(robb|greywind|theon)$', '298 7 2', '299 6 15', 'ride'],
     ['^theon$', '299 1 16', '299 1 22', 'sea'], ['^theon$', '299 2 26', '299 3 12', 'sea'],
-    ['^(tyrion|bronn)$', '298 12 22', '299 1 5', 'ride'], ['^tyrion$', '300 2 11', '300 3 5', 'sea'], ['^(tyrion|griff)$', '300 3 21', '300 5 20', 'boat'],
-    ['^(tyrion|jorah)$', '300 6 1', '300 7 21', 'sea'],
+    ['^(tyrion|bronn)$', '298 12 22', '299 1 5', 'ride'], ['^tyrion$', '300 2 11', '300 3 5', 'sea'], ['^tyrion$', '300 3 21', '300 4 8', 'ride'], ['^(tyrion|griff)$', '300 4 9', '300 5 5', 'boat'], ['^griff$', '300 5 6', '300 6 1', 'boat'],
+    ['^(tyrion|jorah)$', '300 5 6', '300 5 20', 'ride'],
+    ['^(tyrion|jorah)$', '300 6 1', '300 7 20', 'sea'],
     ['^(daenerys|viserys|drogo|jorah)$', '298 2 25', '298 8 15', 'ride'], ['^(daenerys|jorah|barristan|drogon|rhaegal|viserion)$', '299 7 11', '299 8 10', 'sea'],
     ['^barristan$', '298 6 2', '298 7 1', 'sea'],
     ['^(stannis|davos|melisandre)$', '299 13 2', '300 2 20', 'sea'], ['^davos$', '299 5 21', '299 7 1', 'sea'], ['^stannis$', '299 6 2', '299 6 8', 'sea'],
     ['^davos$', '300 3 21', '300 4 10', 'sea'], ['^davos$', '300 9 2', '300 11 1', 'sea'],
     ['^(samwell|gilly)$', '300 4 2', '300 5 1', 'sea'], ['^(samwell|gilly)$', '300 6 11', '300 8 1', 'sea'],
     ['^(sansa|littlefinger)$', '300 1 16', '300 2 5', 'sea'],
-    ['^arya$', '300 1 6', '300 2 1', 'sea'],
+    ['^arya$', '300 1 6', '300 2 1', 'sea'], ['^arya$', '300 2 1', '300 2 3', 'boat'],     # Braavos's canals
     ['^(arya|sandor)$', '299 8 1', '300 1 1', 'ride'],
     ['^(jaime|brienne)$', '299 7 1', '299 7 10', 'boat'],
     ['^(daenerys|drogon)$', '300 9 2', '300 9 12', 'dragon'],             # Daenerys flies from the pit on Drogon
@@ -387,7 +400,7 @@ PATHS.update({
     'lysa': J(('The Eyrie', '297 13 1'), ('The Eyrie', '300 2 20')),
     'sweetrobin': J(('The Eyrie', '297 13 1'), ('The Eyrie', '300 6 1'), ('Gates of the Moon', '300 6 10'), ('Gates of the Moon', '300 13 5')),
     'balon': J(('Pyke', '297 13 1'), ('Pyke', '299 10 1')),
-    'euron': J(([-680, -947], '299 11 1'), ([-367, -782], '299 12 10'), ('Pyke', '299 12 15'), ([-279, -738], '300 1 20'), ('Pyke', '300 2 1'), ([-456, -1280], '300 4 1'), ([-375, -1765], '300 5 1'), ([-375, -1765], '300 13 5')),
+    'euron': J(([-680, -947], '299 11 1'), ([-367, -782], '299 12 10'), ('Pyke', '299 12 15'), ([-279, -738], '300 1 20'), ('Pyke', '300 2 1'), ([-456, -1280], '300 4 1'), ('Southshield', '300 5 1'), ('Southshield', '300 13 5')),
     'mace': J(('Highgarden', '297 13 1'), ('Highgarden', '299 1 20'), ('Bitterbridge', '299 2 15'), ('Bitterbridge', '299 5 20'), ('King\'s Landing', '299 6 1'), ('King\'s Landing', '300 4 1'), ('Storm\'s End', '300 5 1'), ('Storm\'s End', '300 13 5')),
     'renly': J(('King\'s Landing', '297 13 1'), ('King\'s Landing', '298 5 15'), ('Highgarden', '298 7 1'), ('Highgarden', '299 1 20'), ('Bitterbridge', '299 2 15'), ('Storm\'s End', '299 4 5'), ([396, -1585], '299 4 7')),
     'doran': J(('The Water Gardens', '297 13 1'), ('The Water Gardens', '300 3 1'), ('Sunspear', '300 3 10'), ('Sunspear', '300 13 5')),
@@ -531,7 +544,7 @@ EVENTS = {
              ['299 9 10', 'Jaime loses his sword hand on the road; he and Brienne come to Harrenhal (date est.)', 130, -960],
              ['300 1 15', 'King Joffrey dies at his wedding feast; Sansa escapes the city (date est.)', 256, -1296], ['300 2 1', 'Daenerys takes Meereen (date est.)', 2702, -1965],
              ['300 2 10', 'Tyrion kills his father and flees (date est.)', 256, -1296], ['300 3 1', 'The free folk attack Castle Black; Stannis comes to the Wall (date est.)', 20, 452]],
-    'feastdance': [['300 2 1', 'Arya reaches Braavos and the House of Black and White (date est.)', 775, -470], ['300 4 2', 'Samwell sails from Eastwatch for Oldtown (date est.)', 157, 458],
+    'feastdance': [['300 2 1', 'Arya reaches Braavos and the House of Black and White (date est.)', 757, -488], ['300 4 2', 'Samwell sails from Eastwatch for Oldtown (date est.)', 157, 458],
                    ['300 4 1', 'Bran reaches the cave of the three-eyed crow (date est.)', 40, 1000], ['300 5 20', 'Tyrion comes to Volantis on his way east (date est.)', 1420, -2200],
                    ['300 6 1', 'Theon, as Reek, comes back to Winterfell with the Boltons (date est.)', 0, 0], ['300 8 1', 'Jon sends men to the free folk at Hardhome (date est.)', 300, 640],
                    ['300 9 2', 'Drogon comes to Daznak\'s Pit; Daenerys flies away on his back (date est.)', 2705, -1962],
@@ -548,7 +561,6 @@ EXTRA_PLACES = [  # name, kind, x, y, people, realm, note, opts
     ('Gates of the Moon', 'fortress', 336, -798, 'vale', 'The Vale', 'The castle at the foot of the Giant\'s Lance.', {'rank': 5}),
     ('The Inn of the Kneeling Man', 'village', 214, -909, 'river', 'The Riverlands', 'An inn by the Trident.', {'rank': 5}),
     ('Acorn Hall', 'fortress', 30, -1035, 'river', 'The Riverlands', 'A castle in the southern riverlands.', {'rank': 5}),
-    ('The House of Black and White', 'landmark', 775, -470, 'braavos', 'Braavos', 'A temple in Braavos.', {'rank': 4}),
     ('Daznak\'s Pit', 'landmark', 2705, -1962, 'ghiscari', 'Slaver\'s Bay', 'The great fighting pit of Meereen.', {'rank': 5}),
     ('A village of the Lamb Men', 'village', 2400, -1720, 'lhazar', 'The Dothraki Sea', 'A village of Lhazar.', {'rank': 5}),
     ('Skagos', 'landmark', 350, 500, 'north', 'The North', 'A wild island in the Bay of Seals.', {'rank': 5}),
@@ -607,10 +619,28 @@ def _timed(pts, t0, t1):
     return [(p[0], p[1], t0 + (t1 - t0) * d[i] / L) for i, p in enumerate(pts)]
 
 
-def expand(steps, XY, roads):
+def expand(steps, XY, roads, rivers=None):
     out = []
     for s in steps:
-        if s[0] == 'road':
+        if s[0] == 'river':
+            _, names, a, b, d0, d1, bank = s; P = XY(a); pts = [P]
+            pl0 = rivers[names[0]]
+            if _poly_param(pl0, P)[:2] > _poly_param(pl0, XY(b) if len(names) == 1 else pl0[-1])[:2]: bank = -bank   # going upstream
+            for k, n in enumerate(names):
+                pl = rivers[n]
+                if k == len(names) - 1: Q = XY(b)
+                else:                                    # where this river meets the next (a mouth, or a delta's head)
+                    from shapely.geometry import LineString
+                    from shapely.ops import nearest_points
+                    q = nearest_points(LineString(pl), LineString(rivers[names[k + 1]]))[0]; Q = [q.x, q.y]
+                pts += _sub(pl, _poly_param(pl, P), _poly_param(pl, Q)); P = pts[-1]
+            pts.append(XY(b))
+            if bank:                                     # a mile off the river on one bank, smoothed
+                from shapely.geometry import LineString
+                mid = LineString(pts[1:-1]).simplify(0.5).offset_curve(bank * 1.0, join_style=2)
+                pts = [pts[0]] + [list(c) for c in getattr(mid, 'coords', [])] + [pts[-1]]
+            out += _timed(pts, T(d0), T(d1))
+        elif s[0] == 'road':
             _, road, a, b, d0, d1 = s; pl = roads[road]; A, Bp = XY(a), XY(b)
             pts = [A] + _sub(pl, _poly_param(pl, A), _poly_param(pl, Bp)) + [Bp]
             out += _timed(pts, T(d0), T(d1))
@@ -642,8 +672,53 @@ def _clip(pts, a, b):
     return res
 
 
-def build(places, roads, stories, land_rings=None):
-    """-> (CAST, JOURNEYS, MODES, EVENTS) for geo.js. With land_rings, every leg is kept to its element (paths.py)."""
+BUILT = {}
+# crossings the books leave unnamed, where our journeys must cross a river and no road, bridge or town is near:
+# (X, Y on the river, river, 'ford' | 'ferry', why). Our own choices, graded design.
+FORDS = [
+    (64.8, -891.6, 'The Red Fork', 'ford', 'the Hound takes Arya over upriver of the flooded Trident, ASOS'),
+    (105.5, -892.7, 'The Red Fork', 'ford', "Nymeria's pack; the Hound and Arya on their way to the Saltpans, ASOS"),
+    (-135.6, -802.7, 'The Tumblestone', 'ford', "Robb's host"),
+    (160.6, -808.7, 'The Blue Fork', 'ford', 'Tyrion and the clansmen come down from the Mountains of the Moon, AGOT'),
+    (-166.9, 754.1, 'The Milkwater', 'ford', "Mance's host"),
+    (-179.6, 715.7, 'The Milkwater', 'ford', 'the free folk with Jon'),
+    (133.7, -207.8, 'The White Knife', 'ford', "Ramsay's riders, ADWD"),
+    (-108.0, -1201.9, 'The Blackwater Rush', 'ford', "Tywin's host on its way to the city, ACOK"),
+    (976.1, -975.4, 'The Little Rhoyne', 'ford', 'the khalasar, AGOT'),
+    (1106.2, -905.0, 'The Upper Rhoyne', 'ford', 'the khalasar, AGOT'),
+    (1159.9, -875.9, 'The Noyne', 'ford', 'the khalasar, AGOT'),
+    (1362.4, -808.9, 'The Darkwash', 'ford', 'the khalasar, AGOT'),
+    (2772.3, -1854.0, 'The Skahazadhan', 'ford', 'the khalasar, AGOT'),
+    (1395.9, -2166.6, 'The Volaena', 'ferry', 'the road down the Rhoyne\'s east bank into Volantis, ADWD'),
+]
+
+
+def crossings(places, roads, rivers):
+    """Where a land journey may cross a river: every road's crossing, every named ford or bridge, every town, castle
+    or ruin on a river (a bridge or a ferry). -> [(x, y, label, river)]."""
+    from shapely.geometry import LineString, Point
+    riv = [(r['name'], LineString(r['pts'])) for r in rivers]
+    out = []
+    for rd in roads:
+        L = LineString(rd['pts'])
+        for n, R in riv:
+            for g in paths._points(L.intersection(R)): out.append((g.x, g.y, f"{rd['name']} over {n}", n, paths.CROSS))
+    for p in places:
+        if p[1] not in ('ford', 'bridge', 'city', 'town', 'village', 'fortress', 'port', 'ruin'): continue
+        for n, R in riv:
+            if R.distance(Point(p[2], p[3])) < (1.5 if p[1] in ('ford', 'bridge') else 1.0):
+                out.append((p[2], p[3], p[0], n, paths.CROSS if p[1] in ('ford', 'bridge') else paths.TOWN))
+    rv = dict(riv)
+    for x, y, n, kind, why in FORDS:                    # on the river wherever its course now runs
+        q = rv[n].interpolate(rv[n].project(Point(x, y))); out.append((q.x, q.y, f'a {kind} on {n} ({why})', n, paths.CROSS))
+    return out
+
+
+def build(places, roads, stories, land_rings=None, rivers=None):
+    """-> (CAST, JOURNEYS, MODES, EVENTS) for geo.js. With land_rings, every leg is kept to its element (paths.py)
+    and crosses rivers only at a ford, a bridge or a riverside town."""
+    if rivers is None:
+        import author; rivers = author.RIVERS
     where = {p[0]: (p[2], p[3]) for p in places}
     def XY(v):
         if isinstance(v, str):
@@ -661,14 +736,22 @@ def build(places, roads, stories, land_rings=None):
                 if math.hypot(q[2] - pts[i][0], q[3] - pts[i][1]) < 20: pts[i] = [q[2], q[3]]
             for i in range(1, len(pts) - 1):     # the rest is open water: a waypoint the coast now covers moves offshore
                 if land.clear(pts[i]) < 4: pts[i] = [round(v, 1) for v in land.nearest(pts[i], False, clear=6)]
+            for i in (0, len(pts) - 1):          # a voyage starts and ends at the water's edge: a port is walked to
+                if not land.at(*pts[i]) and land.shore(pts[i]) <= 1.0: continue     # its quay, a waypoint left at
+                q = [round(v, 2) for v in land.to_shore(pts[i])]                    # sea is sailed on to the shore
+                if land.at(*pts[i]): pts[i] = q
+                elif i: pts.append(q)
+                else: pts.insert(0, q)
     full = {}
+    river = {r['name']: r['pts'] for r in rivers}
     for k, steps in PATHS.items():
-        if steps: full[k] = expand(steps, XY, road)
+        if steps: full[k] = expand(steps, XY, road, river)
     # every sea lane is sailed: the leg along a LANE is 'sea' whatever else the traveller is doing that season
     lanes = [['^' + re.escape(k) + '$', s[2], s[3], 'sea'] for k, steps in PATHS.items() if 'dragon' not in CHARS[k]
              for s in (steps or []) if s[0] == 'lane']
     windows = sorted(lanes + MODES, key=lambda m: (T(m[2]) - T(m[1]), m[3] != 'wheelhouse'))
     if land:
+        cx = crossings(places, roads, rivers)
         for k in list(full):
             if 'dragon' in CHARS[k]: continue
             def element(t, k=k):
@@ -677,6 +760,7 @@ def build(places, roads, stories, land_rings=None):
                         return 'sea' if mode in ('sea', 'blackship') else None if mode in ('boat', 'barrel', 'dragon', 'fly') else 'land'
                 return 'land'
             full[k] = paths.keep_to(full[k], land, element)
+            full[k] = paths.keep_to(paths.by_crossings(full[k], element, river, cx), land, element)
     for k, (src, d0, d1) in DERIVED.items():
         a, b = T(d0), T(d1) if d1 else 1e9
         pts = [p for p in full[src] if a <= p[2] <= b]
@@ -742,6 +826,7 @@ def build(places, roads, stories, land_rings=None):
             units = [[k, max(1, round(n * share))] for sd in b['sides'] for k, n in sd['units'] if k not in ('giant', 'other')]
         fallen.append({'name': b['name'], 'X': at[0], 'Y': at[1], 't': T(d) if isinstance(d, str) else T(b['frm']), 'days': days, 'units': [u for u in units if u[1] > 0], 'spread': spread})
     onfoot = [k for k in CHARS if 'wolf' in CHARS[k] or 'dragon' in CHARS[k]] + ['others', 'threeeyed']
+    BUILT.update(full=full, windows=windows, land=land, crossings=crossings(places, roads, rivers))   # for tools/known/travel.py
     CAST = {'C': C, 'B': B, 'JOURNEY': JCAST, 'GROUPS': groups, 'PROFILES': prof, 'ON_FOOT': onfoot, 'WHEELHOUSE': WHEELHOUSE,
             'RULERS': rulers, 'CROWN': crown, 'SEVEN': SEVEN, 'DEATHS': deaths, 'FALLEN': fallen,
             'IDS': {name_of(k): k for k in CHARS if k in full}}

@@ -6,17 +6,13 @@
 
 places  a place out at sea (a wonder such as the Titan may stand in the water, and a town astride a river's mouth
         over its estuary), or a port or a `coast=True` place more than 2 miles from the shore
-water   a traveller more than about 3 miles out to sea while moving on foot or horseback (any mode that is not a
-        ship, a boat or a dragon), sampled every quarter day. Two short steps are known and allowed: Davos leaving
-        White Harbor and Tormund beyond the Wall (KNOWN below); a new one fails the check.
+water   every leg of every journey as a line (tools/known/travel.py): on land, at sea, by boat, at a ford or a bridge
 """
 import os, sys, io, re, contextlib
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import numpy as np
 
-WATER_MODES = {'sea', 'boat', 'dragon', 'blackship', 'barrel', 'fly'}
-KNOWN = {('Davos Seaworth', '300 9'), ('Tormund', '300 4'), ('Tormund', '300 9')}      # (traveller, 'year moon') already reported
 
 
 def setup():
@@ -60,40 +56,14 @@ def check_places(author, polys):
 
 
 def check_water(author, coast, polys):
-    import cast
-    _, journeys, modes, _, _ = cast.build(author.PLACES, author.ROADS, author.STORIES, polys)
-    land = mask(polys)
-    rules = [(re.compile(rx), cast.T(a), cast.T(b), m) for rx, a, b, m in modes]
-    def mode(name, t):
-        return next((m for rx, a, b, m in rules if a <= t <= b and rx.search(name)), 'walk')
-    def label(t):
-        y = int(t // 365) + 1; r = t - (y - 1) * 365; mo = int(r // 30) + 1
-        return f'{y} {mo}', f'{y} {mo} {r - (mo - 1) * 30 + 1:4.1f}'
-    def at(p, t):
-        for i in range(len(p) - 1):
-            if p[i][2] <= t <= p[i + 1][2]:
-                f = (t - p[i][2]) / ((p[i + 1][2] - p[i][2]) or 1)
-                return p[i][0] + (p[i + 1][0] - p[i][0]) * f, p[i][1] + (p[i + 1][1] - p[i][1]) * f
-        return None
-    found, new = set(), []
-    for js in journeys.values():
-        for j in js:
-            p = j['pts']; t = p[0][2]
-            while t < p[-1][2]:
-                P, Q = at(p, t), at(p, t + 0.25)
-                wet = P and not land(P) and not any(land((P[0] + dx, P[1] + dy)) for dx, dy in ((3, 0), (-3, 0), (0, 3), (0, -3)))
-                moving = P and Q and np.hypot(Q[0] - P[0], Q[1] - P[1]) > 0.2
-                if wet and moving and mode(j['name'], t) not in WATER_MODES:
-                    moon, day = label(t)
-                    if (j['name'], moon) not in found:
-                        found.add((j['name'], moon))
-                        known = (j['name'], moon) in KNOWN
-                        line = f"  {'known' if known else 'NEW  '} {j['name']:28s} {mode(j['name'], t):8s} on the water at {P[0]:.0f},{P[1]:.0f} on {day}"
-                        print(line)
-                        if not known: new.append(line)
-                t += 0.25
-    print(f'water: {len(found)} wet steps, {len(new)} new')
-    return not new
+    """The journeys, leg by leg as lines (tools/known/travel.py; gate rule G16)."""
+    import travel
+    found, legs, ncx = travel.run()
+    bad = sum(len(v) for v in found.values())
+    for kind, rows in found.items():
+        for k, d, x, y, why in rows[:6]: print(f'  {kind:30s} {k:14s} {d:12s} at {x:.0f},{y:.0f}  {why}')
+    print(f'journeys: {legs} moving legs, {bad} off their element or crossing a river with no crossing ({ncx} crossings known)')
+    return not bad
 
 
 if __name__ == '__main__':

@@ -392,6 +392,14 @@ def g15_stepstones(W, R):
     (R.fail if bad else R.ok)('G15', 'the Stepstones: ' + ('; '.join(bad) if bad else ', '.join(f'{n} {k}' for k, n in now.items()) + ', the strait open'))
 
 
+def g16_travellers(W, R):
+    """Rule 16: every leg of every journey tested as a line (tools/known/travel.py)."""
+    import travel
+    found, legs, ncx = travel.run()
+    bad = [f'{len(v)} {k}' + (f' (e.g. {v[0][0]} {v[0][1]} at {v[0][2]:.0f},{v[0][3]:.0f})' if v else '') for k, v in found.items() if v]
+    (R.fail if bad else R.ok)('G16', f'travellers: {legs} moving legs, {ncx} river crossings' + (': ' + '; '.join(bad) if bad else ', every leg on its element'))
+
+
 NAMED_PASSES = ("The Prince's Pass", 'The Boneway', 'The Bloody Gate', 'The Skirling Pass')
 
 
@@ -424,7 +432,7 @@ def g18_rivers_downhill(W, R):
 
 RULES = {'G1': g1_rivers_over_sea, 'G2': g2_mouths, 'G3': g3_ports, 'G4': g4_validity, 'G5': g5_islands, 'G6': g6_flips,
          'G7': g7_anchors, '7b': g7b_graft, 'G8': g8_one_westeros, 'G9': g9_seas_lakes, '9b': g9b_inlets, 'G10': g10_wall,
-         'G11': g11_neck, 'G12': g12_rhoyne, 'G14': g14_valyria, 'G15': g15_stepstones, '18': g18_rivers_downhill}
+         'G11': g11_neck, 'G12': g12_rhoyne, 'G14': g14_valyria, 'G15': g15_stepstones, 'G16': g16_travellers, '18': g18_rivers_downhill}
 
 
 def run(which=None, W=None):

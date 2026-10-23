@@ -19,7 +19,7 @@ import math
 
 BEARING = {'N': 90, 'NNE': 67.5, 'NE': 45, 'ENE': 22.5, 'E': 0, 'ESE': -22.5, 'SE': -45, 'SSE': -67.5, 'S': -90,
            'SSW': -112.5, 'SW': -135, 'WSW': -157.5, 'W': 180, 'WNW': 157.5, 'NW': 135, 'NNW': 112.5}
-KIND = {'castle': 'fortress', 'holdfast': 'fortress', 'inn': 'village', 'sept': 'landmark', 'hall': 'landmark'}
+KIND = {'castle': 'fortress', 'holdfast': 'fortress', 'inn': 'village', 'sept': 'landmark', 'hall': 'landmark', 'temple': 'landmark'}
 
 
 def G(name, kind, where, people, realm, src, note, rank=5, grade='inferred', **o):
@@ -236,6 +236,7 @@ PLACES += [
     G('Old Ghis', 'ruin', ('near', 'New Ghis', 'N', 140), *GHIS, 'ASOS', 'The ruins of the first city of the Ghiscari, sown with salt by Valyria.', rank=4),
     G('Oros', 'ruin', ('near', 'Valyria', 'W', 60), *VAL, 'TWOIAF', 'A city of the Freehold drowned in the Doom.'),
     G('Tyria', 'ruin', ('near', 'Valyria', 'NW', 60), *VAL, 'TWOIAF', 'A city of the Freehold drowned in the Doom.'),
+    G('The House of Black and White', 'temple', ('in', 'Braavos', 0.8, -0.6), *('braavos', 'Braavos'), 'AFFC', 'The temple of the Many-Faced God in Braavos, where Arya trains.', rank=4, grade='text'),
     G('Sathar', 'ruin', ('at', 2300, -800), *DOTH, 'TWOIAF', 'The ruined capital of the Tall Men of Sarnor.', rank=4),
     G('Kasath', 'ruin', ('at', 2050, -760), *DOTH, 'TWOIAF', 'A ruined city of Sarnor.'),
     G('Mardosh', 'ruin', ('at', 2560, -790), *DOTH, 'TWOIAF', 'A ruined city of Sarnor.'),

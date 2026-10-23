@@ -106,7 +106,7 @@ Stop and report instead of acting if you are about to:
 | `tools/known/shores.py` | builds every coast from our outline plus real Earth coast detail; island transplants and pins | geography agents |
 | `tools/known/donor.py` | the North's coast from Britain; the Iron Islands from Orkney | geography agents (rarely) |
 | `tools/known/realms.py`, `paths.py` | realm borders fitted to the land; journey legs kept on land or sea | engine agents |
-| `tools/known/checks.py` | places against the shore, travellers against the water | everyone runs it |
+| `tools/known/checks.py` | places against the shore, journeys leg by leg (`travel.py`) | everyone runs it |
 | `tools/known/gate.py` | the release gate: rivers, mouths, ports, rings, islands, flips, anchors, the Neck, seas, inlets, the Wall, travellers (G1-G19) | everyone runs it; any FAIL blocks a release |
 | `tools/refs/notrace.py` | the no-tracing check on coasts (needs the owner's reference image) | owner runs it |
 | `tools/sources/audit.js` | measures the map against `STATEMENTS` | everyone runs it |
@@ -146,7 +146,7 @@ npm ci
 npm run author        # regenerate src/geo.js and src/sources.js from tools/known/*.py, then build dist/ and site/
 npm run check         # syntax-check every src/*.js file
 npm run audit         # test the map against STATEMENTS; writes docs/SOURCES.md
-python3 tools/known/checks.py   # places against the shore, travellers against the water (exit 1 on a new failure)
+python3 tools/known/checks.py   # places against the shore, journeys leg by leg (exit 1 on any failure)
 python3 tools/known/gate.py     # the release gate (exit 1 on any FAIL)
 npm run dev           # build and serve http://localhost:8765/dist/preview.html
 ```
@@ -266,10 +266,17 @@ You build the houses layer (Map V2 phases 5 and 6), starting with data only.
 ## 2.6 Cast and journeys
 
 You work in `tools/known/cast.py`: characters, journeys, modes, lanes, events, battles.
-- A journey step is `(place or [X, Y], 'Y M D')`; along a road `ROAD(...)`, at sea `LANE(...)` on a `SEA` lane.
+- A journey step is `(place or [X, Y], 'Y M D')`; along a road `ROAD(...)`, at sea `LANE(...)` on a `SEA` lane, by
+  boat down a river (or one river into the next) `RIVER([...], a, b, d0, d1)`, along a riverbank `RIVER(..., bank=±1)`.
+- A voyage starts and ends at the water's edge (cast.build walks the traveller from an inland port to the shore, and
+  sails a lane that ends at sea on to the shore); legs are kept to their element exactly (paths.py).
+- A land leg crosses a river only at a crossing: a road's crossing, a named ford or bridge, a town or castle on the
+  river, or a `FORDS` entry (our own, with the reason). The builder sends a leg by the nearest one.
+- A leg no `MODES` window covers walks; give a leg with water on it a window, a `LANE` or a `RIVER` step.
 - Every date is an estimate tied to chapter order; record the chapter in your notes and the pull request.
 - Characters' looks come only from the text (LAWS I.3).
-- After any change run `python3 tools/known/checks.py water`: no one walks on water, no ship crosses land.
+- After any change run `python3 tools/known/travel.py` (gate G16): every leg tested as a line, no one on water, no
+  ship over land, every landing within a mile of shore, every river crossed at a crossing.
 
 ## 2.7 Engine / frontend
 
@@ -514,7 +521,7 @@ Anything the owner should decide.
 - [ ] No copied text: notes and captions are my own words, one line each.
 - [ ] No coordinates or shapes copied from any map.
 - [ ] `npm run author`, `npm run check` and `npm run audit` all pass.
-- [ ] `python3 tools/known/checks.py` passes (no place at sea, no new traveller on water).
+- [ ] `python3 tools/known/checks.py` passes (no place at sea, no journey leg off its element).
 - [ ] Screenshots of every visible change are attached (or I said I could not take them).
 - [ ] The generated files are regenerated, not hand-edited.
 - [ ] The commit message follows 4.5; no model or vendor names anywhere.
