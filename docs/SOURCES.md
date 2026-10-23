@@ -1,6 +1,6 @@
 # Source audit
 
-Places: 308. Grades: inferred 168, map 72, text 53, estimate 15. References checked against the text: 0 of 308.
+Places: 310. Grades: inferred 164, map 72, text 59, estimate 15. References checked against the text: 0 of 310.
 
 ## Statements measured on the map
 

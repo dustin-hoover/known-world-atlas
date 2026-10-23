@@ -9,6 +9,7 @@ No published map of the Known World is used.
 
   python3 tools/known/shores.py            # previews: tools/shots/shores-essos.png, tools/shots/shores-sothoryos.png
   python3 tools/known/shores.py --write    # also write tools/known/coast_shores.json for author.py
+  python3 tools/known/shores.py --rivers   # only the rivers again, the coasts in coast_shores.json kept
 """
 import os, sys, json, math
 import numpy as np
@@ -194,8 +195,21 @@ RIVERS = {
     'The Honeywine': (['Oued Sebou'], (-4.70, 34.00), (-6.65, 34.27), 'the Sebou'),
     'The Torrentine': (['Moulouya'], (-4.60, 33.00), (-2.33, 35.10), 'the Moulouya'),
     'The Greenblood': (['Nile'], (32.90, 24.10), (31.25, 30.05), 'the Nile below Aswan'),
-    'The Rhoyne': (['Danube', 'Donau'], (8.60, 47.95), (29.60, 45.20), 'the Danube'),
+    'The Rhoyne': (['Danube', 'Donau'], (8.60, 47.95), (28.00, 44.33), 'the Danube above Cernavodă'),     # not its turn north to the delta
     'The Skahazadhan': (['Tigris', 'Shatt al Arab'], (43.10, 36.40), (48.50, 29.95), 'the Tigris'),
+    # the Rhoyne's daughters are the Danube's, its delta channels the Danube delta's arms
+    'The Upper Rhoyne': (['Inn'], (9.75, 46.40), (13.49, 48.58), 'the Inn'),
+    'The Little Rhoyne': (['Morava'], (16.84, 50.20), (16.97, 48.18), 'the Morava (March)'),
+    'The Noyne': (['Drina'], (19.54, 42.75), (19.36, 44.90), 'the Drina'),
+    'The Qhoyne': (['Mures'], (25.67, 46.64), (20.18, 46.26), 'the Mureș'),
+    'The Darkwash': (['Vltava'], (13.93, 48.84), (14.47, 50.34), 'the Vltava'),
+    'The Lhorulu': (['Sava'], (15.23, 46.05), (20.46, 44.84), 'the Sava'),
+    'The Selhoru': (['Prut'], (24.58, 48.29), (28.21, 45.45), 'the Prut'),
+    'The Volaena': (['Olt'], (25.78, 46.68), (24.77, 43.74), 'the Olt'),
+    'The Rhoyne, the Sarhoy mouth': (['Bratul Chillia'], (28.88, 45.18), (29.66, 45.22), 'the Chilia arm'),
+    'The Rhoyne, the middle mouth': (['Damietta Branch'], (31.15, 30.18), (31.84, 31.53), 'the Damietta branch of the Nile'),
+    'The Rhoyne, the east mouth': (['Bratul Sfintu Gheorghe'], (28.88, 45.18), (29.61, 44.89), 'the St George arm'),
+    'The Worm': (['Byk Menderes'], (30.48, 38.36), (27.18, 37.55), 'the Maeander'),
 }
 RSIG, RSIG_MAX = 8.0, 30.0       # miles: bends smaller than this (more on a long river) are the real river's
 
@@ -642,5 +656,14 @@ def run(write=False):
     return out
 
 
+def run_rivers():
+    """Only the rivers again (after a change to author.RIVERS), the coasts in coast_shores.json kept as they are."""
+    sys.path.insert(0, HERE); import author
+    out = json.load(open(OUT))
+    out['rivers'] = rivers(author.RIVERS_DRAWN_LIST)
+    json.dump(out, open(OUT, 'w'))
+
+
 if __name__ == '__main__':
-    run('--write' in sys.argv)
+    if '--rivers' in sys.argv: run_rivers()
+    else: run('--write' in sys.argv)

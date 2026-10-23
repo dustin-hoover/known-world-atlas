@@ -150,7 +150,7 @@ COAST_ZONES = [
     zone('beach', [[34, -2058], [721, -2122], [720, -1991], [14, -1943]]),                  # Dorne's north shore on the Sea of Dorne
     zone('marsh', [[-262, -740], [174, -629], [156, -312], [-135, -311]]),                # the Neck, Blazewater Bay
     zone('marsh', [[269, -993], [344, -985], [338, -916], [270, -917]]),                  # the Trident's mouth, Saltpans
-    zone('marsh', [[1350, -2280], [1480, -2280], [1480, -2150], [1350, -2150]]),          # the mouths of the Rhoyne at Volantis
+    zone('marsh', [[1285, -2140], [1305, -2100], [1365, -2092], [1412, -2140], [1440, -2222], [1395, -2222]]),  # the delta of the Rhoyne
 ]
 
 # ---------------------------------------------------------------- the style of each mountain range
@@ -179,7 +179,7 @@ RANGES = [
     {'name': 'The Red Mountains', 'h': 3000, 'w': 55, 'label': True, 'pts': [[-281, -2250], [-159, -2132], [-7, -2069], [70, -2050]]},
     {'name': 'The Bones', 'alt': 'The Bone Mountains', 'h': 3600, 'w': 80, 'label': True, 'pts': [[3020, -900], [3060, -1300], [3110, -1700], [3160, -2100]]},
     {'name': 'Mountains of the Shadow', 'h': 4200, 'w': 70, 'label': True, 'pts': [[4880, -2250], [5000, -2400], [5120, -2520]]},
-    {'name': 'The Velvet Hills', 'h': 1500, 'w': 50, 'label': False, 'pts': [[1000, -680], [1060, -880], [1080, -1020]]},
+    {'name': 'The Velvet Hills', 'h': 1500, 'w': 50, 'label': False, 'pts': [[915, -800], [945, -900], [960, -990]]},
 ]
 HILLS = [
     {'name': 'The Westerlands hills', 'h': 2700, 'w': 50, 'pts': [[-293, -895], [-266, -995], [-271, -1100]]},
@@ -197,7 +197,7 @@ PEAKS = [
 RIVERS = [
     {'name': 'The White Knife', 'w0': 20, 'w1': 160, 'rank': 3, 'pts': [[60, -80], [100, -150], [148, -230], [180, -293]]},
     {'name': 'The Last River', 'w0': 20, 'w1': 140, 'rank': 3, 'pts': [[60, 280], [160, 330], [300, 380]]},
-    {'name': 'The Milkwater', 'w0': 20, 'w1': 140, 'rank': 3, 'pts': [[-200, 950], [-160, 800], [-200, 640], [-250, 560]]},
+    {'name': 'The Milkwater', 'w0': 20, 'w1': 140, 'rank': 3, 'pts': [[-172, 940], [-160, 800], [-200, 640], [-250, 560]]},
     {'name': 'The Green Fork', 'w0': 30, 'w1': 220, 'rank': 2, 'pts': [[62, -565], [21, -635], [46, -740], [112, -835], [173, -892]]},
     {'name': 'The Blue Fork', 'w0': 30, 'w1': 200, 'rank': 3, 'pts': [[192, -671], [154, -768], [173, -892]]},
     {'name': 'The Red Fork', 'w0': 30, 'w1': 220, 'rank': 2, 'pts': [[-212, -974], [-140, -938], [-41, -901], [76, -886], [173, -892]]},
@@ -207,9 +207,45 @@ RIVERS = [
     {'name': 'The Honeywine', 'w0': 20, 'w1': 200, 'rank': 3, 'pts': [[-348, -1967], [-403, -2024], [-426, -2153]]},
     {'name': 'The Torrentine', 'w0': 20, 'w1': 160, 'rank': 3, 'pts': [[-168, -2205], [-201, -2300], [-219, -2404]]},
     {'name': 'The Greenblood', 'w0': 30, 'w1': 260, 'rank': 2, 'pts': [[109, -2250], [294, -2346], [518, -2393]]},
-    {'name': 'The Rhoyne', 'alt': 'the Mother Rhoyne', 'w0': 60, 'w1': 900, 'rank': 1, 'pts': [[1150, -650], [1180, -850], [1230, -1050], [1300, -1500], [1360, -1800], [1420, -2205]]},
+    # the Rhoyne begins where the Upper and the Little Rhoyne meet, south-east of Ghoyan Drohe; the Noyne joins it above
+    # Ny Sar, the Qhoyne at Dagger Lake, the Lhorulu at the Sorrows (Chroyane), the Selhoru at Selhorys and the Volaena
+    # just above Volantis, and it reaches the Summer Sea by four mouths, Volantis on the easternmost (ADWD, TWOIAF).
+    # Our own courses through the towns' positions; `to` names the river a tributary joins, `of` the river a delta
+    # channel leaves (join_tree() ends each on its parent's final course).
+    {'name': 'The Rhoyne', 'alt': 'the Mother Rhoyne', 'w0': 320, 'w1': 900, 'rank': 1,
+     'pts': [[1170, -1095], [1195, -1125], [1240, -1195], [1290, -1250], [1302, -1300], [1305, -1345], [1300, -1420],
+             [1300, -1500], [1325, -1630], [1350, -1760], [1352, -1860], [1353, -1939], [1361, -2010], [1356, -2075],
+             [1365, -2115], [1392, -2150], [1412, -2178], [1420, -2205]]},
+    {'name': 'The Upper Rhoyne', 'w0': 30, 'w1': 260, 'rank': 2, 'to': 'The Rhoyne',
+     'pts': [[832, -613], [900, -660], [1000, -720], [1080, -830], [1120, -960], [1170, -1095]]},
+    {'name': 'The Little Rhoyne', 'w0': 20, 'w1': 150, 'rank': 3, 'to': 'The Rhoyne',
+     'pts': [[974, -952], [978, -1000], [985, -1040], [1060, -1080], [1170, -1095]]},
+    {'name': 'The Noyne', 'w0': 30, 'w1': 230, 'rank': 2, 'to': 'The Rhoyne',
+     'pts': [[1185, -720], [1150, -850], [1170, -960], [1190, -1060], [1195, -1125]]},
+    {'name': 'The Qhoyne', 'w0': 30, 'w1': 260, 'rank': 2, 'to': 'The Rhoyne',
+     'pts': [[1500, -930], [1450, -1000], [1420, -1080], [1385, -1140], [1375, -1160], [1340, -1210], [1292, -1255]]},
+    {'name': 'The Darkwash', 'w0': 20, 'w1': 140, 'rank': 3, 'to': 'The Qhoyne',
+     'pts': [[1352, -726], [1360, -850], [1370, -1000], [1385, -1140]]},
+    {'name': 'The Lhorulu', 'w0': 30, 'w1': 230, 'rank': 2, 'to': 'The Rhoyne',
+     'pts': [[1110, -1300], [1180, -1380], [1250, -1450], [1300, -1500]]},
+    {'name': 'The Selhoru', 'w0': 20, 'w1': 200, 'rank': 2, 'to': 'The Rhoyne',
+     'pts': [[1520, -1300], [1500, -1450], [1450, -1600], [1400, -1700], [1350, -1760]]},
+    {'name': 'The Volaena', 'w0': 20, 'w1': 170, 'rank': 3, 'to': 'The Rhoyne',
+     'pts': [[1560, -1950], [1500, -2040], [1440, -2120], [1404, -2166]]},
     {'name': 'The Skahazadhan', 'w0': 40, 'w1': 300, 'rank': 2, 'pts': [[2900, -1650], [2800, -1820], [2700, -1960]]},
+    # Astapor stands where the Worm reaches Slaver's Bay (ASOS)
+    {'name': 'The Worm', 'w0': 20, 'w1': 180, 'rank': 3, 'pts': [[2330, -1990], [2390, -2070], [2456, -2161]]},
 ]
+# the delta of the Rhoyne: three more mouths west of Volantis's (the books name none of them; Sarhoy stood on one)
+DISTRIBUTARIES = [
+    {'name': 'The Rhoyne, the Sarhoy mouth', 'of': 'The Rhoyne', 'label': False, 'w0': 300, 'w1': 380, 'rank': 2,
+     'pts': [[1365, -2115], [1330, -2130], [1298, -2145]]},
+    {'name': 'The Rhoyne, the middle mouth', 'of': 'The Rhoyne', 'label': False, 'w0': 260, 'w1': 340, 'rank': 2,
+     'pts': [[1365, -2115], [1352, -2140], [1340, -2165]]},
+    {'name': 'The Rhoyne, the east mouth', 'of': 'The Rhoyne', 'label': False, 'w0': 260, 'w1': 340, 'rank': 2,
+     'pts': [[1365, -2115], [1372, -2150], [1376, -2181]]},
+]
+RIVERS += DISTRIBUTARIES
 # the rivers of the south reach the sea at the coast's named anchors (tools/known/coast_fixed.py)
 import sys as _sys
 _sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -224,9 +260,60 @@ for r in RIVERS:
 RIVERS_DRAWN_LIST = [{'name': r['name'], 'pts': [list(p) for p in r['pts']]} for r in RIVERS]
 for r in RIVERS:
     if r['name'] in SHORES.get('rivers', {}): r['pts'] = SHORES['rivers'][r['name']]
+JOIN_RAMP = 40.0      # miles: how much of a tributary's course is drawn over to where its parent's real bends put it
+
+
+def join_tree():
+    """Each tributary ends on the river it joins (`to`) and each delta channel leaves its river (`of`), wherever the
+    real bends laid on the larger river put it: the last (or first) JOIN_RAMP miles are drawn over to the nearest point
+    of the parent's course, the pull fading to nothing upstream."""
+    import numpy as np
+    from shapely.geometry import LineString, Point
+    by = {r['name']: r for r in RIVERS}
+    depth = lambda r: 0 if not (r.get('to') or r.get('of')) else 1 + depth(by[r.get('to') or r.get('of')])
+    for r in sorted(RIVERS, key=depth):
+        parent = r.get('to') or r.get('of')
+        if not parent: continue
+        P = np.asarray(r['pts'], float)[::-1 if r.get('of') else 1]
+        line = LineString(by[parent]['pts'])
+        q = line.interpolate(line.project(Point(*P[-1]))); d = np.array([q.x, q.y]) - P[-1]
+        s = np.r_[0, np.cumsum(np.hypot(*np.diff(P, axis=0).T))]; ramp = min(JOIN_RAMP, 0.5 * s[-1])
+        u = np.clip((s - (s[-1] - ramp)) / ramp, 0, 1)
+        P = P + (u * u * (3 - 2 * u))[:, None] * d
+        # a tributary ends where it first meets its river, a delta channel starts where it last leaves it
+        own = LineString(P); x = own.intersection(line)
+        hits = [g for g in ([x] if x.geom_type == 'Point' else getattr(x, 'geoms', [])) if g.geom_type == 'Point']
+        first = min((own.project(g) for g in hits), default=own.length)
+        if first < own.length - 0.5:
+            from shapely.ops import substring
+            P = np.asarray(substring(own, 0, first).coords)
+        P = P[::-1 if r.get('of') else 1]
+        r['pts'] = [[round(x, 2), round(y, 2)] for x, y in P]
+
+
+join_tree()
+
+
+def lake_on(name, river, a, b, half):
+    """A lake the river runs through, from near a to near b (X, Y), at most `half` miles from its course either side,
+    narrowing to the river at both ends."""
+    import math
+    from shapely.geometry import LineString, Point
+    from shapely.ops import substring, unary_union
+    line = LineString(next(r['pts'] for r in RIVERS if r['name'] == river))
+    s0, s1 = sorted((line.project(Point(*a)), line.project(Point(*b))))
+    n = max(8, int((s1 - s0) / 1.0))
+    discs = [line.interpolate(s0 + (s1 - s0) * k / n).buffer(max(0.6, half * math.sin(math.pi * k / n) ** 0.7), 16) for k in range(n + 1)]
+    g = unary_union(discs).simplify(0.2)
+    return {'name': name, 'pts': [[round(x, 2), round(y, 2)] for x, y in list(g.exterior.coords)[:-1]]}
+
+
 LAKES = [
     {'name': 'The Gods Eye', 'pts': chaikin([[80, -950], [156, -947], [182, -994], [147, -1038], [84, -1033], [62, -992]], 2)},
     {'name': 'The Long Lake', 'pts': chaikin([[30, 180], [60, 185], [62, 215], [36, 220]], 2)},
+    lake_on('Dagger Lake', 'The Rhoyne', (1286, -1240), (1306, -1350), 8.0),     # where the Qhoyne joins the Rhoyne (ADWD)
+    # the sacred lake below the Mother of Mountains, beside Vaes Dothrak (AGOT); its size and shape are ours
+    {'name': 'The Womb of the World', 'pts': chaikin([[2712, -1004], [2731, -1001], [2738, -1012], [2726, -1021], [2709, -1017]], 2)},
 ]
 
 # ---------------------------------------------------------------- land cover
@@ -546,7 +633,7 @@ def math_hypot(a, b):
 
 
 SEA_RIVERS = {'The White Knife', 'The Last River', 'The Milkwater', 'The Trident', 'The Blackwater Rush', 'The Mander',
-              'The Honeywine', 'The Torrentine', 'The Greenblood', 'The Rhoyne', 'The Skahazadhan'}
+              'The Honeywine', 'The Torrentine', 'The Greenblood', 'The Rhoyne', 'The Skahazadhan', 'The Worm'}
 
 
 def river_mouths(coast_s):
@@ -561,7 +648,7 @@ def river_mouths(coast_s):
         pts = [tuple(p) for p in r['pts']]; E = Point(pts[-1])
         land = main if main.distance(E) <= ess.distance(E) else ess
         edge = land.boundary
-        if r['name'] not in SEA_RIVERS and edge.distance(E) > 30: continue     # it ends in a lake or another river
+        if r.get('to') or (r['name'] not in SEA_RIVERS and not r.get('of') and edge.distance(E) > 30): continue   # it ends in a lake or another river
         out = [pts[0]]
         for a, b in zip(pts, pts[1:]):
             if land.contains(Point(b)): out.append(b); continue
@@ -775,7 +862,7 @@ def seas_on_water(coast):
 # town that spans the river or floats on it)
 MOUTH_TOWNS = {'Planky Town': ('The Greenblood', 'mid'), 'White Harbor': ('The White Knife', 'near'),
                'Oldtown': ('The Honeywine', 'mid'), "King's Landing": ('The Blackwater Rush', 'left'),
-               'Volantis': ('The Rhoyne', 'mid'), 'Meereen': ('The Skahazadhan', 'near')}
+               'Volantis': ('The Rhoyne', 'mid'), 'Meereen': ('The Skahazadhan', 'near'), 'Astapor': ('The Worm', 'near')}
 
 
 def mouth_towns(land=None):

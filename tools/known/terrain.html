@@ -1,0 +1,10 @@
+<!doctype html><html><head><meta charset="utf-8"><title>terrain</title></head><body>
+<!-- The terrain alone (no map), for the checks that need the generated ground: tools/known/rivercheck.py -->
+<script src="../../src/geo.js"></script><script src="../../src/gen.js"></script><script src="../../src/rasters.js"></script>
+<script>
+const T0 = performance.now();
+const DATA = RASTERS.build(GEO);
+const T1 = performance.now();
+GEN.init(DATA);
+window.READY = { rasters: Math.round(T1 - T0), init: Math.round(performance.now() - T1) };
+</script></body></html>

@@ -10,6 +10,7 @@ Positions are given against our own geography, never copied from a published map
   ('in', place, dx, dy)         a few miles from a place: a quarter, a tower or a hall in or by it
   ('between', a, b, f)          the fraction f of the way from a to b
   ('river', river, f)           on a river, the fraction f of the way from its source to its mouth
+  ('on', river, X, Y)           on a river, at the point of its course nearest (X, Y)
   ('wall', X)                   on the Wall, where it crosses X
 `coast=True` puts a place on the waterline (a port, a castle on a sea cliff); `move=True` moves a place already
 in author.py instead of adding one. `seat` names the house that holds it in the novels (phase 5 fills in the rest).
@@ -223,11 +224,13 @@ PLACES = [
 # ---------------------------------------------------------------- Essos, Sothoryos and the islands of the summer seas
 VOL, GHIS, VAL, DOTH, IBB = ('freecity', 'Volantis'), ('ghiscari', 'Slaver\'s Bay'), ('valyria', 'Valyria'), ('dothraki', 'The Dothraki Sea'), ('ib', 'Ib')
 PLACES += [
-    G('Valysar', 'town', ('river', 'The Rhoyne', 0.82), *VOL, 'ADWD', 'A Volantene town on the Rhoyne below Selhorys.'),
-    G('Volon Therys', 'town', ('river', 'The Rhoyne', 0.9), *VOL, 'ADWD', 'A Volantene town on the Rhoyne, the last before Volantis.'),
-    G('Ghoyan Drohe', 'ruin', ('near', 'Chroyane', 'W', 70), *VOL, 'ADWD', 'A Rhoynar city burned by the dragonlords, on the Little Rhoyne.'),
-    G('Ar Noy', 'ruin', ('near', 'Qohor', 'S', 90), *('freecity', 'Qohor'), 'ADWD', 'A ruined Rhoynar city on the Qhoyne.'),
-    G('Ny Sar', 'ruin', ('near', 'Norvos', 'S', 130), *('freecity', 'Norvos'), 'ADWD', 'A ruined Rhoynar city on the Noyne.'),
+    G('Valysar', 'town', ('on', 'The Rhoyne', 1353, -1939), *VOL, 'ADWD', 'A Volantene town on the Rhoyne below Selhorys.', grade='text'),
+    G('Sar Mell', 'ruin', ('on', 'The Rhoyne', 1361, -2010), *VOL, 'TWOIAF', 'A Rhoynar city on the lower Rhoyne, sacked by Valyria in the last war against the Rhoynar.', grade='text'),
+    G('Volon Therys', 'town', ('on', 'The Rhoyne', 1356, -2075), *VOL, 'ADWD', 'A Volantene town on the Rhoyne, the last before Volantis.', grade='text'),
+    G('Sarhoy', 'ruin', ('on', 'The Rhoyne, the Sarhoy mouth', 1298, -2145), *VOL, 'TWOIAF', 'A Rhoynar port at one of the mouths of the Rhoyne, burned and salted by Volantis and the dragonlords.', coast=True),
+    G('Ghoyan Drohe', 'ruin', ('on', 'The Little Rhoyne', 985, -1040), *('freecity', 'Norvos'), 'ADWD', 'A Rhoynar city burned by the dragonlords, on the Little Rhoyne above its meeting with the Upper Rhoyne.', grade='text'),
+    G('Ar Noy', 'ruin', ('on', 'The Qhoyne', 1375, -1160), *('freecity', 'Qohor'), 'ADWD', 'A ruined Rhoynar city on the Qhoyne, below Qohor.', grade='text'),
+    G('Ny Sar', 'ruin', ('on', 'The Rhoyne', 1200, -1140), *('freecity', 'Norvos'), 'ADWD', 'A ruined Rhoynar city on the Rhoyne, just below where the Noyne joins it.', grade='text'),
     G('Tolos', 'city', ('near', 'New Ghis', 'NW', 95), *GHIS, 'ADWD', 'A city on the Gulf of Grief, famed for its slingers.', rank=4, coast=True),
     G('Elyria', 'city', ('near', 'New Ghis', 'W', 160), *GHIS, 'ADWD', 'A city of the Gulf of Grief, an ally of Yunkai.', rank=5, coast=True),
     G('Old Ghis', 'ruin', ('near', 'New Ghis', 'N', 140), *GHIS, 'ASOS', 'The ruins of the first city of the Ghiscari, sown with salt by Valyria.', rank=4),
@@ -279,6 +282,9 @@ def resolve(places, rivers, walls, log=print):
             a, b = at[w[1]], at[w[2]]; x, y = a[2] + (b[2] - a[2]) * w[3], a[3] + (b[3] - a[3]) * w[3]
         elif w[0] == 'river':
             q = riv[w[1]].interpolate(w[2], normalized=True); x, y = q.x, q.y
+        elif w[0] == 'on':
+            from shapely.geometry import Point
+            q = riv[w[1]].interpolate(riv[w[1]].project(Point(w[2], w[3]))); x, y = q.x, q.y
         elif w[0] == 'wall':
             x = w[1]; y = next(a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]) for a, b in zip(wall, wall[1:]) if a[0] <= x <= b[0])
         else: raise ValueError(w)

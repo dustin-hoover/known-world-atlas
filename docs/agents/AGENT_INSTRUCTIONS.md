@@ -26,10 +26,10 @@ If anything here conflicts with `docs/geodyssey/LAWS.md`, the laws win.
 - **Lineage:** the second world of Geodyssey, built on the engine of Arda Atlas (Tolkien).
   Some engine notes in `AGENTS.md` still use Arda's names (Hobbiton, Shire Reckoning); they describe the shared
   engine, not this world's data.
-- **Current state:** 308 places ranked by importance; the North's coast from Britain's real shape; everything
+- **Current state:** 310 places ranked by importance; the North's coast from Britain's real shape; everything
   south of the North running between 40 named coastal anchors, each stretch a whole real coastline turned to fit;
-  Essos and Sothoryos with real shores laid along our own outline; 14 rivers with real
-  meanders; about seventy characters with journeys across all five novels; a dozen battles; seasons; weather
+  Essos and Sothoryos with real shores laid along our own outline; 26 rivers with real
+  meanders, each in a bed that never climbs; about seventy characters with journeys across all five novels; a dozen battles; seasons; weather
   (off by default).
 
 ## 1.2 The laws (binding, from `docs/geodyssey/LAWS.md`)
@@ -240,7 +240,14 @@ You work on rivers, lakes, roads, ranges, forests, marshes and coasts in `author
 - Our shapes are our own: control points in miles, smoothed, then real Earth detail laid along them. Never
   shape a feature after a published or fan map.
 - New rivers need a course that ends on the coast (south of the North at a named anchor: `RIVER_MOUTHS`) and an
-  Earth analogue in `shores.py` `RIVERS` if it should meander.
+  Earth analogue in `shores.py` `RIVERS` if it should meander. A tributary names the river it joins (`'to'`), a
+  delta channel the river it leaves (`'of'`, listed in `DISTRIBUTARIES`); `join_tree()` ends each on its parent's
+  final course. After changing courses, `python3 tools/known/shores.py --rivers` re-lays only the rivers.
+- No river crosses a range's crest except at a named pass (the Prince's Pass, the Boneway, the Bloody Gate, the
+  Skirling Pass): its valley would be a new pass. Rivers rise on a range's flank and run down from it.
+- Rivers never climb (rule 18): `gen.js` gives every river a bed that only falls toward its mouth and cuts the land
+  down to it. `python3 tools/known/rivercheck.py` walks every drawn course on the generated ground (headless
+  Chromium); the gate runs it as rule 18.
 - New islands are real islands moved bodily (`shores.py` `TRANSPLANTS`), with their castles pinned to the real
   island's town (`TRANSPLANT_PINS`).
 - After any change: `npm run author`, `npm run audit`, `python3 tools/known/checks.py`, screenshots before and
@@ -334,9 +341,12 @@ otherwise. Each task says which role takes it.
 ## P6 — Rivers, tributaries, lakes (researcher, then geography engineer)
 
 - **Goal:** every river, tributary and lake the books name in Westeros (then Essos): source, mouth, places on it,
-  which bank, with citations. Today only 14 rivers exist (the Trident and its forks, the Blackwater Rush, the
-  Mander, the Honeywine, the Torrentine, the Greenblood, the White Knife, the Last River, the Milkwater, the
-  Rhoyne, the Skahazadhan).
+  which bank, with citations. Today 26 rivers exist: the Trident and its forks, the Blackwater Rush, the Mander,
+  the Honeywine, the Torrentine, the Greenblood, the White Knife, the Last River, the Milkwater, the Skahazadhan,
+  the Worm, and the Rhoyne with its daughters (the Upper and Little Rhoyne, the Noyne, the Qhoyne and the
+  Darkwash, the Lhorulu, the Selhoru, the Volaena) and its delta's three other mouths. Lakes: the Gods Eye, the
+  Long Lake, Dagger Lake, the Womb of the World. The books give no deltas for the rivers of Westeros: don't add one
+  without a citation.
 - **Engineering:** add courses in `author.py` `RIVERS`, mouths at named anchors or on the shore, towns on their banks; pick an Earth
   analogue for the meanders. Regenerate with `shores.py` (needs the Natural Earth files).
 
@@ -392,6 +402,7 @@ G('Wintertown', 'town', ('in', 'Winterfell', 2.5, -2.5), *N, 'AGOT', 'The town u
   - `('in', place, dx, dy)` for a few miles from a place (quarters, towers);
   - `('between', a, b, f)` for the fraction f of the way from a to b;
   - `('river', river, f)` for the fraction f from source to mouth;
+  - `('on', river, X, Y)` for the point of a river's course nearest (X, Y);
   - `('wall', X)` for a spot on the Wall.
 - Region tuples already defined: `N` North, `R` Riverlands, `V` Vale, `I` Iron Islands, `W` Westerlands,
   `C` Crownlands, `S` Stormlands, `H` Reach, `D` Dorne, `WATCH` the Wall, `VOL` Volantis, `GHIS` Slaver's Bay,

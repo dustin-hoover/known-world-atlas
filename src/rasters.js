@@ -185,7 +185,7 @@ function build(GEO) {
     peaks: GEO.PEAKS.map(p => ({ x: p.x, y: p.y, h: p.h, r: p.r, kind: p.kind })),
     flats: GEO.PLACES.filter(p => p[7] && p[7].r >= 0.3).map(p => ({ x: p[2], y: p[3], r: p[7].r * 1.6 + 0.3, lift: 20, sea: p[1] === 'port' ? 1 : 0 })),
     vectors: {
-      rivers: GEO.RIVERS.map(r => ({ name: r.name, pts: r.pts, w0: r.w0, w1: r.w1 })),
+      rivers: GEO.RIVERS.map(r => ({ name: r.name, pts: r.pts, w0: r.w0, w1: r.w1, to: r.to, of: r.of })),
       roads: GEO.ROADS.map(r => ({ name: r.name, pts: r.pts, cls: r.cls })),
       lakes: GEO.LAKES.map(l => ({ pts: l.pts })),
       walls: GEO.WALLS.map(w => ({ name: w.name, pts: w.pts, circle: w.circle, ice: w.ice })),

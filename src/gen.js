@@ -101,6 +101,138 @@ function init(data) {
   M = data.main; G = data.glob; PEAKS = data.peaks || []; FLATS = data.flats || [];
   if (data.vectors) initVectors(data.vectors);
   CO = data.coast ? initCoast(data.coast) : null;
+  BEDS = null;
+  if (data.vectors) { if (!data.beds) data.beds = bedProfiles(data.vectors.rivers); BEDS = initBeds(data.beds); }
+}
+
+/* ---------------- river beds (rule 18: a river never climbs) ----------------
+   Each river is given a bed that only ever falls toward its mouth. The land along its drawn course is sampled every
+   half mile, on the course and a mile and a half to either side, and the bed taken as the running minimum of the
+   lowest of the three, so the river is the low line of its valley; a confluence sits no higher than any river that
+   meets there (tributaries are worked out before the river they join); a river that reaches the sea is let down to the
+   shore; below the head of a delta every channel, the main one too, falls at least evenly from the head's height to
+   the sea.
+   The page works the profiles out once (bedProfiles) and the workers get them with the rest of the data. evaluate()
+   sets the ground in a river's channel to its bed and cuts the land on either side down to valley walls rising from
+   it (bedRise), so a river that meets higher ground runs through it in a gorge. */
+let BEDS = null, NOBED = false;
+const BB = 4, BED_REACH = 10, BED_STEP = 0.5, BED_SAMPLE = 0.5, BED_SIDE = 1.5, BED_DEPTH = 3, SEA_FALL = 0.5;
+const bedRise = e => e * (30 + 55 * e);          // metres above the bed, e miles beyond the channel (5,800 m at the reach)
+function riverLine(r, i) { return densify(r.pts, 0.2, i + 1, 0.12); }      // the course the imagery draws (initVectors)
+function bedProfiles(rivers) {
+  NOBED = true;
+  const by = new Map(rivers.map((r, i) => [r.name, i])), done = new Map(), out = [];
+  const near = (b, x, y) => {                    // the index of a profile's point nearest (x, y)
+    let best = Infinity, k0 = 0;
+    for (let k = 0; k < b.x.length; k++) { const d = (b.x[k] - x) ** 2 + (b.y[k] - y) ** 2; if (d < best) { best = d; k0 = k; } }
+    return k0;
+  };
+  const ground = (x, y) => { const h = evaluate(x, y, 0.25); return R.s > 0 ? h : Infinity; };
+  const profile = i => {
+    const r = rivers[i], line = riverLine(r, i);
+    const x = [line[0][0]], y = [line[0][1]], s = [0];
+    let acc = 0;
+    for (let k = 1; k < line.length; k++) {      // every half mile along the drawn course
+      acc += Math.hypot(line[k][0] - line[k - 1][0], line[k][1] - line[k - 1][1]);
+      if (acc - s[s.length - 1] >= BED_STEP || k === line.length - 1) { x.push(line[k][0]); y.push(line[k][1]); s.push(acc); }
+    }
+    const n = x.length, L = s[n - 1], z = new Float64Array(n);
+    const every = Math.round(BED_SAMPLE / BED_STEP);
+    let m = Infinity, last = 0, lastZ = Infinity;
+    for (let k = 0; k < n; k++) {
+      if (k % every && k !== n - 1) continue;
+      const a = Math.max(0, k - 1), c = Math.min(n - 1, k + 1), dx = x[c] - x[a], dy = y[c] - y[a], d = Math.hypot(dx, dy) || 1;
+      const ox = -dy / d * BED_SIDE, oy = dx / d * BED_SIDE;
+      const low = Math.min(ground(x[k], y[k]), ground(x[k] + ox, y[k] + oy), ground(x[k] - ox, y[k] - oy));
+      m = Math.min(m, low === Infinity ? 0.6 : low - BED_DEPTH);
+      for (let j = last + 1; j < k; j++) z[j] = lastZ === Infinity ? m : lastZ + (m - lastZ) * (s[j] - s[last]) / (s[k] - s[last] || 1);
+      z[k] = m; last = k; lastZ = m;
+    }
+    return { name: r.name, x, y, s, z, L };
+  };
+  const finish = (i, b) => {
+    const r = rivers[i], n = b.x.length;
+    const w = b.s.map(v => Math.max(0.4, mix(r.w0, r.w1, Math.pow(v / (b.L || 1), 0.8)) / 3218));   // half the channel, miles
+    for (let k = 0; k < n; k++) b.z[k] = Math.max(0.6, b.z[k]);
+    out[i] = { name: r.name, x: Float64Array.from(b.x), y: Float64Array.from(b.y), z: Float64Array.from(b.z), w: Float64Array.from(w) };
+    done.set(r.name, b);
+  };
+  const visit = i => {
+    const r = rivers[i];
+    rivers.forEach((c, j) => { if (c.to === r.name) visit(j); });           // the rivers that join it, first
+    const b = profile(i), n = b.x.length;
+    rivers.forEach(c => {                                                  // a confluence no higher than the river that meets it
+      if (c.to !== r.name || !done.has(c.name)) return;
+      const t = done.get(c.name), zEnd = t.z[t.z.length - 1], k0 = near(b, t.x[t.x.length - 1], t.y[t.y.length - 1]);
+      for (let k = k0; k < n; k++) b.z[k] = Math.min(b.z[k], zEnd);
+    });
+    const end = CO ? Math.abs(coastSD(b.x[n - 1], b.y[n - 1])) : 99;
+    if (end < 2.5 && !r.to) for (let k = 0; k < n; k++) b.z[k] = Math.min(b.z[k], 0.6 + SEA_FALL * (b.L - b.s[k]));   // let down to the sea
+    const delta = rivers.map((c, j) => j).filter(j => rivers[j].of === r.name);
+    if (delta.length) {                                                    // below the head of its delta, an even fall to the sea
+      const kA = Math.min(...delta.map(j => near(b, rivers[j].pts[0][0], rivers[j].pts[0][1]))), zA = b.z[kA];
+      for (let k = kA; k < n; k++) b.z[k] = Math.min(b.z[k], zA + (0.6 - zA) * (b.s[k] - b.s[kA]) / (b.L - b.s[kA] || 1));
+      finish(i, b);
+      delta.forEach(j => {
+        const d = profile(j), m = d.x.length;
+        for (let k = 0; k < m; k++) d.z[k] = Math.min(d.z[k], zA + (0.6 - zA) * d.s[k] / (d.L || 1));
+        finish(j, d);
+      });
+    } else finish(i, b);
+  };
+  rivers.forEach((r, i) => { if (!(r.to && by.has(r.to)) && !(r.of && by.has(r.of))) visit(i); });
+  // where two rivers run close (or one doubles back on itself), the lower course's valley would pull the other down and
+  // let it climb out again: each bed is settled at or below every bed and valley wall along it, then made to fall
+  // again, until none moves
+  const beds = out.filter(Boolean);
+  for (let pass = 0; pass < 4; pass++) {
+    const idx = initBeds(beds, 4);                 // differences between neighbouring beds are spanned within 4 miles
+    let moved = 0;
+    beds.forEach(b => {
+      let m = Infinity;
+      for (let k = 0; k < b.x.length; k++) {
+        const v = Math.min(b.z[k], bedAt(b.x[k], b.y[k], Infinity, idx));
+        m = Math.min(m, v);
+        if (b.z[k] - m > 0.05) { moved++; b.z[k] = Math.max(0.6, m); }
+      }
+    });
+    if (!moved) break;
+  }
+  NOBED = false;
+  return beds;
+}
+function initBeds(beds, reach = BED_REACH) {
+  const ax = [], ay = [], bx = [], by = [], za = [], zb = [], hw = [], rid = [], buckets = new Map();
+  beds.forEach((b, bi) => { for (let k = 0; k < b.x.length - 1; k++) {
+    const j = ax.length;
+    ax.push(b.x[k]); ay.push(b.y[k]); bx.push(b.x[k + 1]); by.push(b.y[k + 1]); za.push(b.z[k]); zb.push(b.z[k + 1]); hw.push(b.w[k]); rid.push(bi);
+    for (let gx = Math.floor((Math.min(b.x[k], b.x[k + 1]) - reach) / BB); gx <= Math.floor((Math.max(b.x[k], b.x[k + 1]) + reach) / BB); gx++)
+      for (let gy = Math.floor((Math.min(b.y[k], b.y[k + 1]) - reach) / BB); gy <= Math.floor((Math.max(b.y[k], b.y[k + 1]) + reach) / BB); gy++) {
+        const key = gx * 100003 + gy; let q = buckets.get(key); if (!q) buckets.set(key, q = []); q.push(j);
+      }
+  } });
+  const lst = new Map(); for (const [k, v] of buckets) lst.set(k, Int32Array.from(v));
+  return { ax: Float64Array.from(ax), ay: Float64Array.from(ay), bx: Float64Array.from(bx), by: Float64Array.from(by),
+    za: Float64Array.from(za), zb: Float64Array.from(zb), hw: Float64Array.from(hw), rid: Int32Array.from(rid), buckets: lst };
+}
+// the ground at (X, Y) given the land's own height h there: a river's bed in its channel, the land cut to the valley
+// walls (B and skip: another index, leaving one river out, for bedProfiles)
+function bedAt(X, Y, h, B = BEDS, skip = -1) {
+  const q = B.buckets.get(Math.floor(X / BB) * 100003 + Math.floor(Y / BB));
+  if (!q) return h;
+  let cap = Infinity, inb = Infinity;
+  for (let i = 0; i < q.length; i++) {
+    const k = q[i];
+    if (B.rid[k] === skip) continue;
+    const ax = B.ax[k], ay = B.ay[k], dx = B.bx[k] - ax, dy = B.by[k] - ay;
+    const L2 = dx * dx + dy * dy || 1e-9, t = Math.max(0, Math.min(1, ((X - ax) * dx + (Y - ay) * dy) / L2));
+    const ex = X - ax - t * dx, ey = Y - ay - t * dy, e = Math.sqrt(ex * ex + ey * ey) - B.hw[k];
+    const z = B.za[k] + (B.zb[k] - B.za[k]) * t;
+    if (e <= 0) { if (z < inb) inb = z; }
+    else if (e < BED_REACH) { const c = z + bedRise(e); if (c < cap) cap = c; }
+  }
+  if (inb < Infinity) return Math.min(inb, cap);
+  return cap < h ? cap : h;
 }
 
 /* ---------------- the exact coastline ----------------
@@ -427,6 +559,7 @@ function evaluate(X, Y, pix) {
       else if (d < 1) { const t = sstep(1, 0.2, d) * 0.85; h = mix(h, Math.min(h, base + f.lift + (h - base) * 0.25), t); str *= 1 - t; R.stream = str; }
     }
     if (PEAKS.length) h += peakAt(X, Y, pix);
+    if (BEDS && !NOBED) h = bedAt(X, Y, h);                                  // rivers in their beds, never climbing
     { const dW = iceWallDist(X, Y); if (dW < 0.08) h += 213 * sstep(0.08, 0.03, dW); }   // the Wall (about 700 ft, AGOT)
     R.base = base;
     if (h < 0.6) h = 0.6;
@@ -1106,6 +1239,6 @@ function buildingsNear(X, Y, rad) {
 }
 
 return { setSeason, D2R, MI, EARTH_C, toLL, toXY, noise, fbm, fbmA, hash2, sat, sstep, mix, clamp, init, evaluate, F, R, CH, tempAt, moistAt,
-  demTile, imageryTile, renderGrid, tileLL, drawVectors, buildingsNear, orchardAt, coastSD, CS };
+  demTile, imageryTile, renderGrid, tileLL, drawVectors, buildingsNear, orchardAt, coastSD, CS, beds: () => BEDS, riverLine };
 })();
 if (typeof self !== 'undefined') self.GEN = GEN;
