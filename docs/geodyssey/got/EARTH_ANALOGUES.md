@@ -157,6 +157,14 @@ Each island group sits on its position (graded `map`; `tools/known/shores.py` TR
 stand on the real island's own towns and harbours (TRANSPLANT_PINS: High Tide on Oléron, Faircastle on St Helier,
 Ryamsport on Palma, the three Shields on Porquerolles, Port-Cros and Le Levant...).
 
+None of them is set down as the real place: `shores.py` `disguise()` mirrors each one across a line through its
+anchor, draws it a little longer and narrower along that line and warps it gently (a smooth field seeded by the
+island's name, which never folds). The line is chosen to move its pinned towns least, and the whole is then turned and
+scaled (by at most a tenth) so the towns come back to their marks; Valyria's neck is held to the mainland the same
+way. They keep a real coast's character without reading as the Peloponnese, Iceland or Mallorca.
+`python3 tools/known/shores.py --east --write` rebuilds the east and the transplants with Westeros's coast kept, then
+fills any false inlet rule 9b would find on the gate's own grids.
+
 ## How the samples are used
 
 1. **Heights and shape:** each range's real profile (crest height, valley floors, how steep its sides are,

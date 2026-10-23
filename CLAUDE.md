@@ -13,7 +13,8 @@ Arda's engine notes below still apply; what differs in this world:
   character along each stretch (Connemara, Brittany, the Wadden Sea, the Algarve, Tripolitania, Kerry for the Fingers).
   Rivers of the south end at their fixed points (author.py `RIVER_MOUTHS`) and a coastal place named like a fixed point
   stands on it (`on_fixed`). Essos and Sothoryos keep our outline (author.py `ESSOS`, `SOTHORYOS`) with real shores laid
-  along it and real islands moved bodily (`tools/known/shores.py` → `coast_shores.json`, pins move Braavos, Valyria, the
+  along it and real islands moved bodily and disguised (mirrored, stretched, warped: `disguise()`; `--east --write` rebuilds them with
+  Westeros kept) (`tools/known/shores.py` → `coast_shores.json`, pins move Braavos, Valyria, the
   Fourteen Flames, Ib Nefer and the castles of Westeros's islands); shores.py also lays real detail on the North's long
   straight edges and gives each river its Earth analogue's bends (`RIVERS_DRAWN_LIST` keeps our own courses). Both read
   Natural Earth from `tools/refs/earth/` (git-ignored); re-run them, then `npm run author`.

@@ -10,6 +10,7 @@ No published map of the Known World is used.
   python3 tools/known/shores.py            # previews: tools/shots/shores-essos.png, tools/shots/shores-sothoryos.png
   python3 tools/known/shores.py --write    # also write tools/known/coast_shores.json for author.py
   python3 tools/known/shores.py --rivers   # only the rivers again, the coasts in coast_shores.json kept
+  python3 tools/known/shores.py --east --write   # the east and the transplanted islands again, Westeros kept
 """
 import os, sys, json, math
 import numpy as np
@@ -424,19 +425,54 @@ TRANSPLANT_PINS = {'Valyria': ('The Smoking Sea', (25.43, 36.42)), 'The Fourteen
                    'Last Lament': ('The Summer Isles', (-171.6, -14.02))}
 
 
+def disguise(name, pts, pins=()):
+    """A real land made ours: mirrored across a line through its anchor (so it stays where it was put), a little longer
+    and narrower along that line, and gently warped (a smooth field that never folds), seeded by its name. It keeps a
+    real coast's character without reading as the real place (LAWS: the lands are ours; the About panel says so). The
+    line is the land's long axis, or, where it carries pinned places, the one that moves those places least, so the
+    towns stay where the map has them.
+    pts: km from the anchor, all of the land's points; pins: the pinned places, same frame -> f(P) for any points."""
+    import hashlib
+    rng = np.random.default_rng(int(hashlib.sha256(name.encode()).hexdigest()[:8], 16))
+    ph = rng.uniform(0, 2 * math.pi, 8)
+    c = pts - pts.mean(axis=0)
+    w, v = np.linalg.eigh(c.T @ c); long_ax = v[:, np.argmax(w)]
+    def make(ax):
+        nx = np.array([-ax[1], ax[0]])
+        L = max(1.0, float(np.ptp(pts @ ax)))
+        def f(P):
+            u, n = P @ ax, -(P @ nx)                                   # along the line; across it, mirrored
+            u2 = u * 1.12 + L * (0.03 * np.sin(2 * math.pi * u / (L / 1.3) + ph[0]) * np.cos(2 * math.pi * n / (L / 1.1) + ph[1])
+                                 + 0.012 * np.sin(2 * math.pi * u / (L / 3.1) + ph[2]) * np.sin(2 * math.pi * n / (L / 2.7) + ph[3]))
+            n2 = n * 0.9 + L * (0.03 * np.cos(2 * math.pi * u / (L / 1.2) + ph[4]) * np.sin(2 * math.pi * n / (L / 1.4) + ph[5])
+                                + 0.012 * np.sin(2 * math.pi * u / (L / 2.9) + ph[6]) * np.cos(2 * math.pi * n / (L / 3.3) + ph[7]))
+            return np.outer(u2, ax) + np.outer(n2, nx)
+        return f
+    if not len(pins): return make(long_ax)
+    Q = np.asarray(pins, float)
+    axes = [np.array([math.cos(t), math.sin(t)]) for t in np.radians(np.arange(0, 180, 1.0))]
+    g = make(min(axes, key=lambda ax: float(np.sum(np.hypot(*(make(ax)(Q) - Q).T)))))
+    # then turned, scaled (by no more than a tenth) and shifted as a whole so the pinned places come back to their marks
+    G = g(Q); ma, mb = G.mean(axis=0), Q.mean(axis=0)
+    za, zb = (G - ma) @ [1, 1j], (Q - mb) @ [1, 1j]
+    k = complex(np.vdot(za, zb) / np.vdot(za, za)) if len(Q) > 1 and np.vdot(za, za).real > 1e-9 else 1 + 0j
+    k = k / abs(k) * min(1.1, max(0.9, abs(k)))
+    def f(P):
+        z = k * ((g(P) - ma) @ [1, 1j])
+        return np.c_[z.real, z.imag] + mb
+    return f
+
+
 def transplants(pins=None):
-    """-> [{'name', 'role', 'anchor', 'pts'}] in our miles; fills `pins` with the moved places."""
+    """-> [{'name', 'role', 'anchor', 'pts'}] in our miles; fills `pins` with the moved places. Each land is made ours
+    (disguise) before it is turned, scaled and set down."""
     out = []
     world_land()
     for name, clip, (alo, ala), (X, Y), s, turn, role in TRANSPLANTS:
         clip = box(clip[0], clip[2], clip[1], clip[3]) if len(clip) == 4 and not isinstance(clip[0], tuple) else Polygon(clip)
         lat0 = clip.centroid.y; a = math.radians(turn)
         A = km([alo], [ala], lat0)[0]
-        def f(P):
-            P = P - A
-            return np.c_[P[:, 0] * math.cos(a) - P[:, 1] * math.sin(a), P[:, 0] * math.sin(a) + P[:, 1] * math.cos(a)] * s + (X, Y)
-        for p, (land, (lo, la)) in TRANSPLANT_PINS.items():
-            if land == name and pins is not None: pins[p] = f(km([lo], [la], lat0))[0].tolist()
+        pieces = []
         for j in world_land.tree.query(clip):
             g = world_land.g[j]
             if role == 'island':                     # whole islands only, never a piece cut by the box
@@ -445,8 +481,20 @@ def transplants(pins=None):
             else: c = g.intersection(clip)
             for q in getattr(c, 'geoms', [c]):
                 if q.geom_type != 'Polygon' or q.area < 1e-5: continue
-                P = f(km(*np.array(q.exterior.coords)[:-1].T, lat0))
-                if Polygon(P).area > 0.3: out.append({'name': name, 'role': role, 'anchor': [X, Y], 'pts': P})
+                pieces.append(km(*np.array(q.exterior.coords)[:-1].T, lat0) - A)
+        if not pieces: continue
+        mine = [km([lo], [la], lat0)[0] - A for land, (lo, la) in TRANSPLANT_PINS.values() if land == name]
+        if role == 'attach': mine += [np.zeros(2)] * 3                 # the neck held to the mainland before the towns
+        ours = disguise(name, np.vstack(pieces), mine)
+        def f(P, ours=ours, a=a, s=s, X=X, Y=Y):
+            P = ours(P)
+            return np.c_[P[:, 0] * math.cos(a) - P[:, 1] * math.sin(a), P[:, 0] * math.sin(a) + P[:, 1] * math.cos(a)] * s + (X, Y)
+        for p, (land, (lo, la)) in TRANSPLANT_PINS.items():
+            if land == name and pins is not None: pins[p] = f(km([lo], [la], lat0) - A)[0].tolist()
+        for P0 in pieces:
+            P = f(P0)
+            if Polygon(P).area > 0.3:
+                out.append({'name': name, 'role': role, 'anchor': f(np.zeros((1, 2)))[0].tolist(), 'pts': P})
     return out
 
 
@@ -592,16 +640,19 @@ def hold_anchors(ring, anchors, ramp=20.0):
     return [[round(x, 3), round(y, 3)] for x, y in list(g.exterior.coords)[:-1]]
 
 
-def run(write=False):
+def run(write=False, keep_westeros=False):
+    """keep_westeros: Westeros's coast and islands as they are in coast_shores.json (only the east and the transplanted
+    islands rebuilt), after checking that no transplant comes within a mile of them."""
     sys.path.insert(0, HERE); import author
     old = {'Essos': author.chaikin(author.ESSOS, 2), 'Sothoryos': author.chaikin(author.SOTHORYOS, 2)}   # our outlines
     tp = {}; extra = transplants(tp)
     out = {}
     donor = json.load(open(os.path.join(HERE, 'coast_donor.json')))
     import south, waters, io, contextlib
+    avoid = [e['pts'] for e in extra if np.mean(np.asarray(e['pts'])[:, 0]) < 720]
+    if keep_westeros: return run_east(write, old, tp, extra, donor, author, waters)
     with contextlib.redirect_stdout(io.StringIO()): author.prepare()           # the settled map the south must respect
     pl, riv = south.constraints(author)
-    avoid = [e['pts'] for e in extra if np.mean(np.asarray(e['pts'])[:, 0]) < 720]
     wc, wi, pieces = westeros(donor['coast'], donor['islands'], avoid, pl, riv)
     clean = lambda g: g.buffer(0.5, join_style=1).buffer(-1.0, join_style=1).buffer(0.5, join_style=1).simplify(0.08)
     ringify = lambda q: [[round(x, 2), round(y, 2)] for x, y in list(q.exterior.coords)[:-1]]
@@ -630,6 +681,20 @@ def run(write=False):
     for nm, (cx, cy, half) in WZOOMS.items():
         preview(os.path.join(ROOT, 'tools', 'shots', f'shores-{nm}.png'), out['Westeros']['coast'], out['Westeros']['islands'],
                 (cx - half, cx + half, cy - half, cy + half, 700 / (2 * half)), donor['coast'], author.PLACES)
+    return east(out, write, old, tp, extra, author, waters)
+
+
+def run_east(write, old, tp, extra, donor, author, waters):
+    out = {'Westeros': json.load(open(OUT))['Westeros']}
+    w = unary_union([Polygon(out['Westeros']['coast']).buffer(0)] + [Polygon(i['pts']).buffer(0) for i in out['Westeros']['islands']])
+    for e in extra:
+        d = Polygon(e['pts']).buffer(0).distance(w)
+        if d < 1.0: raise SystemExit(f"  {e['name']} comes within {d:.2f} mi of Westeros's kept coast: rebuild it all (--write)")
+    print("  Westeros: kept as it is")
+    return east(out, write, old, tp, extra, author, waters)
+
+
+def east(out, write, old, tp, extra, author, waters):
     for name, shores, box_ in (('Essos', ESSOS_SHORES, (600, 5800, -2950, 150, 0.2)),
                                ('Sothoryos', SOTHORYOS_SHORES, (400, 3900, -5500, -2900, 0.25))):
         main, isles, got = build(name, old[name], shores, PINS, extra if name == 'Essos' else ())
@@ -652,9 +717,46 @@ def run(write=False):
         land = out['Essos' if cx > 700 and cy > -2950 else 'Sothoryos']
         preview(os.path.join(ROOT, 'tools', 'shots', f'shores-{nm}.png'), land['coast'], land['islands'],
                 (cx - half, cx + half, cy - half, cy + half, 700 / (2 * half)), old['Essos'], author.PLACES)
+    print(f'  {fill_as_gate(out)} inlets on the islands filled on the gate\'s own grid')
     out['rivers'] = rivers(author.RIVERS_DRAWN_LIST if hasattr(author, 'RIVERS_DRAWN_LIST') else author.RIVERS)
     if write: json.dump(out, open(OUT, 'w'))
     return out
+
+
+GATE_BOXES = (((-1000, 1000, -2700, 1500), 0.5), ((600, 5900, -3000, 1100), 1.0), ((-300, 4000, -5600, -2700), 1.0))   # gate.py 9b
+
+
+def fill_as_gate(out):
+    """The unnamed inlets rule 9b would still find on the islands of the east, looked for on the gate's own grids (a
+    fjord whose mouth is right at the search disc's width reads open on one grid and closed on another), filled into
+    their island. Westeros and the mainlands are left as they are. -> how many."""
+    import waters
+    from skimage import measure
+    mine = [i for nm in ('Essos', 'Sothoryos') for i in out[nm]['islands']]
+    fixed = [out[nm]['coast'] for nm in ('Westeros', 'Essos', 'Sothoryos')] + [i['pts'] for i in out['Westeros']['islands']]
+    n = 0
+    for box, res in GATE_BOXES:
+        for _ in range(3):
+            mine = [i for i in mine if len(i['pts']) > 2]
+            found, (x0, y1, rs) = waters.inlets(fixed + [i['pts'] for i in mine], box, res)
+            found = [f for f in found if not f['named'] and f.get('depth')]
+            polys = [Polygon(i['pts']).buffer(0) for i in mine]
+            got = 0
+            for f in found:
+                parts = [Polygon(np.c_[x0 + (c[:, 1] - 1) * rs, y1 - (c[:, 0] - 1) * rs]).buffer(0)
+                         for c in measure.find_contours(np.pad(f['mask'], 1).astype(float), 0.5) if len(c) > 3]
+                g = unary_union(parts).buffer(rs * 1.5)
+                touch = sorted([k for k, q in enumerate(polys) if g.intersects(q)], key=lambda k: -polys[k].area)
+                if not touch or any(g.intersects(Polygon(r).buffer(0)) for r in fixed): continue      # an island's own,
+                if any(mine[k]['name'] not in (None, 'isle', mine[touch[0]]['name']) for k in touch): continue   # or its islets'
+                h = unary_union([polys[k] for k in touch] + [g]); h = max(getattr(h, 'geoms', [h]), key=lambda q: q.area)
+                mine[touch[0]]['pts'] = [[round(x, 2), round(y, 2)] for x, y in list(h.exterior.coords)[:-1]]
+                polys[touch[0]] = h; got += 1
+                for k in touch[1:]: mine[k]['pts'] = []; polys[k] = Polygon()
+            n += got
+            if not got: break
+    for nm in ('Essos', 'Sothoryos'): out[nm]['islands'] = [i for i in out[nm]['islands'] if len(i['pts']) > 2]
+    return n
 
 
 def run_rivers():
@@ -667,4 +769,4 @@ def run_rivers():
 
 if __name__ == '__main__':
     if '--rivers' in sys.argv: run_rivers()
-    else: run('--write' in sys.argv)
+    else: run('--write' in sys.argv, '--east' in sys.argv)

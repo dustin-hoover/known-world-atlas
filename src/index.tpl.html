@@ -95,7 +95,7 @@
 <script type="text/plain" id="lib-maplibre">/*MAPLIBRE_MAIN*/</script>
 <script type="text/plain" id="lib-maplibre-worker">/*MAPLIBRE_WORKER*/</script>
 <script type="text/plain" id="lib-three">/*THREE_JS*/</script>
-<script>
+<script>window.DATA_KEY = '/*DATA_KEY*/';
 window.LIBURL = id => URL.createObjectURL(new Blob([document.getElementById(id).textContent], { type: 'text/javascript' }));
 window.MAPLIBRE = (async () => {
   const shared = LIBURL('lib-maplibre-shared');

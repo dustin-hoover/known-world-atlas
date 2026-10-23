@@ -95,7 +95,24 @@ const CASTLE = {
     P.push([KB(46, 9, 22).translate(-70, 0, 70), 0x5a6a70], [bx(44, 4, 20).translate(-70, 9, 70), 0xa8d4dc]);                         // the glass gardens
     for (let i = 0; i < 26; i++) { const x = -110 + (i * 37) % 80, z = -100 + (i * 23) % 70; kTree(P, x + 70, z + 150 - 60, 14 + (i % 4) * 3, 0x3a2a1a, 0x2a4a30); }
     weirwood(P, 20, 70);
-    return castleMesh(P);
+    P.push([cy(9, 9, 0.5, 14).translate(34, -0.2, 84), 0x4a7a84], [cy(6, 6, 0.5, 12).translate(4, -0.2, 92), 0x4a7a84]);   // the hot pools in the godswood
+    const g = castleMesh(P);
+    // steam off the hot springs: soft plumes rising and thinning over the pools and the glass gardens
+    const puffs = [];
+    for (let i = 0; i < 14; i++) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture('rgba(240,244,248,0.55)', 'rgba(240,244,248,0)'), depthWrite: false, transparent: true }));
+      const [x0, z0] = [[34, 84], [4, 92], [-70, 70]][i % 3];
+      sp.userData = { x0: x0 + (i * 7) % 9 - 4, z0: z0 + (i * 5) % 7 - 3, ph: i / 14 };
+      g.add(sp); puffs.push(sp);
+    }
+    g.userData.update = (dt, t) => {
+      for (const sp of puffs) {
+        const u = ((t * 0.06 + sp.userData.ph) % 1 + 1) % 1;              // each puff rises 40 m over its life, swelling
+        sp.position.set(sp.userData.x0 + 6 * u, 3 + 40 * u, sp.userData.z0 - 3 * u);
+        sp.scale.setScalar(8 + 26 * u); sp.material.opacity = 0.75 * Math.sin(Math.PI * u);
+      }
+    };
+    return g;
   },
   // no walls: towers, halls and barracks of stone and timber at the foot of the Wall, and a timber stair zig-zagging up its face
   castleblack() {

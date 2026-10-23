@@ -26,10 +26,24 @@ try {
 } catch (e) { /* fall back to system faces */ }
 
 /* ---------------- rasters ---------------- */
+// The terrain's data is the same for the same sources, so a browser keeps it (IndexedDB, under DATA_KEY, a hash of
+// geo.js, gen.js and rasters.js made at build time) and the next visit starts without rebuilding it. Storage may be
+// missing or refuse: then it is built here as before.
+const IDB = {
+  open: () => new Promise((res, rej) => { const r = indexedDB.open('geodyssey', 1); r.onupgradeneeded = () => r.result.createObjectStore('data'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }),
+  async get(k) { const db = await IDB.open(); return new Promise((res, rej) => { const q = db.transaction('data').objectStore('data').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => rej(q.error); }); },
+  async put(k, v) { const db = await IDB.open(); return new Promise((res, rej) => { const tx = db.transaction('data', 'readwrite'), st = tx.objectStore('data'); st.clear(); st.put(v, k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); },
+};
 lstep('Raising the mountains…', 14);
 await sleep(30);
-const DATA = RASTERS.build(GEO);
-GEN.init(DATA);
+let DATA = null;
+const DATA_KEY = window.DATA_KEY && !/DATA_KEY/.test(window.DATA_KEY) ? window.DATA_KEY : '';
+try { if (DATA_KEY && window.indexedDB) DATA = await Promise.race([IDB.get(DATA_KEY), sleep(2500).then(() => null)]); } catch (e) { DATA = null; }
+const freshData = !DATA;
+if (freshData) DATA = RASTERS.build(GEO);
+GEN.init(DATA);                                       // works out the river beds the first time (they are kept with the rest)
+performance.mark(freshData ? 'data-built' : 'data-cached');
+if (freshData && DATA_KEY && window.indexedDB) IDB.put(DATA_KEY, DATA).catch(() => {});
 lstep('Filling the narrow sea…', 38);
 await sleep(20);
 
@@ -1014,7 +1028,7 @@ const PANELS = {
     <div class="eyebrow">Where each thing comes from</div>
     <p class="note"><b>Text:</b> what the novels state, in our own words: a distance (the Wall is a hundred leagues long), a direction, a journey, a river a town stands on.<br>
     <b>Position from map:</b> where a named place stands on the published maps, when the text doesn't pin it. Most places south of the Neck are graded so. We take positions only, never the maps' drawn lines.<br>
-    <b>Ours:</b> everything between: coastlines, river courses, the shapes of ranges and forests, roads the books don't trace. Coast detail is borrowed from real Earth coastlines (Natural Earth, public domain) and is illustrative only: the North's shores are bent from Britain's, the Iron Islands from Orkney, Braavos's lagoon from Venice, Valyria from the Peloponnese and the Cyclades.<br>
+    <b>Ours:</b> everything between: coastlines, river courses, the shapes of ranges and forests, roads the books don't trace. Coast detail is borrowed from real Earth coastlines (Natural Earth, public domain) and is illustrative only: the North's shores are bent from Britain's, the Iron Islands from Orkney, Braavos's lagoon from Venice; the islands of the east and of Westeros's seas (Valyria and the Smoking Sea, Ib, the Arbor, Tarth...) are real islands mirrored and reshaped so they read as our own.<br>
     <b>Estimate:</b> Sothoryos and the far east beyond the known coasts are our guesses, labelled so on the map and on their cards.<br>
     Every place's card shows its grade; the full ledger lives with the source code.</p>
     <div class="eyebrow">Canon</div>

@@ -253,7 +253,9 @@ You work on rivers, lakes, roads, ranges, forests, marshes and coasts in `author
   down to it. `python3 tools/known/rivercheck.py` walks every drawn course on the generated ground (headless
   Chromium); the gate runs it as rule 18.
 - New islands are real islands moved bodily (`shores.py` `TRANSPLANTS`), with their castles pinned to the real
-  island's town (`TRANSPLANT_PINS`).
+  island's town (`TRANSPLANT_PINS`), and each is disguised on the way (`disguise()`: mirrored, stretched and warped,
+  then posed so its pinned towns keep their marks). Rebuild them with `python3 tools/known/shores.py --east --write`,
+  which keeps Westeros's coast as it is.
 - After any change: `npm run author`, `npm run audit`, `python3 tools/known/checks.py`, screenshots before and
   after.
 

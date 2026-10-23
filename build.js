@@ -27,6 +27,9 @@ put('/*APP_CSS*/', rd('src/app.css'));
 for (const [k, f] of [['MAPLIBRE_SHARED', 'maplibre-gl/dist/maplibre-gl-shared.mjs'], ['MAPLIBRE_MAIN', 'maplibre-gl/dist/maplibre-gl.mjs'],
   ['MAPLIBRE_WORKER', 'maplibre-gl/dist/maplibre-gl-worker.mjs'], ['THREE_JS', 'three/build/three.module.min.js']])
   put('/*' + k + '*/', guard(f, rd('node_modules/' + f).replace(/\n\/\/# sourceMappingURL=\S+\s*$/, '\n')));
+// the terrain data the page builds is the same for the same sources: a hash of them names it in the browser's cache
+const DATA_KEY = require('crypto').createHash('sha256').update(['geo.js', 'gen.js', 'rasters.js'].map(f => rd('src/' + f)).join('\n')).digest('hex').slice(0, 16);
+put('/*DATA_KEY*/', DATA_KEY);
 for (const [k, f] of [['GEN_JS', 'gen.js'], ['WX_JS', 'wx.js'], ['WORKER_JS', 'worker.js'], ['GEO_JS', 'geo.js'], ['ROUTES_JS', 'routes.js'], ['SOURCES_JS', 'sources.js'], ['AVATARS_JS', 'avatars.js'], ['RASTERS_JS', 'rasters.js'], ['AUDIO_JS', 'audio.js'], ['APP_JS', 'app.js'], ['GROUND_JS', 'ground.js']])
   put('/*' + k + '*/', guard(f, rd('src/' + f) + (f === 'ground.js' ? '\n' + rd('src/world3d.js') : '')));
 require('./tools/offline.js').assertOffline(html);                    // nothing may load from another site
