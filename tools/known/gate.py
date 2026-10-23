@@ -516,8 +516,9 @@ NAMED_PASSES = ("The Prince's Pass", 'The Boneway', 'The Bloody Gate', 'The Skir
 
 
 def g18_rivers_downhill(W, R):
-    """Rule 18: no river climbs (more than 5 m within a mile, downstream, on the generated ground: rivercheck.py), and no
-    river crosses a range's crest except at a named pass (its valley would be a new pass)."""
+    """Rule 18: no river climbs (more than 5 m within a mile, downstream, on the generated ground: rivercheck.py), no
+    river crosses a range's crest except at a named pass (its valley would be a new pass), and no guarded crest has a
+    gap lower than 40% of its range's height away from its ends and its named passes."""
     bad, warn = [], []
     passes = [Point(p[2], p[3]) for n, p in W.places.items() if n in NAMED_PASSES]
     for g in W.A.RANGES:
@@ -532,6 +533,8 @@ def g18_rivers_downhill(W, R):
         _, rows = __import__('asyncio').run(rivercheck.measure())
     except Exception as e:
         rows = None; warn.append(f'the ground was not measured ({type(e).__name__}: {str(e)[:80]})')
+    for c in getattr(rivercheck.measure, 'crests', None) or []:
+        if c['gaps']: bad.append(f"{c['name']}: a gap in the crest at {c['first'][0][:2]} ({c['first'][0][2]} m), a new pass")
     if rows:
         for r in rows:
             if r['rises']: bad.append(f"{r['name']} climbs {r['worst']:.0f} m at {r['at']}")

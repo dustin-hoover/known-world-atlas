@@ -60,6 +60,31 @@ JS = """([STEP, WINDOW, BANK, BANK_TOL]) => {
 }"""
 
 
+CRESTS_JS = """() => {
+  // each guarded range's crest, every mile: the lowest way over it there (the highest ground across a 3-mile band,
+  // taken as the crest) against half the range's height; the ends and the named passes are left out
+  const out = [], passes = DATA.vectors.passes;
+  for (const r of GEO.RANGES.filter(r => r.guard)) {
+    const P = r.pts; let L = 0; const seg = [];
+    for (let i = 0; i < P.length - 1; i++) { const l = Math.hypot(P[i + 1][0] - P[i][0], P[i + 1][1] - P[i][1]); seg.push([P[i], P[i + 1], L, l]); L += l; }
+    const gaps = []; let low = Infinity, at = null;
+    for (let s = 8; s < L - 8; s += 1) {
+      const g = seg.find(q => s >= q[2] && s <= q[2] + q[3]); const f = (s - g[2]) / g[3];
+      const x = g[0][0] + (g[1][0] - g[0][0]) * f, y = g[0][1] + (g[1][1] - g[0][1]) * f;
+      if (passes.some(p => Math.hypot(p[0] - x, p[1] - y) < 12)) continue;
+      const nx = -(g[1][1] - g[0][1]) / g[3], ny = (g[1][0] - g[0][0]) / g[3];
+      let top = -1e9, wet = false;
+      for (let k = -3; k <= 3; k++) { const h = GEN.evaluate(x + nx * k * 0.5, y + ny * k * 0.5, 0.06); if (GEN.R.s > 0) top = Math.max(top, h); else wet = true; }
+      if (wet) continue;                         // where the range meets the sea, the sea is the way round, not a pass
+      if (top < low) { low = top; at = [Math.round(x), Math.round(y)]; }
+      if (top < 0.4 * r.h) gaps.push([Math.round(x), Math.round(y), Math.round(top)]);
+    }
+    out.push({ name: r.name, h: r.h, low: Math.round(low), at, gaps: gaps.length, first: gaps.slice(0, 3) });
+  }
+  return out;
+}"""
+
+
 async def measure():
     from playwright.async_api import async_playwright
     async with async_playwright() as p:
@@ -73,8 +98,10 @@ async def measure():
         await pg.wait_for_function('window.READY || false', timeout=300000)
         ready = await pg.evaluate('window.READY')
         rows = await pg.evaluate(JS, [0.25, WINDOW, BANK, BANK_TOL])
+        crests = await pg.evaluate(CRESTS_JS)
         await b.close()
         if errs: raise RuntimeError('; '.join(errs))
+        measure.crests = crests
         return ready, rows
 
 
@@ -90,6 +117,10 @@ def main():
         print(f"{'FAIL' if f else 'WARN' if floor else 'PASS'}  {r['name']:30s} {r['miles']:5d} mi  worst rise {r['worst']:7.1f} m"
               f"{' at ' + str(r['at']) if r['worst'] > RISE else ''}  off the valley floor {r['off']}/{r['banks']}"
               f"{' e.g. ' + str(r['offAt']) if r['off'] else ''}  source {r['top']} m, mouth {r['mouth']} m")
+    for c in measure.crests:
+        bad += bool(c['gaps'])
+        print(f"{'FAIL' if c['gaps'] else 'PASS'}  {c['name']:30s} crest at least {c['low']} m (at {c['at']}); "
+              f"{c['gaps']} miles under {0.4 * c['h']:.0f} m" + (f" e.g. {c['first']}" if c['gaps'] else ''))
     sys.exit(1 if bad else 0)
 
 

@@ -191,6 +191,10 @@ function build(GEO) {
       shoals: (GEO.SHOALS || []).map(z => ({ pts: z.pts, depth: z.depth })),
       walls: GEO.WALLS.map(w => ({ name: w.name, pts: w.pts, circle: w.circle, ice: w.ice })),
       gorges: (GEO.GORGES || []).map(g => ({ name: g.name, pts: g.pts, cut: g.cut, steep: g.steep, half: g.half, gorge: 1 })),
+      // the guarded ranges' crests, and where the books let a way through them (named passes, and the Boneway)
+      crests: GEO.RANGES.filter(r => r.guard).map(r => ({ name: r.name, pts: r.pts, h: r.h })),
+      passes: GEO.PLACES.filter(p => /^The (Prince's Pass|Bloody Gate|Skirling Pass|Boneway)$/.test(p[0])).map(p => [p[2], p[3]])
+        .concat((GEO.ROADS || []).filter(r => r.name === 'The Boneway').map(r => r.pts).flat()),
       settlements: GEO.PLACES.filter(p => p[7] && p[7].culture && p[7].r).map(p => ({ name: p[0], x: p[2], y: p[3], r: p[7].r, culture: p[7].culture, castle: p[7].castle, cr: p[7].cr, cx: p[7].cx, cy: p[7].cy })),
     },
   };

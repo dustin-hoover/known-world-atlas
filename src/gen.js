@@ -93,7 +93,30 @@ const sstep = (a, b, v) => { const t = sat((v - a) / (b - a)); return t * t * (3
 const mix = (a, b, t) => a + (b - a) * t;
 
 /* ---------------- rasters ---------------- */
-let M = null, G = null, PEAKS = [], VEC = null, FLATS = [], SHOALS = [];
+let M = null, G = null, PEAKS = [], VEC = null, FLATS = [], SHOALS = [], CRESTS = [], PASSES = [];
+// no new passes: within CREST_W miles of a guarded range's crest (author.py `guard`) the ground stays above half the
+// range's height, falling away at the range's ends and wherever the books let a way through (named passes, the
+// Boneway). Only the ranges' own noise could open a gap; no river crosses a crest (the gate's rule 18).
+const CREST_W = 3;
+function crestFloor(X, Y) {
+  let fl = 0;
+  for (let k = 0; k < CRESTS.length; k++) {
+    const c = CRESTS[k], b = c.bb;
+    if (X < b[0] || X > b[2] || Y < b[1] || Y > b[3]) continue;
+    const P = c.pts;
+    for (let i = 0; i < P.length - 1; i++) {
+      const ax = P[i][0], ay = P[i][1], dx = P[i + 1][0] - ax, dy = P[i + 1][1] - ay, L2 = dx * dx + dy * dy || 1e-9;
+      const t = Math.max(0, Math.min(1, ((X - ax) * dx + (Y - ay) * dy) / L2)), d = Math.hypot(X - ax - t * dx, Y - ay - t * dy);
+      if (d >= CREST_W) continue;
+      const s = c.cum[i] + t * Math.sqrt(L2);
+      let gap = 1;
+      for (let j = 0; j < PASSES.length; j++) gap = Math.min(gap, sstep(4, 12, Math.hypot(X - PASSES[j][0], Y - PASSES[j][1])));
+      const f = 0.5 * c.h * (1 - (d / CREST_W) * (d / CREST_W)) * sstep(0, 6, Math.min(s, c.L - s)) * gap;
+      if (f > fl) fl = f;
+    }
+  }
+  return fl;
+}
 // shallows (author.py SHOALS): -> [weight 0..1, depth in metres]; the weight rises over SHOAL_EDGE miles inside
 const SHOAL_EDGE = 22;
 function shoalAt(X, Y) {
@@ -117,6 +140,12 @@ const CH = { land:0, cont:1, mtn:2, hill:3, forest:4, gold:5, dark:6, marsh:7, a
 function init(data) {
   M = data.main; G = data.glob; PEAKS = data.peaks || []; FLATS = data.flats || [];
   if (data.vectors) initVectors(data.vectors);
+  CRESTS = (data.vectors && data.vectors.crests || []).map(c => {
+    const xs = c.pts.map(p => p[0]), ys = c.pts.map(p => p[1]), cum = [0];
+    for (let i = 1; i < c.pts.length; i++) cum.push(cum[i - 1] + Math.hypot(c.pts[i][0] - c.pts[i - 1][0], c.pts[i][1] - c.pts[i - 1][1]));
+    return { pts: c.pts, h: c.h, cum, L: cum[cum.length - 1], bb: [Math.min(...xs) - CREST_W, Math.min(...ys) - CREST_W, Math.max(...xs) + CREST_W, Math.max(...ys) + CREST_W] };
+  });
+  PASSES = (data.vectors && data.vectors.passes) || [];
   SHOALS = (data.vectors && data.vectors.shoals || []).map(z => {
     const xs = z.pts.map(p => p[0]), ys = z.pts.map(p => p[1]);
     return { pts: z.pts, depth: z.depth, bb: [Math.min(...xs) - 4, Math.min(...ys) - 4, Math.max(...xs) + 4, Math.max(...ys) + 4] };
@@ -581,6 +610,10 @@ function evaluate(X, Y, pix) {
       h -= (5 + 30 * rough + 70 * hill + 160 * mtn) * Math.max(cv1 * cv1, 0.5 * cv2 * cv2) * (0.35 + 0.65 * reach * flat);
     }
     R.stream = str;
+    if (CRESTS.length) {                                             // the guarded crests stay closed
+      const fl = crestFloor(X, Y);
+      if (fl > h - 60) { const k = Math.max(0, 60 - Math.abs(h - fl)); h = Math.max(h, fl) + k * k / 240; }
+    }
     h *= sstep(0, 0.07, s);
     const v = F[11];
     if (v > 0.01) { const floor = Math.min(h, base * 0.75 + 6); h += (floor - h) * sstep(0, 0.8, v); }

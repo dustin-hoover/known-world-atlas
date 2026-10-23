@@ -174,10 +174,13 @@ def terrain_zones():
 
 # ---------------------------------------------------------------- relief
 RANGES = [
-    {'name': 'The Frostfangs', 'h': 3000, 'w': 50, 'label': True, 'pts': [[-300, 560], [-250, 700], [-210, 850], [-190, 1000]]},
-    {'name': 'Mountains of the Moon', 'h': 3400, 'w': 60, 'label': True, 'pts': [[241, -653], [303, -705], [362, -773], [408, -843], [402, -913]]},
-    {'name': 'The Red Mountains', 'h': 3000, 'w': 55, 'label': True, 'pts': [[-281, -2250], [-159, -2132], [-7, -2069], [70, -2050]]},
-    {'name': 'The Bones', 'alt': 'The Bone Mountains', 'h': 3600, 'w': 80, 'label': True, 'pts': [[3020, -900], [3060, -1300], [3110, -1700], [3160, -2100]]},
+    {'name': 'The Frostfangs', 'h': 3000, 'w': 50, 'label': True, 'guard': True, 'pts': [[-300, 560], [-250, 700], [-210, 850], [-190, 1000]]},
+    {'name': 'Mountains of the Moon', 'h': 3400, 'w': 60, 'label': True, 'guard': True, 'pts': [[241, -653], [303, -705], [362, -773], [408, -843], [402, -913]]},
+    # Dorne's only ways in are the Prince's Pass, the Boneway and the sea (AFFC): the range runs from the Summer Sea's
+    # shore in the west to the Sea of Dorne in the east, the Boneway crossing its eastern end by Wyl
+    {'name': 'The Red Mountains', 'h': 3000, 'w': 55, 'label': True, 'guard': True,
+     'pts': [[-322, -2368], [-281, -2250], [-159, -2132], [-7, -2069], [70, -2050], [130, -2075], [186, -2108]]},
+    {'name': 'The Bones', 'alt': 'The Bone Mountains', 'h': 3600, 'w': 80, 'label': True, 'guard': True, 'pts': [[3020, -900], [3060, -1300], [3110, -1700], [3160, -2100]]},
     {'name': 'Mountains of the Shadow', 'h': 4200, 'w': 70, 'label': True, 'pts': [[4880, -2250], [5000, -2400], [5120, -2520]]},
     {'name': 'The Velvet Hills', 'h': 1500, 'w': 50, 'label': False, 'pts': [[915, -800], [945, -900], [960, -990]]},
 ]
