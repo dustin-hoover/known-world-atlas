@@ -93,13 +93,34 @@ const sstep = (a, b, v) => { const t = sat((v - a) / (b - a)); return t * t * (3
 const mix = (a, b, t) => a + (b - a) * t;
 
 /* ---------------- rasters ---------------- */
-let M = null, G = null, PEAKS = [], VEC = null, FLATS = [];
+let M = null, G = null, PEAKS = [], VEC = null, FLATS = [], SHOALS = [];
+// shallows (author.py SHOALS): -> [weight 0..1, depth in metres]; the weight rises over SHOAL_EDGE miles inside
+const SHOAL_EDGE = 22;
+function shoalAt(X, Y) {
+  for (let k = 0; k < SHOALS.length; k++) {
+    const z = SHOALS[k], b = z.bb;
+    if (X < b[0] || X > b[2] || Y < b[1] || Y > b[3]) continue;
+    const P = z.pts; let inside = false, best = 1e9;
+    for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+      const [ax, ay] = P[i], [bx, by] = P[j];
+      if ((ay > Y) !== (by > Y) && X < (bx - ax) * (Y - ay) / (by - ay) + ax) inside = !inside;
+      const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy || 1e-9, t = Math.max(0, Math.min(1, ((X - ax) * dx + (Y - ay) * dy) / L2));
+      best = Math.min(best, Math.hypot(X - ax - t * dx, Y - ay - t * dy));
+    }
+    if (inside) return [sstep(0, SHOAL_EDGE, best * (0.55 + 0.9 * sat(0.5 + fbm(X * 0.03 + 3, Y * 0.03 - 8, 4)))), z.depth];   // a ragged shelf edge
+  }
+  return null;
+}
 const NCH = 16;
 const CH = { land:0, cont:1, mtn:2, hill:3, forest:4, gold:5, dark:6, marsh:7, arid:8, farm:9, ash:10, valley:11, uplift:12, grass:13, ice:14, lake:15 };
 
 function init(data) {
   M = data.main; G = data.glob; PEAKS = data.peaks || []; FLATS = data.flats || [];
   if (data.vectors) initVectors(data.vectors);
+  SHOALS = (data.vectors && data.vectors.shoals || []).map(z => {
+    const xs = z.pts.map(p => p[0]), ys = z.pts.map(p => p[1]);
+    return { pts: z.pts, depth: z.depth, bb: [Math.min(...xs) - 4, Math.min(...ys) - 4, Math.max(...xs) + 4, Math.max(...ys) + 4] };
+  });
   CO = data.coast ? initCoast(data.coast) : null;
   BEDS = null;
   if (data.vectors) { if (!data.beds) data.beds = bedProfiles(data.vectors.rivers.concat(data.vectors.gorges || [])); BEDS = initBeds(data.beds); }
@@ -117,6 +138,7 @@ function init(data) {
    it (bedRise), so a river that meets higher ground runs through it in a gorge. A named gorge with no river in it
    (author.py GORGES) is a dry bed cut `cut` metres into the land, its walls `steep` times as steep. */
 let BEDS = null, NOBED = false;
+const BED_SOFT = 30;      // metres over which a valley wall eases into the land
 const BB = 4, BED_REACH = 10, BED_STEP = 0.5, BED_SAMPLE = 0.5, BED_SIDE = 1.5, BED_DEPTH = 3, SEA_FALL = 0.5;
 const bedRise = e => e * (30 + 55 * e);          // metres above the bed, e miles beyond the channel (5,800 m at the reach)
 function riverLine(r, i) { return densify(r.pts, 0.2, i + 1, 0.12); }      // the course the imagery draws (initVectors)
@@ -221,7 +243,7 @@ function initBeds(beds, reach = BED_REACH) {
 function bedAt(X, Y, h, B = BEDS, skip = -1) {
   const q = B.buckets.get(Math.floor(X / BB) * 100003 + Math.floor(Y / BB));
   if (!q) return h;
-  let cap = Infinity, inb = Infinity;
+  let cap = Infinity, inb = Infinity, near = BED_REACH;
   for (let i = 0; i < q.length; i++) {
     const k = q[i];
     if (B.rid[k] === skip) continue;
@@ -230,10 +252,13 @@ function bedAt(X, Y, h, B = BEDS, skip = -1) {
     const ex = X - ax - t * dx, ey = Y - ay - t * dy, e = Math.sqrt(ex * ex + ey * ey) - B.hw[k];
     const z = B.za[k] + (B.zb[k] - B.za[k]) * t;
     if (e <= 0) { if (z < inb) inb = z; }
-    else if (e < BED_REACH) { const c = z + bedRise(e) * B.st[k]; if (c < cap) cap = c; }
+    else if (e < BED_REACH) { const c = z + bedRise(e) * B.st[k]; if (c < cap) { cap = c; near = e; } }
   }
   if (inb < Infinity) return Math.min(inb, cap);
-  return cap < h ? cap : h;
+  const soft = 2 + (BED_SOFT - 2) * Math.min(1, near);              // the valley wall meets the land in a smooth bend,
+  if (cap >= h + soft) return h;                                   // not a crease (a smooth minimum), sharp again by
+  const k = Math.max(0, soft - Math.abs(h - cap));                 // the water so no bank sinks below the river
+  return Math.min(h, cap) - k * k / (4 * soft);
 }
 
 /* ---------------- the exact coastline ----------------
@@ -529,6 +554,13 @@ function evaluate(X, Y, pix) {
       h += mm * 4500 * (1 - 0.18 * alpine) * (floor + (1 - floor) * Math.pow(r, sharp));
       if (dry < 0.6) h += mm * (1100 + 900 * alpine) * (1 - dry) * (ridgedA(X * 1.7 + 13.1, Y * 1.7 - 4.2, 9, Math.max(pix * 1.1, 0.003)) - 0.35);
     }
+    // the hot deserts: ridges of sand where the arid ground is deep, gullied badlands where it meets the hills
+    const sand = sat(F[8] * 1.3 - 0.45) * sstep(38, 30, lat);
+    if (sand > 0.01) {
+      const dune = Math.abs(noise(X * 0.9 + noise(X * 0.1, Y * 0.1) * 2, Y * 0.35));      // the imagery's ripples (colorAt)
+      h += sand * (1 - F[3]) * (18 + 26 * sat(0.5 + fbm(X * 0.03, Y * 0.03, 2))) * (0.6 - dune);
+      if (F[3] > 0.05) h -= sand * F[3] * 140 * ridgedA(X * 1.3 + 7, Y * 1.3 - 3, 3, Math.max(pix * 1.1, 0.01));
+    }
     // regional roughness: rolling country, low hills, broken ground
     const rough = sat(0.35 + 0.9 * fbm(X * 0.004 + 71, Y * 0.004 - 12, 3));
     h += (25 + 190 * rough * nearSea) * (0.5 + 0.5 * fbmA(X, Y, 14, Math.max(pix * 1.1, 0.01), 0.75, 3)) * (1 - F[15]);
@@ -541,9 +573,12 @@ function evaluate(X, Y, pix) {
       const v2 = 1 - Math.abs(noise(qx * 2.3 + 11, qy * 2.3 - 3));
       const w1 = Math.max(0.018, pix * 0.09), w2 = Math.max(0.03, pix * 0.2);
       const s1 = sstep(1 - w1 * 3, 1 - w1 * 0.3, v1), s2 = sstep(1 - w2 * 2, 1 - w2 * 0.2, v2) * 0.6;
-      str = Math.max(s1, s2) * (1 - sstep(0.3, 0.7, F[8])) * (1 - F[10]) * sstep(0.35, 0.08, pix) * sstep(-0.25, 0.25, noise(X * 0.04 + 7, Y * 0.04 - 3));
+      // noise's zero lines run in parallel swirls, not branching drainage: keep them broken into short reaches, and
+      // let them fade out on flat farmland where they would read as contour lines
+      const reach = sstep(0.05, 0.35, fbm(X * 0.22 + 31, Y * 0.22 - 17, 3)), flat = 1 - 0.85 * sat(F[9] * 1.5) * (1 - sat(hill * 4));
+      str = Math.max(s1, s2) * reach * flat * (1 - sstep(0.3, 0.7, F[8])) * (1 - F[10]) * sstep(0.35, 0.08, pix) * sstep(-0.25, 0.25, noise(X * 0.04 + 7, Y * 0.04 - 3));
       const cv1 = sstep(0.45, 1, v1), cv2 = sstep(0.6, 1, v2);
-      h -= (5 + 30 * rough + 70 * hill + 160 * mtn) * Math.max(cv1 * cv1, 0.5 * cv2 * cv2);
+      h -= (5 + 30 * rough + 70 * hill + 160 * mtn) * Math.max(cv1 * cv1, 0.5 * cv2 * cv2) * (0.35 + 0.65 * reach * flat);
     }
     R.stream = str;
     h *= sstep(0, 0.07, s);
@@ -572,6 +607,8 @@ function evaluate(X, Y, pix) {
     // a mid-ocean ridge running down the Sunset Sea
     const rdg = Math.exp(-Math.pow((X + 1700 + 120 * Math.sin(Y * 0.004)) / 90, 2));
     h += rdg * 1900 * (0.7 + 0.3 * noise(X * 0.02, Y * 0.02)) * deep;
+    const sh = SHOALS.length ? shoalAt(X, Y) : null;                 // the shallows: sand banks and channels
+    if (sh) h = mix(h, Math.max(h, -sh[1] * (0.55 + 0.45 * sat(0.5 + fbm(X * 0.08 + 9, Y * 0.08 - 2, 3)))), sh[0]);
     R.base = 0;
   }
   R.h = h; R.mtn = mtn;
@@ -612,20 +649,26 @@ function blend(r, g, b, t) { tmp3[0] += (r - tmp3[0]) * t; tmp3[1] += (g - tmp3[
 
 // farmland: Voronoi parcels subdivided into strip fields, with hedgerows
 const FC = [[190,170,112],[170,152,104],[150,140,96],[104,124,66],[88,112,58],[124,104,78],[112,92,70],[140,134,90],[96,116,64],[118,128,74]];
+const DISTRICT = 22;        // miles: the fields of a district share one lie of the land
 function fields(X, Y, cell, pix, small) {
-  // a rotated grid of blocks; each block split into strips of varying width
-  const th = 0.6 * noise(X * 0.05 + 11, Y * 0.05 - 7) + (small ? 0.3 : 0.9);
-  const c = Math.cos(th), s = Math.sin(th);
-  let u = (X * c + Y * s) / cell, v = (-X * s + Y * c) / cell;
+  // a rotated grid of blocks; each block split into strips of varying width. Each district turns its grid about its
+  // own middle (turned about one far-off point, a slowly changing angle would shear the parcels to slivers)
+  const qx = X + 5 * noise(X * 0.03 + 2, Y * 0.03), qy = Y + 5 * noise(X * 0.03, Y * 0.03 + 7);
+  const gx = Math.floor(qx / DISTRICT), gy = Math.floor(qy / DISTRICT);
+  const th = (hash2(gx, gy, 9) - 0.5) * 1.4 + (small ? 0.3 : 0.9);
+  const c = Math.cos(th), s = Math.sin(th), lx = X - (gx + 0.5) * DISTRICT, ly = Y - (gy + 0.5) * DISTRICT;
+  let u = (lx * c + ly * s) / cell, v = (-lx * s + ly * c) / cell;
   u += 0.18 * noise(u * 0.35, v * 0.35); v += 0.18 * noise(u * 0.35 + 5, v * 0.35 - 3);
-  const bi = Math.floor(u), bj = Math.floor(v * 0.7);
-  const fu = u - bi, fv = v * 0.7 - bj;
+  const bi = Math.floor(u) + gx * 1013, bj = Math.floor(v * 0.7) + gy * 917;
+  const fu = u - Math.floor(u), fv = v * 0.7 - Math.floor(v * 0.7);
   const pid = hash2(bi, bj, 11);
   const vert = hash2(bi, bj, 13) < 0.5;
   const ns = 1 + Math.floor(hash2(bi, bj, 15) * (small ? 3 : 5));
   const q = vert ? fu : fv;
   const sid = Math.floor(q * ns);
-  const k = hash2(sid + bi * 7, bj, 17);
+  // strips narrower than a pixel would alias into moiré: then the whole parcel takes one crop
+  const stripW = cell / ns * (vert ? 1 : 1 / 0.7);
+  const k = pix > stripW * 0.25 ? hash2(bi * 7, bj, 19) : hash2(sid + bi * 7, bj, 17);
   let col;
   if (pid < 0.3) col = FC[3 + Math.floor(k * 2)];
   else col = FC[Math.floor(k * FC.length)];
@@ -714,8 +757,14 @@ function colorAt(X, Y, h, slope, pix, mode, dsea) {
   const g = F[13];
   if (g > 0.02) {
     const gp = fbmA(X, Y, 1.5, Math.max(pix * 1.3, 0.004), 0.75, 51);
-    blend(158 + 18 * gp, 144 + 10 * gp, 84, g * 0.5);
-    blend(96, 112, 60, g * sat(-gp * 1.8) * 0.5);
+    blend(118 + 18 * gp, 136 + 10 * gp, 70, g * 0.4);
+    blend(84, 112, 52, g * sat(-gp * 1.8) * 0.5);
+    // the wind combs the tall grass: long light and dark bands across it, finer the closer you look
+    const cw = Math.cos(0.35), sw = Math.sin(0.35);                   // the prevailing wind, from the west
+    const along = X * cw + Y * sw, across = -X * sw + Y * cw;
+    const band = Math.sin(across * 2.2 + 2.5 * noise(along * 0.15, across * 0.3)) * sat((0.6 - pix) * 3)
+               + 0.6 * Math.sin(across * 11 + 2 * noise(along * 0.8, across * 1.5)) * sat((0.08 - pix) * 25);
+    const k = 0.055 * g * band; tmp3[0] *= 1 + k; tmp3[1] *= 1 + k * 1.15; tmp3[2] *= 1 + k * 0.8;
   }
   // landcover variety: scrub, heath, bare ground, riparian green
   const lc1 = fbm(X * 0.05 + 21, Y * 0.05 - 4, 4), lc2 = fbmA(X, Y, 1.2, Math.max(pix * 1.5, 0.004), 0.6, 30);
@@ -752,8 +801,10 @@ function colorAt(X, Y, h, slope, pix, mode, dsea) {
       const f = fields(X, Y, cell, pix, false);
       const t = sat((cell * 0.22 - pix) / (cell * 0.12)) * pf;
       blend(118, 128, 76, favg * (1 - t));
-      const k = 0.4 + 0.6 * sat((cell * 0.08 - pix) / (cell * 0.05));
-      blend(118 + (f[0] - 118) * k, 128 + (f[1] - 128) * k, 76 + (f[2] - 76) * k, t * 0.85);
+      const k = 0.65 + 0.35 * sat((cell * 0.08 - pix) / (cell * 0.05));
+      const pasture = sat(veg - 0.35) * 0.55;    // the wetter the country, the more of it is green pasture
+      const fr0 = mix(f[0], 92, pasture), fg0 = mix(f[1], 120, pasture), fb0 = mix(f[2], 60, pasture);
+      blend(118 + (fr0 - 118) * k, 128 + (fg0 - 128) * k, 76 + (fb0 - 76) * k, t * 0.85);
       if (f[3] > 0) blend(f[4] ? 44 : 70, f[4] ? 62 : 86, f[4] ? 34 : 48, f[3] * t * 0.85 * sat((0.012 - pix) / 0.006));
       if (f[5] && pix < 0.006) {
         // orchard: grassy alleys between rows of round crowns
@@ -765,6 +816,10 @@ function colorAt(X, Y, h, slope, pix, mode, dsea) {
       blend(118, 128, 76, favg);
       const fn = fbm(X / cell * 0.8, Y / cell * 0.8, 3);
       tmp3[0] *= 1 + 0.08 * fn * pf; tmp3[1] *= 1 + 0.06 * fn * pf;
+      if (pix < 0.6) {                           // from further out the parcels still read as a patchwork of crops
+        const f = fields(X, Y, cell * 4, pix, false), t = pf * 0.5 * sat((0.6 - pix) * 2.5), pasture = sat(veg - 0.35) * 0.55;
+        blend(mix(f[0], 92, pasture), mix(f[1], 120, pasture), mix(f[2], 60, pasture), t);
+      }
     }
   }
   // natural woodland and forests
@@ -779,14 +834,23 @@ function colorAt(X, Y, h, slope, pix, mode, dsea) {
   if (fd > 0.01) {
     const conifer = sat(sstep(8, 1, T + 0.004 * 0) + sstep(treeline - 1200, treeline - 400, h));
     let fr = mix(50, 30, conifer), fg = mix(70, 50, conifer), fb = mix(36, 34, conifer);
-    const dk = F[6];
-    if (dk > 0) { fr = mix(fr, 22, dk); fg = mix(fg, 36, dk); fb = mix(fb, 24, dk); }
+    const dk = F[6] * 0.6;                      // dark woods are darker, not black
+    if (dk > 0) { fr = mix(fr, 26, dk); fg = mix(fg, 40, dk); fb = mix(fb, 28, dk); }
     const gold = F[5];
     if (gold > 0) { const gm = gold * (0.35 + 0.35 * sat(0.5 + fbm(X * 0.6, Y * 0.6, 3))); fr = mix(fr, 168, gm); fg = mix(fg, 140, gm); fb = mix(fb, 52, gm); }
     if (T > 22) { fr *= 0.8; fg *= 1.05; }
     const mott = fbmA(X, Y, 0.6, Math.max(pix, 0.002), 0.7, 9);
     fr *= 1 + 0.12 * mott; fg *= 1 + 0.14 * mott; fb *= 1 + 0.1 * mott;
-    let dens = sstep(0.3, 0.52, fd + 0.28 * fbmA(X, Y, 4, Math.max(pix, 0.003), 0.8, 40));
+    // ragged edges and glades: the forest's own outline broken at every scale, meadows opening inside it
+    const edgeN = 0.28 * fbmA(X, Y, 4, Math.max(pix, 0.003), 0.8, 40) + 0.14 * fbmA(X, Y, 0.7, Math.max(pix, 0.002), 0.75, 41);
+    const glade = sstep(0.5, 0.62, fbm(X * 0.35 + 17, Y * 0.35 - 5, 3)) * 0.7;
+    let dens = sstep(0.3, 0.52, fd + edgeN) * (1 - glade);
+    const stand = sat(0.5 + 1.4 * fbm(X * 0.45 - 11, Y * 0.45 + 6, 3) + 0.8 * fbmA(X, Y, 0.35, Math.max(pix, 0.004), 0.8, 43));   // stands of lighter and darker trees
+    fr = mix(fr, fr * 1.5 + 8, stand * 0.5); fg = mix(fg, fg * 1.4 + 8, stand * 0.5); fb = mix(fb, fb * 1.2, stand * 0.5);
+    if (pix >= 0.008 && pix < 0.6) {            // from further out, the canopy as clumps of crowns, lit and shadowed
+      const cr = fbmA(X, Y, 0.12, Math.max(pix, 0.004), 0.85, 42), lit = 1 + 0.32 * cr * sat((0.6 - pix) * 2);
+      fr *= lit; fg *= lit; fb *= lit;
+    }
     if (pix < 0.008) {
       const c = canopy(X, Y, gold > 0.5 ? 0.012 : 0.0065);
       const gap = c < -0.5;
@@ -822,6 +886,9 @@ function colorAt(X, Y, h, slope, pix, mode, dsea) {
   // each region's own colour, graded from its Earth analogue (tools/known/colours.py): Dorne toward the Anti-Atlas,
   // the North toward the Scottish moors; a factor on our colours, so fields, woods and marsh keep their detail
   { const w = tintAt(X, Y) * 0.9; if (w > 0) for (let c = 0; c < 3; c++) tmp3[c] *= 1 + (TINT[c] - 1) * w; }
+  // scree: pale broken stone on the high slopes below the cliffs
+  const scree = sstep(0.28, 0.5, slope) * (1 - sstep(0.6, 0.95, slope)) * sstep(treeline - 500, treeline + 100, h);
+  if (scree > 0.01) { const sn = fbmA(X, Y, 0.3, Math.max(pix, 0.002), 0.8, 46); blend(152 + 16 * sn, 146 + 14 * sn, 136 + 12 * sn, scree * 0.6 * sat(0.6 + sn)); }
   // alpine: rock on steep slopes and high ground, snow above the snowline
   const rock = Math.max(sstep(0.5, 0.95, slope), sstep(treeline + 200, treeline + 900, h) * 0.85);
   if (rock > 0.01) {

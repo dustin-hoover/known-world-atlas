@@ -344,6 +344,12 @@ FARMS = [
     area('The Winterfell fields', [[-100, 80], [100, 80], [100, -100], [-100, -100]], v=0.4),
     area('The Rhoyne valley', [[1150, -1500], [1450, -1500], [1450, -2150], [1150, -2150]], v=0.8),
 ]
+# shallows: the sea no deeper than `depth` metres inside, shelving to it over a few miles (our own; gen.js)
+SHOALS = [
+    {'name': 'The Stepstones', 'depth': 60, 'pts': chaikin([[690, -2040], [790, -2005], [885, -2010], [895, -2075], [800, -2145], [700, -2140]], 2)},
+    {'name': 'The Braavos lagoon', 'depth': 8, 'pts': chaikin([[735, -525], [795, -525], [800, -455], [740, -455]], 2)},
+    {'name': "Slaver's Bay", 'depth': 80, 'pts': chaikin([[2425, -2150], [2560, -2035], [2700, -1980], [2770, -2050], [2750, -2210], [2550, -2260], [2430, -2235]], 2)},
+]
 GRASS = [area('The Dothraki Sea', [[1500, -700], [2600, -700], [2900, -1000], [2900, -1500], [2400, -1600], [1700, -1500], [1500, -1100]], v=1)]
 ASH = [area('The Smoking Sea', [[1850, -2560], [2160, -2560], [2160, -2820], [1850, -2820]], v=1)]   # the isles moved from the Cyclades
 UPLIFT = []
@@ -963,7 +969,7 @@ const GEO = (() => {
 """
     parts = [
         ('COAST', coast_s), ('ISLANDS', ISLANDS), ('COAST_ZONES', COAST_ZONES), ('TERRAIN_ZONES', terrain_zones()), ('COLOUR_ZONES', colour_zones), ('RANGES', RANGES), ('HILLS', HILLS), ('PEAKS', PEAKS),
-        ('RIVERS', RIVERS), ('LAKES', LAKES), ('FORESTS', FORESTS), ('MARSHES', MARSHES), ('ARID', ARID), ('FARMS', FARMS),
+        ('RIVERS', RIVERS), ('LAKES', LAKES), ('FORESTS', FORESTS), ('MARSHES', MARSHES), ('ARID', ARID), ('FARMS', FARMS), ('SHOALS', SHOALS),
         ('GRASS', GRASS), ('ASH', ASH), ('UPLIFT', UPLIFT), ('ICE', ICE), ('RELIEF', RELIEF),
         ('PLACES', PLACES), ('REGION_LABELS', REGION_LABELS), ('SEA_LABELS', SEA_LABELS), ('REALMS', REALMS),
         ('ADMIN', ADMIN), ('PEOPLES', PEOPLES), ('ROADS', ROADS), ('WALLS', WALLS), ('GORGES', GORGES),

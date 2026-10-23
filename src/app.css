@@ -28,6 +28,7 @@ button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 #map { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 60%, #0e1520 0%, #07090d 70%); }
+#haze { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.4s; }
 #stars { position: fixed; inset: 0; pointer-events: none; }
 .maplibregl-canvas { outline: none; }
 

@@ -310,7 +310,7 @@ const style = {
     { id: 'journeys-av', type: 'symbol', source: 'journey-pos', filter: ['has', 'icon'], layout: { 'icon-image': ['get', 'icon'], 'icon-anchor': 'bottom', 'icon-offset': [0, -3], 'icon-size': ['interpolate', ['linear'], ['zoom'], 3, 0.8, 7, 1.05, 10, 1.3], 'icon-allow-overlap': true, 'icon-ignore-placement': true, 'symbol-sort-key': ['-', 0, ['get', 'n']] } },
     { id: 'journeys-pos-label', type: 'symbol', source: 'journey-pos', layout: { 'text-field': ['get', 'name'], 'text-font': TXT_UIB, 'text-size': 12.5, 'text-offset': ['case', ['has', 'icon'], ['literal', [0, 0.55]], ['literal', [0, -1.1]]], 'text-anchor': ['case', ['has', 'icon'], 'top', 'bottom'], 'text-allow-overlap': false, 'text-optional': true }, paint: { 'text-color': ['get', 'color'], 'text-halo-color': 'rgba(0,0,0,0.85)', 'text-halo-width': 1.5 } },
   ]),
-  sky: { 'sky-color': '#7fa7d0', 'horizon-color': '#d6e4ee', 'fog-color': '#c9d6e0', 'horizon-fog-blend': 0.6, 'sky-horizon-blend': 0.6, 'fog-ground-blend': 0.85, 'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 8, 0] },
+  sky: { 'sky-color': '#7fa7d0', 'horizon-color': '#d6e4ee', 'sky-horizon-blend': 0.6, 'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 8, 0] },
 };
 // region labels respect their zoom windows
 style.layers.find(l => l.id === 'regions').filter = ['all', ['<=', ['get', 'minz'], ['zoom']], ['>=', ['get', 'maxz'], ['zoom']]];
@@ -779,8 +779,6 @@ function setTime(t, fromSlider) {
   if (lead) { const np = nearestPlace(lead.X, lead.Y); where = `<b>${esc(lj.name)}</b> ${lead.done && lj.hide ? 'lies dead' : np.d < 4 ? 'at' : 'near'} ${esc(np.p.name)}`; }
   $('#ticker').innerHTML = [where, ev ? esc(ev.text) : ''].filter(Boolean).join(' · ');
   updateJourneys();
-  const beaconsLit = S.story === 'war' && S.t >= WX.parse('3019 3 8') && S.t < WX.parse('3019 3 16');
-  if (mapLoaded) map.setPaintProperty('beacons-line', 'line-opacity', beaconsLit ? 1 : 0.35);
   wxRequest();
   if (wxOn('night')) drawNight();
   updateSky(); refreshSeason();
@@ -814,6 +812,7 @@ function togglePlay(on) {
 $('#play').onclick = () => togglePlay();
 
 /* sky follows the sun at the view centre */
+let hazeColor = '#d6e4ee', hazeRaf = 0;
 function updateSky() {
   if (!mapLoaded) return;
   const c = map.getCenter();
@@ -821,10 +820,35 @@ function updateSky() {
   const day = GEN.sat((el + 4) / 14), dusk = Math.max(0, 1 - Math.abs(el - 1) / 7);
   const mixc = (a, b, t) => '#' + a.map((v, i) => Math.round(v + (b[i] - v) * t).toString(16).padStart(2, '0')).join('');
   const sky = mixc([14, 22, 44], [110, 160, 210], day), hor = mixc(mixc([30, 36, 60], [214, 228, 238], day).match(/\w\w/g).map(h => parseInt(h, 16)), [236, 170, 120], dusk * 0.8);
-  const fog = mixc([26, 32, 50], [200, 212, 222], day);
-  map.setSky({ 'sky-color': sky, 'horizon-color': hor, 'fog-color': fog, 'horizon-fog-blend': 0.6, 'sky-horizon-blend': 0.6, 'fog-ground-blend': 0.85, 'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 8, 0] });
+  // no fog: MapLibre draws none on the globe (and says so); the haze over the far ground is #haze, below
+  map.setSky({ 'sky-color': sky, 'horizon-color': hor, 'sky-horizon-blend': 0.6, 'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 8, 0] });
+  hazeColor = hor; updateHaze();
 }
 map.on('moveend', updateSky);
+
+/* haze: the far ground fades into the horizon's colour when the view is tipped up toward it */
+function horizonY() {
+  const c = map.getCanvas(), h = c.clientHeight, x = c.clientWidth / 2;
+  const on = y => {                              // a screen point on the ground maps to a place and back to itself
+    try { const q = map.project(map.unproject([x, y])); return Math.abs(q.y - y) < 2 && Math.abs(q.x - x) < 2; } catch (e) { return false; }
+  };
+  if (on(0)) return null;
+  let lo = 0, hi = h;
+  if (!on(hi)) return null;
+  for (let k = 0; k < 16; k++) { const m = (lo + hi) / 2; if (on(m)) hi = m; else lo = m; }
+  return hi;
+}
+function updateHaze() {
+  const el = $('#haze'); if (!el) return;
+  const p = map.getPitch(), z = map.getZoom();
+  const a = GEN.sat((p - 45) / 20) * GEN.sat((z - 5) / 2);
+  const y = a > 0 ? horizonY() : null;
+  if (y === null) { el.style.opacity = 0; return; }
+  const h = map.getCanvas().clientHeight, band = Math.max(60, h * 0.28);
+  el.style.background = `linear-gradient(to bottom, transparent ${Math.max(0, y - 14)}px, ${hazeColor} ${y + 2}px, transparent ${y + band}px)`;
+  el.style.opacity = (0.55 * a).toFixed(3);
+}
+map.on('move', () => { if (!hazeRaf) hazeRaf = requestAnimationFrame(() => { hazeRaf = 0; updateHaze(); }); });
 
 /* ---------------- layer switching ---------------- */
 const LAYER_GROUPS = {
@@ -953,7 +977,7 @@ const PANELS = {
       return `<div class="row" style="cursor:pointer" data-cpick="${id}">${charAvatar(id)}<label>${esc(P[id].name)} <small>${esc(P[id].house)} · ${p ? (p.done && l.hide ? 'gone' : (np.d < 4 ? 'at ' : 'near ') + esc(np.p.name)) : 'not yet'}</small></label></div>`; }).join('')).join('')}`;
   },
   weather: () => `<div class="ph"><h2>Weather</h2><button class="x" aria-label="Close">×</button></div>
-    <p class="note">A deterministic atmosphere: Atlantic-style lows sweep in from Belegaer on the westerlies, highs settle over Rhûn in winter, and mountains wring rain from the air. It follows the timeline, so scrub to any date.</p>
+    <p class="note">A deterministic atmosphere: Atlantic-style lows sweep in from the Sunset Sea on the westerlies, highs settle over the Dothraki Sea in winter, and mountains wring rain from the air. It follows the timeline, so scrub to any date.</p>
     <div class="row" style="padding:10px 0;border-bottom:1px solid var(--rule)"><label for="w-master"><b>Show weather</b></label><input class="tog" type="checkbox" id="w-master" ${S.wxMaster ? 'checked' : ''}></div>
     <div class="eyebrow">Layers</div>
     ${tog('w-clouds', 'Clouds', S.wx.clouds, 'visible satellite')}${tog('w-radar', 'Precipitation radar', S.wx.radar)}
@@ -1250,16 +1274,22 @@ map.on('click', e => {
   }
   showPoint(X, Y);
 });
+let pointerIn = false;
 map.on('mousemove', e => {
+  pointerIn = true;
   const f = map.queryRenderedFeatures(e.point, { layers: ['places-1', 'places-2', 'places-3', 'places-4', 'places-5', 'places-6', 'peaks'].filter(id => map.getLayer(id)) });
   map.getCanvas().style.cursor = S.pick || S.measure ? 'crosshair' : f.length ? 'pointer' : '';
   statusAt(e.lngLat);
 });
+map.getCanvas().addEventListener('mouseleave', () => { pointerIn = false; statusAt(map.getCenter(), true); });
+// with no pointer over the map (touch, flights, jumps) the status follows the middle of the view
+map.on('move', () => { if (!pointerIn) statusAt(map.getCenter()); });
+map.on('moveend', () => { if (!pointerIn) statusAt(map.getCenter(), true); });
 
 /* ---------------- status ---------------- */
 let stT = 0;
-function statusAt(lngLat) {
-  const now = performance.now(); if (now - stT < 60) return; stT = now;
+function statusAt(lngLat, force) {
+  const now = performance.now(); if (!force && now - stT < 60) return; stT = now;
   const [X, Y] = GEN.toXY(lngLat.lng, lngLat.lat);
   const h = GEN.evaluate(X, Y, 0.3);
   $('#s1').innerHTML = `<b>${fmtLL(lngLat.lng, lngLat.lat)}</b> · ${GEN.R.s > 0 ? Math.round(h) + ' m' : 'sea'}`;

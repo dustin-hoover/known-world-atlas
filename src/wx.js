@@ -40,16 +40,19 @@ function sunVector(t, lon, lat) {
   const az = Math.atan2(-Math.sin(ha), Math.tan(dec) * Math.cos(la) - Math.sin(la) * Math.cos(ha));
   return { el: el / D2R, az: az / D2R };     // az: 0 = north, clockwise
 }
-// Seasons in the Known World last years. canonSeason: 0 = high summer, 1 = deep winter. The long summer ends as the
-// story opens, autumn follows and winter comes in the later books (approximate; to be pinned in the ledger).
-const SEASONS = [['297 1 1', 0], ['298 13 5', 0.1], ['299 6 1', 0.45], ['300 1 1', 0.7], ['300 9 1', 0.95], ['302 1 1', 1]];
+// Seasons in the Known World follow the story, not a year: canonSeason 0 = high summer, 1 = deep winter. The long
+// summer ends as the story opens, autumn runs through the books, and winter is declared when the Citadel's white
+// raven flies at the end of A Dance with Dragons (WHITE_RAVEN, an event on the timeline; dates approximate, to be
+// pinned in the ledger). Day and night keep an ordinary sun.
+const WHITE_RAVEN = '300 12 20';
+const SEASONS = [['297 1 1', 0], ['298 13 5', 0.1], ['299 6 1', 0.4], ['300 1 1', 0.6], ['300 12 19', 0.8], [WHITE_RAVEN, 1]];
 function canonSeason(t) {
   const P = SEASONS.map(([d, v]) => [parse(d), v]);
   if (t <= P[0][0]) return P[0][1];
   for (let i = 1; i < P.length; i++) if (t <= P[i][0]) return P[i - 1][1] + (P[i][1] - P[i - 1][1]) * (t - P[i - 1][0]) / (P[i][0] - P[i - 1][0]);
   return P[P.length - 1][1];
 }
-function winterness(t) { const yearly = 0.5 + 0.5 * Math.cos(2 * Math.PI * (gdoy(t) - 15) / 365); return Math.min(1, 0.85 * canonSeason(t) + 0.15 * yearly); }   // the books' seasons run for years; the yearly swing is slight
+function winterness(t) { return canonSeason(t); }    // the story's season alone: no yearly swing
 
 /* ------------------------------ systems ------------------------------ */
 const PER = 2.3;
@@ -168,7 +171,7 @@ function sample(X, Y, t, st, sys, lore) {
   let T = GEN.tempAt(lat, st.h);
   const g = gdoy(t);
   const A = (6 + 11 * st.cont) * sat((Math.abs(lat) - 8) / 42);
-  T += A * Math.cos(2 * Math.PI * (g - 200) / 365);
+  T += A * (1 - 2 * winterness(t));                // warmer in the story's summer, colder in its winter
   const D = (3 + 6 * st.cont * (1 - st.arid * 0) + 5 * st.arid) * (1 - 0.65 * C);
   T += D * Math.cos(2 * Math.PI * (hour - 15) / 24);
   T += Math.max(-7, Math.min(7, v * 0.33));
@@ -225,6 +228,6 @@ function describe(o) {
   return { sky, windFrom: pts[Math.round(dir / 22.5) % 16], windDir: dir, kmh: spd * 3.6, mph: spd * 2.237 };
 }
 
-return { MONTHS, canonSeason, parse, parts, fmtTime, declination, sunVector, winterness, systems, sample, describe, gdoy };
+return { MONTHS, WHITE_RAVEN, canonSeason, parse, parts, fmtTime, declination, sunVector, winterness, systems, sample, describe, gdoy };
 })();
 if (typeof self !== 'undefined') self.WX = WX;
